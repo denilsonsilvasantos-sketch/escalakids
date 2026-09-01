@@ -1,0 +1,1221 @@
+import {
+  Micro,
+  MicroFunction,
+  Person,
+  Family,
+  AvailabilityRule,
+  Schedule,
+  UserAccount,
+  RotationHistoryItem,
+  AuditLog,
+  UserRole,
+  BirthdayNotification,
+  ScheduleSlot
+} from '../types';
+import {
+  INITIAL_USERS,
+  INITIAL_MICROS,
+  INITIAL_FUNCTIONS,
+  INITIAL_FAMILIES,
+  INITIAL_PEOPLE,
+  INITIAL_AVAILABILITIES,
+  INITIAL_SCHEDULES,
+  INITIAL_ROTATION_HISTORY,
+  INITIAL_AUDIT_LOGS
+} from '../data/seedData';
+import { supabaseService } from './supabaseService';
+
+const STORAGE_KEYS = {
+  CURRENT_USER_ID: 'mevam_kids_current_user_id',
+  USERS: 'mevam_kids_users',
+  MICROS: 'mevam_kids_micros',
+  FUNCTIONS: 'mevam_kids_functions',
+  FAMILIES: 'mevam_kids_families',
+  PEOPLE: 'mevam_kids_people',
+  AVAILABILITIES: 'mevam_kids_availabilities',
+  SCHEDULES: 'mevam_kids_schedules',
+  ROTATION_HISTORY: 'mevam_kids_rotation_history',
+  AUDIT_LOGS: 'mevam_kids_audit_logs',
+};
+
+class StorageService {
+  private load<T>(key: string, fallback: T): T {
+    try {
+      const data = localStorage.getItem(key);
+      if (!data) {
+        this.save(key, fallback);
+        return fallback;
+      }
+      return JSON.parse(data) as T;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private save<T>(key: string, data: T): void {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save to localStorage:', e);
+    }
+  }
+
+  // --- Auth & Users ---
+  getUsers(): UserAccount[] {
+    let users = this.load<UserAccount[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    let modified = false;
+
+    // Filter out old demo/mock users
+    const demoIds = new Set(['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila']);
+    const filteredUsers = users.filter((u) => {
+      if (demoIds.has(u.id)) return false;
+      if (u.role === 'VOLUNTARIO') return false;
+      return true;
+    });
+
+    if (filteredUsers.length !== users.length) {
+      users = filteredUsers;
+      modified = true;
+    }
+
+    // Ensure admin user exists and is properly configured
+    let admin = users.find((u) => u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin');
+    if (!admin) {
+      admin = {
+        id: 'user-admin',
+        name: 'Administrador',
+        username: 'admin',
+        email: 'admin@mevamkids.org',
+        password: 'admin',
+        role: 'ADMIN_LIDERANCA',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        whatsapp: ''
+      };
+      users.unshift(admin);
+      modified = true;
+    } else {
+      if (admin.name !== 'Administrador') {
+        admin.name = 'Administrador';
+        modified = true;
+      }
+      if (admin.username !== 'admin') {
+        admin.username = 'admin';
+        modified = true;
+      }
+      if (admin.password !== 'admin') {
+        admin.password = 'admin';
+        modified = true;
+      }
+      if (admin.personId) {
+        delete admin.personId;
+        modified = true;
+      }
+    }
+
+    // Ensure all other users have valid usernames
+    users.forEach((u) => {
+      if (u.id !== 'user-admin' && !u.username) {
+        const firstName = u.name.trim().split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        u.username = firstName;
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      this.save(STORAGE_KEYS.USERS, users);
+    }
+
+    return users;
+  }
+
+  getCurrentUser(): UserAccount {
+    const users = this.getUsers();
+    const currentId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID) || 'user-admin';
+    return users.find((u) => u.id === currentId) || users[0];
+  }
+
+  setCurrentUser(userId: string): UserAccount {
+    const users = this.getUsers();
+    const user = users.find((u) => u.id === userId) || users[0];
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+    localStorage.setItem('mevam_kids_session_authenticated', 'true');
+    this.addAuditLog('TROCA_USUARIO', `Usuário ativo alterado para ${user.name} (${user.role})`, 'SYSTEM');
+    return user;
+  }
+
+  isAuthenticated(): boolean {
+    return localStorage.getItem('mevam_kids_session_authenticated') === 'true';
+  }
+
+  authenticate(loginIdentifier: string, passwordInput: string): { success: boolean; user?: UserAccount; message?: string } {
+    const users = this.getUsers();
+    const cleanId = (loginIdentifier || '').trim().toLowerCase();
+    const cleanPass = (passwordInput || '').trim();
+
+    if (!cleanId || !cleanPass) {
+      return { success: false, message: 'Por favor, informe o nome de usuário e a senha.' };
+    }
+
+    // Direct match for admin
+    let user = users.find((u) => {
+      if (cleanId === 'admin' || cleanId === 'administrador') {
+        return u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin' || u.username === 'admin';
+      }
+      const matchUsername = u.username && u.username.toLowerCase() === cleanId;
+      const matchId = u.id.toLowerCase() === cleanId;
+      const normalizedName = u.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const matchFirstName = normalizedName.split(' ')[0] === cleanId;
+      return matchUsername || matchId || matchFirstName;
+    });
+
+    // Fallback if looking for admin and not found
+    if (!user && (cleanId === 'admin' || cleanId === 'administrador')) {
+      user = users.find((u) => u.role === 'ADMIN_LIDERANCA') || users[0];
+    }
+
+    if (!user) {
+      return { success: false, message: 'Nome de usuário não encontrado. Verifique seu usuário.' };
+    }
+
+    if (user.role === 'VOLUNTARIO') {
+      return { success: false, message: 'O acesso ao sistema é exclusivo para a Liderança. Voluntários não possuem acesso ao painel.' };
+    }
+
+    // Check password: If ADMIN role, also allow 'ADMIN' or 'admin' master password by default
+    const expectedPassword = user.password || (user.role === 'ADMIN_LIDERANCA' ? 'ADMIN' : '123');
+    const isPasswordCorrect = user.role === 'ADMIN_LIDERANCA'
+      ? (cleanPass === expectedPassword || cleanPass.toUpperCase() === 'ADMIN')
+      : cleanPass === expectedPassword;
+
+    if (!isPasswordCorrect) {
+      return { success: false, message: 'Senha incorreta. Tente novamente.' };
+    }
+
+    // Update lastLoginAt
+    user.lastLoginAt = new Date().toISOString();
+    this.saveUsers(users);
+
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+    localStorage.setItem('mevam_kids_session_authenticated', 'true');
+    this.addAuditLog('LOGIN_USUARIO', `Login realizado com sucesso: ${user.name} (${user.role}) - Usuário: ${user.username || user.id}`, 'SYSTEM');
+
+    return { success: true, user };
+  }
+
+  logout(): void {
+    localStorage.removeItem('mevam_kids_session_authenticated');
+    this.addAuditLog('LOGOUT_USUARIO', 'Sessão encerrada.', 'SYSTEM');
+  }
+
+  saveUsers(users: UserAccount[]): void {
+    this.save(STORAGE_KEYS.USERS, users);
+  }
+
+  // Delegated User Management (Admin -> Macro Leader -> Micro Leader)
+  createDelegatedUser(
+    userData: {
+      name: string;
+      username?: string;
+      email?: string;
+      password?: string;
+      role: UserRole;
+      allowedMicroIds?: string[];
+      primaryMicroId?: string;
+      personId?: string;
+      whatsapp?: string;
+    },
+    creator: UserAccount = this.getCurrentUser()
+  ): { success: boolean; user?: UserAccount; message: string } {
+    const users = this.getUsers();
+
+    // Verification of permissions
+    if (userData.role === 'VOLUNTARIO') {
+      return { success: false, message: 'Voluntários não possuem acesso de usuário ao sistema. Cadastre-os no menu de Voluntários.' };
+    }
+
+    if (creator.role === 'ADMIN_LIDERANCA') {
+      // Admin can create any leadership role (LIDER_MACRO, LIDER_MICRO, COORDENADOR)
+    } else if (creator.role === 'LIDER_MACRO') {
+      // Macro Leader can create LIDER_MICRO (for their allowed micros)
+      if (userData.role !== 'LIDER_MICRO') {
+        return { success: false, message: 'Líderes Macro só têm permissão para cadastrar Líderes de Micro.' };
+      }
+      if (userData.primaryMicroId && !creator.allowedMicroIds?.includes(userData.primaryMicroId)) {
+        return { success: false, message: 'Você só pode criar líderes para micros dentro da sua frente de supervisão.' };
+      }
+    } else {
+      return { success: false, message: 'Você não tem permissão para criar novos usuários ou líderes.' };
+    }
+
+    // Validation
+    const cleanName = userData.name.trim();
+    if (!cleanName) {
+      return { success: false, message: 'O nome do usuário é obrigatório.' };
+    }
+
+    // Default username if not provided: first name in lowercase without accents
+    const firstName = cleanName.split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanUsername = (userData.username || firstName).trim().toLowerCase();
+
+    // Check duplicate username
+    const existing = users.find((u) => u.username?.toLowerCase() === cleanUsername);
+    if (existing) {
+      return { success: false, message: `O nome de usuário "${cleanUsername}" já está em uso. Escolha outro.` };
+    }
+
+    // Default initial password: provided password, or first name + '123', or '123'
+    const initialPassword = userData.password?.trim() || `${firstName}123`;
+
+    const newUser: UserAccount = {
+      id: `user-${Date.now()}`,
+      name: cleanName,
+      username: cleanUsername,
+      email: userData.email?.trim() || `${cleanUsername}@mevamkids.org`,
+      password: initialPassword,
+      role: userData.role,
+      allowedMicroIds: userData.allowedMicroIds || [],
+      primaryMicroId: userData.primaryMicroId,
+      personId: userData.personId,
+      whatsapp: userData.whatsapp?.trim(),
+      createdBy: creator.id,
+      createdByName: `${creator.name} (${creator.role})`,
+      mustChangePassword: true,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanUsername}`
+    };
+
+    users.push(newUser);
+    this.saveUsers(users);
+
+    // Sync profile to Supabase in background
+    supabaseService.syncProfile(newUser);
+
+    this.addAuditLog(
+      'CRIACAO_USUARIO',
+      `Novo usuário criado: ${newUser.name} (${newUser.role}) com usuário "${newUser.username}" por ${creator.name}.`,
+      'SYSTEM'
+    );
+
+    return {
+      success: true,
+      user: newUser,
+      message: `Usuário "${newUser.name}" criado com sucesso! Usuário: ${newUser.username} | Senha inicial: ${initialPassword}`
+    };
+  }
+
+  updateUserPassword(
+    targetUserId: string,
+    newPassword: string,
+    actor: UserAccount = this.getCurrentUser()
+  ): { success: boolean; message: string } {
+    const users = this.getUsers();
+    const targetIndex = users.findIndex((u) => u.id === targetUserId);
+    if (targetIndex === -1) {
+      return { success: false, message: 'Usuário não encontrado.' };
+    }
+
+    const targetUser = users[targetIndex];
+
+    // Permission check: self, Admin, or creator
+    const isSelf = actor.id === targetUserId;
+    const isAdmin = actor.role === 'ADMIN_LIDERANCA';
+    const isCreator = targetUser.createdBy === actor.id;
+    const isMacroSupervisor =
+      actor.role === 'LIDER_MACRO' &&
+      targetUser.primaryMicroId &&
+      actor.allowedMicroIds?.includes(targetUser.primaryMicroId);
+
+    if (!isSelf && !isAdmin && !isCreator && !isMacroSupervisor) {
+      return { success: false, message: 'Você não tem permissão para alterar a senha deste usuário.' };
+    }
+
+    if (!newPassword || newPassword.trim().length < 3) {
+      return { success: false, message: 'A senha deve ter no mínimo 3 caracteres.' };
+    }
+
+    targetUser.password = newPassword.trim();
+    targetUser.mustChangePassword = false;
+    users[targetIndex] = targetUser;
+    this.saveUsers(users);
+
+    // Sync profile to Supabase in background
+    supabaseService.syncProfile(targetUser);
+
+    this.addAuditLog('ALTERACAO_SENHA', `Senha alterada para o usuário ${targetUser.name} por ${actor.name}.`, 'SYSTEM');
+    return { success: true, message: 'Senha atualizada com sucesso!' };
+  }
+
+  updateUserAccount(
+    updatedUser: UserAccount,
+    actor: UserAccount = this.getCurrentUser()
+  ): { success: boolean; message: string } {
+    const users = this.getUsers();
+    const idx = users.findIndex((u) => u.id === updatedUser.id);
+    if (idx === -1) {
+      return { success: false, message: 'Usuário não encontrado.' };
+    }
+
+    users[idx] = { ...users[idx], ...updatedUser };
+    this.saveUsers(users);
+    supabaseService.syncProfile(users[idx]);
+    this.addAuditLog('ATUALIZACAO_USUARIO', `Dados de ${updatedUser.name} atualizados por ${actor.name}.`, 'SYSTEM');
+    return { success: true, message: 'Usuário atualizado com sucesso!' };
+  }
+
+  deleteUserAccount(
+    userId: string,
+    actor: UserAccount = this.getCurrentUser()
+  ): { success: boolean; message: string } {
+    if (actor.role !== 'ADMIN_LIDERANCA') {
+      return { success: false, message: 'Apenas o Administrador pode excluir contas de usuários.' };
+    }
+
+    if (userId === 'user-admin' || userId === actor.id) {
+      return { success: false, message: 'Não é permitido excluir o Administrador principal.' };
+    }
+
+    let users = this.getUsers();
+    const toDelete = users.find((u) => u.id === userId);
+    users = users.filter((u) => u.id !== userId);
+    this.saveUsers(users);
+
+    this.addAuditLog('EXCLUSAO_USUARIO', `Conta do usuário ${toDelete?.name} (${toDelete?.role}) excluída por ${actor.name}.`, 'SYSTEM');
+    return { success: true, message: 'Usuário excluído com sucesso.' };
+  }
+
+  getManageableUsers(actor: UserAccount = this.getCurrentUser()): UserAccount[] {
+    const all = this.getUsers();
+    if (actor.role === 'ADMIN_LIDERANCA' || actor.role === 'COORDENADOR') {
+      return all;
+    }
+    if (actor.role === 'LIDER_MACRO') {
+      const allowed = actor.allowedMicroIds || [];
+      return all.filter(
+        (u) =>
+          u.id === actor.id ||
+          u.createdBy === actor.id ||
+          (u.primaryMicroId && allowed.includes(u.primaryMicroId)) ||
+          u.role === 'VOLUNTARIO'
+      );
+    }
+    if (actor.role === 'LIDER_MICRO') {
+      return all.filter((u) => u.id === actor.id || (u.primaryMicroId && u.primaryMicroId === actor.primaryMicroId));
+    }
+    return all.filter((u) => u.id === actor.id);
+  }
+
+  canAccessMicro(microId: string, user: UserAccount = this.getCurrentUser()): boolean {
+    if (user.role === 'ADMIN_LIDERANCA' || user.role === 'COORDENADOR') return true;
+    if (user.role === 'LIDER_MACRO') {
+      return !!user.allowedMicroIds?.includes(microId);
+    }
+    if (user.role === 'LIDER_MICRO') {
+      return user.primaryMicroId === microId;
+    }
+    if (user.role === 'VOLUNTARIO') {
+      // Volunteers can view micros they belong to
+      if (user.personId) {
+        const person = this.getPersonById(user.personId);
+        return Boolean(person?.microIds.includes(microId));
+      }
+    }
+    return false;
+  }
+
+  canAdministerSystem(user: UserAccount = this.getCurrentUser()): boolean {
+    return user.role === 'ADMIN_LIDERANCA';
+  }
+
+  canManageSchedules(user: UserAccount = this.getCurrentUser()): boolean {
+    return user.role === 'ADMIN_LIDERANCA' || user.role === 'LIDER_MACRO' || user.role === 'LIDER_MICRO';
+  }
+
+  canManageVolunteers(user: UserAccount = this.getCurrentUser()): boolean {
+    return user.role === 'ADMIN_LIDERANCA' || user.role === 'LIDER_MACRO';
+  }
+
+  // Hierarchy Filter: Filter micros by current user scope
+  getAccessibleMicros(user: UserAccount = this.getCurrentUser()): Micro[] {
+    const all = this.getMicros();
+    if (user.role === 'ADMIN_LIDERANCA' || user.role === 'COORDENADOR' || user.role === 'OBSERVADOR') {
+      return all;
+    }
+    if (user.role === 'LIDER_MACRO') {
+      const allowed = user.allowedMicroIds || [];
+      return all.filter((m) => allowed.includes(m.id));
+    }
+    if (user.role === 'LIDER_MICRO') {
+      return all.filter((m) => m.id === user.primaryMicroId);
+    }
+    if (user.role === 'VOLUNTARIO' && user.personId) {
+      const person = this.getPersonById(user.personId);
+      const personMicros = person?.microIds || [];
+      return all.filter((m) => personMicros.includes(m.id));
+    }
+    return all;
+  }
+
+  // Hierarchy Filter: Filter schedules by user scope
+  getAccessibleSchedules(user: UserAccount = this.getCurrentUser()): Schedule[] {
+    const all = this.getSchedules();
+    if (user.role === 'ADMIN_LIDERANCA' || user.role === 'COORDENADOR' || user.role === 'OBSERVADOR') {
+      return all;
+    }
+    if (user.role === 'LIDER_MACRO') {
+      const allowed = user.allowedMicroIds || [];
+      return all.filter((s) => s.microIds.some((mId) => allowed.includes(mId)));
+    }
+    if (user.role === 'LIDER_MICRO') {
+      return all.filter((s) => s.microIds.includes(user.primaryMicroId || ''));
+    }
+    if (user.role === 'VOLUNTARIO') {
+      // Volunteers can see published or confirmed schedules
+      return all.filter((s) => s.status === 'PUBLICADA' || s.status === 'CONFIRMADA');
+    }
+    return all;
+  }
+
+  // Hierarchy Filter: Filter volunteers by user scope
+  getAccessiblePeople(user: UserAccount = this.getCurrentUser()): Person[] {
+    const all = this.getPeople();
+    if (user.role === 'ADMIN_LIDERANCA' || user.role === 'COORDENADOR' || user.role === 'OBSERVADOR') {
+      return all;
+    }
+    if (user.role === 'LIDER_MACRO') {
+      const allowed = user.allowedMicroIds || [];
+      return all.filter((p) => p.microIds.some((mId) => allowed.includes(mId)));
+    }
+    if (user.role === 'LIDER_MICRO') {
+      return all.filter((p) => p.microIds.includes(user.primaryMicroId || ''));
+    }
+    if (user.role === 'VOLUNTARIO') {
+      if (user.personId) {
+        return all.filter((p) => p.id === user.personId);
+      }
+      return all.filter((p) => p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase());
+    }
+    return all;
+  }
+
+  // Get specific volunteer assignments across all schedules
+  getVolunteerAssignments(personId: string): Array<{
+    scheduleId: string;
+    scheduleTitle: string;
+    date: string;
+    shift: string;
+    microName: string;
+    functionName: string;
+    sectionTitle?: string;
+    status: string;
+  }> {
+    const schedules = this.getSchedules();
+    const micros = this.getMicros();
+    const functions = this.getFunctions();
+    const results: Array<{
+      scheduleId: string;
+      scheduleTitle: string;
+      date: string;
+      shift: string;
+      microName: string;
+      functionName: string;
+      sectionTitle?: string;
+      status: string;
+    }> = [];
+
+    for (const sched of schedules) {
+      const mySlots = sched.slots.filter((s) => s.assignedPersonId === personId);
+      for (const slot of mySlots) {
+        const micro = micros.find((m) => m.id === slot.microId);
+        const fn = functions.find((f) => f.id === slot.functionId);
+        results.push({
+          scheduleId: sched.id,
+          scheduleTitle: sched.title,
+          date: slot.date,
+          shift: sched.shift,
+          microName: micro?.name || slot.microId,
+          functionName: fn?.name || slot.functionId,
+          sectionTitle: slot.sectionTitle,
+          status: sched.status
+        });
+      }
+    }
+
+    return results.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // --- Micros ---
+  getMicros(): Micro[] {
+    return this.load<Micro[]>(STORAGE_KEYS.MICROS, INITIAL_MICROS);
+  }
+
+  getMicroById(id: string): Micro | undefined {
+    return this.getMicros().find((m) => m.id === id);
+  }
+
+  saveMicro(micro: Micro): void {
+    const micros = this.getMicros();
+    const idx = micros.findIndex((m) => m.id === micro.id);
+    if (idx >= 0) {
+      micros[idx] = micro;
+      this.addAuditLog('EDICAO_MICRO', `Micro ${micro.name} atualizado.`, 'MICRO');
+    } else {
+      micros.push(micro);
+      this.addAuditLog('CRIACAO_MICRO', `Novo micro ${micro.name} criado.`, 'MICRO');
+    }
+    this.save(STORAGE_KEYS.MICROS, micros);
+    // Background cloud sync
+    supabaseService.syncMicro(micro);
+  }
+
+  deleteMicro(id: string): void {
+    const micro = this.getMicroById(id);
+    const micros = this.getMicros().filter((m) => m.id !== id);
+    this.save(STORAGE_KEYS.MICROS, micros);
+
+    // Delete all functions belonging to this micro
+    const functions = this.getFunctions().filter((f) => f.microId !== id);
+    this.save(STORAGE_KEYS.FUNCTIONS, functions);
+
+    // Unlink micro from all volunteers
+    const people = this.getPeople().map((p) => {
+      const updatedMicroIds = p.microIds.filter((mId) => mId !== id);
+      const updatedPrefs = p.functionPreferences.filter((pref) => pref.microId !== id);
+      return {
+        ...p,
+        microIds: updatedMicroIds,
+        functionPreferences: updatedPrefs
+      };
+    });
+    this.save(STORAGE_KEYS.PEOPLE, people);
+
+    // Remove micro and its slots from all active schedules
+    const schedules = this.getSchedules().map((sched) => {
+      const updatedMicroIds = sched.microIds.filter((mId) => mId !== id);
+      const updatedSlots = sched.slots.filter((slot) => slot.microId !== id);
+      return {
+        ...sched,
+        microIds: updatedMicroIds,
+        slots: updatedSlots
+      };
+    });
+    this.save(STORAGE_KEYS.SCHEDULES, schedules);
+
+    if (micro) {
+      this.addAuditLog('EXCLUSAO_MICRO', `Micro ${micro.name} e suas funções associadas foram excluídos.`, 'MICRO');
+    }
+    // Background cloud sync
+    supabaseService.deleteMicro(id);
+  }
+
+  // --- Functions ---
+  getFunctions(): MicroFunction[] {
+    return this.load<MicroFunction[]>(STORAGE_KEYS.FUNCTIONS, INITIAL_FUNCTIONS);
+  }
+
+  getFunctionsByMicro(microId: string): MicroFunction[] {
+    return this.getFunctions().filter((f) => f.microId === microId);
+  }
+
+  getFunctionById(id: string): MicroFunction | undefined {
+    return this.getFunctions().find((f) => f.id === id);
+  }
+
+  saveFunction(fn: MicroFunction): void {
+    const functions = this.getFunctions();
+    const idx = functions.findIndex((f) => f.id === fn.id);
+    if (idx >= 0) {
+      functions[idx] = fn;
+      this.addAuditLog('EDICAO_FUNCAO', `Função ${fn.name} atualizada.`, 'FUNCTION');
+    } else {
+      functions.push(fn);
+      this.addAuditLog('CRIACAO_FUNCAO', `Nova função ${fn.name} adicionada.`, 'FUNCTION');
+    }
+    this.save(STORAGE_KEYS.FUNCTIONS, functions);
+  }
+
+  deleteFunction(id: string): void {
+    const fn = this.getFunctionById(id);
+    const functions = this.getFunctions().filter((f) => f.id !== id);
+    this.save(STORAGE_KEYS.FUNCTIONS, functions);
+
+    // Unlink function from volunteers
+    const people = this.getPeople().map((p) => ({
+      ...p,
+      functionPreferences: p.functionPreferences.filter((pref) => pref.functionId !== id)
+    }));
+    this.save(STORAGE_KEYS.PEOPLE, people);
+
+    // Remove slots associated with this function in all schedules
+    const schedules = this.getSchedules().map((sched) => ({
+      ...sched,
+      slots: sched.slots.filter((slot) => slot.functionId !== id)
+    }));
+    this.save(STORAGE_KEYS.SCHEDULES, schedules);
+
+    if (fn) {
+      this.addAuditLog('EXCLUSAO_FUNCAO', `Função ${fn.name} removida.`, 'FUNCTION');
+    }
+  }
+
+  // --- People (Unified Single Volunteer Profile) ---
+  getPeople(): Person[] {
+    return this.load<Person[]>(STORAGE_KEYS.PEOPLE, INITIAL_PEOPLE);
+  }
+
+  getPersonById(id: string): Person | undefined {
+    return this.getPeople().find((p) => p.id === id);
+  }
+
+  findPeopleByBirthDate(birthDate: string): Person[] {
+    if (!birthDate) return [];
+    const normalized = birthDate.trim();
+    return this.getPeople().filter((p) => p.birthDate === normalized);
+  }
+
+  findPotentialNameDuplicates(name: string, excludeId?: string): Person[] {
+    if (!name || name.trim().length < 3) return [];
+    const term = name.trim().toLowerCase();
+    return this.getPeople().filter((p) => {
+      if (excludeId && p.id === excludeId) return false;
+      const pName = p.name.toLowerCase();
+      return pName.includes(term) || term.includes(pName) || (p.nickname && p.nickname.toLowerCase() === term);
+    });
+  }
+
+  savePerson(person: Person): void {
+    const people = this.getPeople();
+    const idx = people.findIndex((p) => p.id === person.id);
+    if (idx >= 0) {
+      people[idx] = { ...person, updatedAt: new Date().toISOString() };
+      this.addAuditLog('EDICAO_VOLUNTARIO', `Dados de ${person.name} atualizados.`, 'PERSON');
+    } else {
+      people.push({
+        ...person,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      this.addAuditLog('CADASTRO_VOLUNTARIO', `Novo voluntário cadastrado: ${person.name}.`, 'PERSON');
+    }
+    this.save(STORAGE_KEYS.PEOPLE, people);
+    // Background cloud sync
+    supabaseService.syncPerson(person);
+  }
+
+  deletePerson(id: string): void {
+    const person = this.getPersonById(id);
+    const people = this.getPeople().filter((p) => p.id !== id);
+    this.save(STORAGE_KEYS.PEOPLE, people);
+    if (person) {
+      this.addAuditLog('EXCLUSAO_VOLUNTARIO', `Voluntário ${person.name} desativado.`, 'PERSON');
+    }
+    // Background cloud sync
+    supabaseService.deletePerson(id);
+  }
+
+  // --- Families ---
+  getFamilies(): Family[] {
+    return this.load<Family[]>(STORAGE_KEYS.FAMILIES, INITIAL_FAMILIES);
+  }
+
+  getFamilyById(id: string): Family | undefined {
+    return this.getFamilies().find((f) => f.id === id);
+  }
+
+  saveFamily(family: Family): void {
+    const families = this.getFamilies();
+    const idx = families.findIndex((f) => f.id === family.id);
+    if (idx >= 0) {
+      families[idx] = family;
+      this.addAuditLog('EDICAO_FAMILIA', `Família ${family.name} atualizada.`, 'FAMILY');
+    } else {
+      families.push(family);
+      this.addAuditLog('CRIACAO_FAMILIA', `Nova família criada: ${family.name}.`, 'FAMILY');
+    }
+    this.save(STORAGE_KEYS.FAMILIES, families);
+  }
+
+  deleteFamily(id: string): void {
+    const fam = this.getFamilyById(id);
+    const families = this.getFamilies().filter((f) => f.id !== id);
+    this.save(STORAGE_KEYS.FAMILIES, families);
+    // Unlink members
+    const people = this.getPeople().map((p) => (p.familyId === id ? { ...p, familyId: undefined } : p));
+    this.save(STORAGE_KEYS.PEOPLE, people);
+    if (fam) {
+      this.addAuditLog('EXCLUSAO_FAMILIA', `Família ${fam.name} excluída.`, 'FAMILY');
+    }
+  }
+
+  getFamilyMembers(familyId: string): Person[] {
+    return this.getPeople().filter((p) => p.familyId === familyId);
+  }
+
+  linkPersonsToFamily(person1Id: string, person2Id: string, customFamilyName?: string): Family {
+    const p1 = this.getPersonById(person1Id);
+    const p2 = this.getPersonById(person2Id);
+    if (!p1 || !p2) throw new Error('Pessoas não encontradas');
+
+    let family: Family;
+
+    if (p1.familyId) {
+      family = this.getFamilyById(p1.familyId)!;
+      p2.familyId = family.id;
+      this.savePerson(p2);
+    } else if (p2.familyId) {
+      family = this.getFamilyById(p2.familyId)!;
+      p1.familyId = family.id;
+      this.savePerson(p1);
+    } else {
+      // Auto create new family
+      const lastName = p1.name.split(' ').slice(-1)[0] || 'Família';
+      const famName = customFamilyName || `Família ${lastName}`;
+      family = {
+        id: `fam-${Date.now()}`,
+        name: famName,
+        priority: 'ALTA',
+        createdAt: new Date().toISOString()
+      };
+      this.saveFamily(family);
+      p1.familyId = family.id;
+      p2.familyId = family.id;
+      this.savePerson(p1);
+      this.savePerson(p2);
+    }
+
+    this.addAuditLog(
+      'VINCULO_FAMILIAR',
+      `${p1.name} e ${p2.name} vinculados à ${family.name}.`,
+      'FAMILY'
+    );
+    return family;
+  }
+
+  // --- Availability & Unavailability ---
+  getAvailabilities(): AvailabilityRule[] {
+    return this.load<AvailabilityRule[]>(STORAGE_KEYS.AVAILABILITIES, INITIAL_AVAILABILITIES);
+  }
+
+  getPersonAvailabilities(personId: string): AvailabilityRule[] {
+    return this.getAvailabilities().filter((a) => a.personId === personId);
+  }
+
+  getAvailabilitiesByPerson(personId: string): AvailabilityRule[] {
+    return this.getPersonAvailabilities(personId);
+  }
+
+  saveAvailability(rule: AvailabilityRule): void {
+    const rules = this.getAvailabilities();
+    const idx = rules.findIndex((r) => r.id === rule.id);
+    if (idx >= 0) {
+      rules[idx] = rule;
+    } else {
+      rules.push(rule);
+    }
+    this.save(STORAGE_KEYS.AVAILABILITIES, rules);
+  }
+
+  deleteAvailability(id: string): void {
+    const rules = this.getAvailabilities().filter((r) => r.id !== id);
+    this.save(STORAGE_KEYS.AVAILABILITIES, rules);
+  }
+
+  isPersonAvailable(personId: string, dateStr: string, shift: string = 'NOITE'): { available: boolean; reason?: string } {
+    const rules = this.getPersonAvailabilities(personId);
+    // Check specific date unavailability
+    const specificUnavail = rules.find((r) => r.type === 'DATA_ESPECIFICA' && r.specificDate === dateStr && !r.isAvailable);
+    if (specificUnavail) {
+      return { available: false, reason: specificUnavail.reason || `Indisponível em ${dateStr}` };
+    }
+
+    // Check specific date availability override
+    const specificAvail = rules.find((r) => r.type === 'DATA_ESPECIFICA' && r.specificDate === dateStr && r.isAvailable);
+    if (specificAvail) {
+      return { available: true };
+    }
+
+    // Parse date day of week (0=Sunday)
+    const dateObj = new Date(dateStr + 'T12:00:00Z');
+    const dayOfWeek = dateObj.getUTCDay();
+
+    // Check recurring unavailability
+    const recurringUnavail = rules.find(
+      (r) =>
+        r.type === 'RECORRENTE' &&
+        r.dayOfWeek === dayOfWeek &&
+        (!r.shift || r.shift === 'AMBOS' || r.shift === 'QUALQUER' || r.shift.toLowerCase() === shift.toLowerCase()) &&
+        !r.isAvailable
+    );
+    if (recurringUnavail) {
+      return { available: false, reason: recurringUnavail.reason || 'Indisponibilidade recorrente' };
+    }
+
+    return { available: true };
+  }
+
+  // --- Conflict Detection ---
+  checkCrossMicroConflict(
+    personId: string,
+    date: string,
+    scheduleId: string,
+    excludeSlotId?: string
+  ): { hasConflict: boolean; conflictingSlot?: ScheduleSlot; conflictingMicro?: Micro; conflictingFunction?: MicroFunction } {
+    const schedules = this.getSchedules();
+    for (const sched of schedules) {
+      if (sched.status === 'CANCELADA') continue;
+      for (const slot of sched.slots) {
+        if (slot.date === date && slot.assignedPersonId === personId && slot.id !== excludeSlotId) {
+          const micro = this.getMicroById(slot.microId);
+          const fn = this.getFunctionById(slot.functionId);
+          return {
+            hasConflict: true,
+            conflictingSlot: slot,
+            conflictingMicro: micro,
+            conflictingFunction: fn
+          };
+        }
+      }
+    }
+    return { hasConflict: false };
+  }
+
+  // --- Schedules ---
+  getSchedules(): Schedule[] {
+    return this.load<Schedule[]>(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+  }
+
+  getScheduleById(id: string): Schedule | undefined {
+    return this.getSchedules().find((s) => s.id === id);
+  }
+
+  saveSchedule(schedule: Schedule): void {
+    const schedules = this.getSchedules();
+    const idx = schedules.findIndex((s) => s.id === schedule.id);
+    const currentUser = this.getCurrentUser();
+    const updated = {
+      ...schedule,
+      updatedBy: currentUser.name,
+      updatedAt: new Date().toISOString()
+    };
+    if (idx >= 0) {
+      schedules[idx] = updated;
+      this.addAuditLog('EDICAO_ESCALA', `Escala "${schedule.title}" atualizada (${schedule.status}).`, 'SCHEDULE');
+    } else {
+      schedules.push({
+        ...updated,
+        createdBy: currentUser.name,
+        createdAt: new Date().toISOString()
+      });
+      this.addAuditLog('CRIACAO_ESCALA', `Nova escala criada: "${schedule.title}".`, 'SCHEDULE');
+    }
+    this.save(STORAGE_KEYS.SCHEDULES, schedules);
+    // Background cloud sync
+    supabaseService.syncSchedule(updated);
+  }
+
+  deleteSchedule(id: string): void {
+    const sched = this.getScheduleById(id);
+    const schedules = this.getSchedules().filter((s) => s.id !== id);
+    this.save(STORAGE_KEYS.SCHEDULES, schedules);
+    if (sched) {
+      this.addAuditLog('EXCLUSAO_ESCALA', `Escala "${sched.title}" excluída.`, 'SCHEDULE');
+    }
+    // Background cloud sync
+    supabaseService.deleteSchedule(id);
+  }
+
+  updateSlotAssignment(scheduleId: string, slotId: string, personId?: string, isManual = true): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    const slot = sched.slots.find((s) => s.id === slotId);
+    if (!slot) return;
+
+    if (personId) {
+      const person = this.getPersonById(personId);
+      slot.assignedPersonId = personId;
+      slot.assignedPersonName = person?.name || '';
+      slot.manualOverride = isManual;
+      // Record in audit log
+      this.addAuditLog(
+        'ATRIBUICAO_ESCALA',
+        `${person?.name} atribuído à ${slot.sectionTitle || 'Função'} na data ${slot.date}.`,
+        'SCHEDULE'
+      );
+    } else {
+      slot.assignedPersonId = undefined;
+      slot.assignedPersonName = undefined;
+      slot.manualOverride = isManual;
+      slot.score = undefined;
+      slot.scoreBreakdown = undefined;
+    }
+    this.saveSchedule(sched);
+  }
+
+  addFunctionToSchedule(scheduleId: string, fn: MicroFunction): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+
+    // Ensure micro is in schedule
+    if (!sched.microIds.includes(fn.microId)) {
+      sched.microIds.push(fn.microId);
+    }
+
+    const count = fn.defaultRequiredCount || 1;
+    const newSlots: ScheduleSlot[] = [];
+
+    for (let i = 1; i <= count; i++) {
+      for (const date of sched.dates) {
+        const slotId = `slot-${fn.microId}-${fn.id}-${date}-${i}`;
+        // Only if not exists
+        if (!sched.slots.some((s) => s.id === slotId)) {
+          newSlots.push({
+            id: slotId,
+            scheduleId: sched.id,
+            date,
+            microId: fn.microId,
+            functionId: fn.id,
+            sectionTitle: fn.category || fn.name,
+            slotIndex: i,
+            manualOverride: false
+          });
+        }
+      }
+    }
+
+    sched.slots = [...sched.slots, ...newSlots];
+    this.saveSchedule(sched);
+  }
+
+  addExtraSlotToSchedule(scheduleId: string, functionId: string): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    const fn = this.getFunctions().find((f) => f.id === functionId);
+    if (!fn) return;
+
+    const existingSlotsForFn = sched.slots.filter((s) => s.functionId === functionId);
+    const maxIndex = existingSlotsForFn.reduce((max, s) => Math.max(max, s.slotIndex || 1), 0);
+    const nextIndex = maxIndex + 1;
+
+    const newSlots: ScheduleSlot[] = [];
+    for (const date of sched.dates) {
+      const slotId = `slot-${fn.microId}-${fn.id}-${date}-${nextIndex}`;
+      if (!sched.slots.some((s) => s.id === slotId)) {
+        newSlots.push({
+          id: slotId,
+          scheduleId: sched.id,
+          date,
+          microId: fn.microId,
+          functionId: fn.id,
+          sectionTitle: fn.category || fn.name,
+          slotIndex: nextIndex,
+          manualOverride: false
+        });
+      }
+    }
+
+    sched.slots = [...sched.slots, ...newSlots];
+    this.saveSchedule(sched);
+  }
+
+  removeFunctionFromSchedule(scheduleId: string, functionId: string): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    sched.slots = sched.slots.filter((s) => s.functionId !== functionId);
+    this.saveSchedule(sched);
+  }
+
+  addMicroToSchedule(scheduleId: string, microId: string): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    if (!sched.microIds.includes(microId)) {
+      sched.microIds.push(microId);
+    }
+
+    // Generate slots for micro's functions
+    const microFunctions = this.getFunctionsByMicro(microId);
+    const newSlots: ScheduleSlot[] = [];
+
+    for (const fn of microFunctions) {
+      const count = fn.defaultRequiredCount || 1;
+      for (let i = 1; i <= count; i++) {
+        for (const date of sched.dates) {
+          const slotId = `slot-${microId}-${fn.id}-${date}-${i}`;
+          if (!sched.slots.some((s) => s.id === slotId)) {
+            newSlots.push({
+              id: slotId,
+              scheduleId: sched.id,
+              date,
+              microId,
+              functionId: fn.id,
+              sectionTitle: fn.category || fn.name,
+              slotIndex: i,
+              manualOverride: false
+            });
+          }
+        }
+      }
+    }
+
+    sched.slots = [...sched.slots, ...newSlots];
+    this.saveSchedule(sched);
+  }
+
+  removeMicroFromSchedule(scheduleId: string, microId: string): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    sched.microIds = sched.microIds.filter((mId) => mId !== microId);
+    sched.slots = sched.slots.filter((s) => s.microId !== microId);
+    this.saveSchedule(sched);
+  }
+
+  // --- Birthdays ---
+  calculateBirthdays(): BirthdayNotification[] {
+    const people = this.getPeople().filter((p) => p.active);
+    const micros = this.getMicros();
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const todayMonth = today.getMonth(); // 0-11
+    const todayDate = today.getDate();
+
+    const notifications: BirthdayNotification[] = [];
+
+    for (const p of people) {
+      if (!p.birthDate) continue;
+      const parts = p.birthDate.split('-');
+      if (parts.length !== 3) continue;
+      const bYear = parseInt(parts[0], 10);
+      const bMonth = parseInt(parts[1], 10) - 1; // 0-11
+      const bDay = parseInt(parts[2], 10);
+
+      let nextBday = new Date(currentYear, bMonth, bDay);
+      if (nextBday < new Date(currentYear, todayMonth, todayDate)) {
+        nextBday = new Date(currentYear + 1, bMonth, bDay);
+      }
+
+      const diffTime = nextBday.getTime() - new Date(currentYear, todayMonth, todayDate).getTime();
+      const daysRemaining = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      const ageTurning = nextBday.getFullYear() - bYear;
+
+      let category: BirthdayNotification['category'] = 'OUTROS';
+      if (daysRemaining === 0) category = 'HOJE';
+      else if (daysRemaining === 1) category = 'AMANHA';
+      else if (daysRemaining <= 7) category = 'PROXIMOS_7';
+      else if (daysRemaining <= 30) category = 'PROXIMOS_30';
+      else if (bMonth === todayMonth) category = 'ESTE_MES';
+
+      const personMicros = p.microIds.map((mId) => micros.find((m) => m.id === mId)?.name || mId);
+
+      notifications.push({
+        personId: p.id,
+        personName: p.name,
+        birthDate: p.birthDate,
+        nextBirthday: nextBday.toISOString().split('T')[0],
+        ageTurning,
+        daysRemaining,
+        category,
+        micros: personMicros,
+        whatsapp: p.whatsapp,
+        phone: p.phone
+      });
+    }
+
+    return notifications.sort((a, b) => a.daysRemaining - b.daysRemaining);
+  }
+
+  // --- Audit Logs ---
+  getAuditLogs(): AuditLog[] {
+    return this.load<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
+  }
+
+  addAuditLog(action: string, details: string, targetType: AuditLog['targetType']): void {
+    const logs = this.getAuditLogs();
+    const currentUser = this.getCurrentUser();
+    const newLog: AuditLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      userName: currentUser.name,
+      userRole: currentUser.role,
+      action,
+      details,
+      targetType
+    };
+    logs.unshift(newLog);
+    if (logs.length > 300) logs.pop();
+    this.save(STORAGE_KEYS.AUDIT_LOGS, logs);
+  }
+
+  // --- Rotation History ---
+  getRotationHistory(): RotationHistoryItem[] {
+    return this.load<RotationHistoryItem[]>(STORAGE_KEYS.ROTATION_HISTORY, INITIAL_ROTATION_HISTORY);
+  }
+
+  recordRotationHistory(items: RotationHistoryItem[]): void {
+    const history = this.getRotationHistory();
+    history.push(...items);
+    this.save(STORAGE_KEYS.ROTATION_HISTORY, history);
+  }
+
+  // --- Supabase Cloud Sync & Export Helper ---
+  getAllDataForExport() {
+    return {
+      users: this.getUsers(),
+      micros: this.getMicros(),
+      functions: this.getFunctions(),
+      families: this.getFamilies(),
+      people: this.getPeople(),
+      availabilities: this.getAvailabilities(),
+      schedules: this.getSchedules(),
+      rotationHistory: this.getRotationHistory(),
+      auditLogs: this.getAuditLogs()
+    };
+  }
+
+  async syncWithSupabaseRemote(): Promise<boolean> {
+    try {
+      const remote = await supabaseService.fetchRemoteData();
+      if (!remote) return false;
+
+      if (remote.users && remote.users.length > 0) {
+        this.save(STORAGE_KEYS.USERS, remote.users);
+      }
+      if (remote.micros && remote.micros.length > 0) {
+        this.save(STORAGE_KEYS.MICROS, remote.micros);
+      }
+      if (remote.functions && remote.functions.length > 0) {
+        this.save(STORAGE_KEYS.FUNCTIONS, remote.functions);
+      }
+      if (remote.families && remote.families.length > 0) {
+        this.save(STORAGE_KEYS.FAMILIES, remote.families);
+      }
+      if (remote.people && remote.people.length > 0) {
+        this.save(STORAGE_KEYS.PEOPLE, remote.people);
+      }
+      if (remote.availabilities && remote.availabilities.length > 0) {
+        this.save(STORAGE_KEYS.AVAILABILITIES, remote.availabilities);
+      }
+      if (remote.schedules && remote.schedules.length > 0) {
+        this.save(STORAGE_KEYS.SCHEDULES, remote.schedules);
+      }
+
+      this.addAuditLog('SINCRONIZACAO_SUPABASE', 'Dados remotos do Supabase sincronizados com o navegador.', 'SYSTEM');
+      return true;
+    } catch (e) {
+      console.warn('Sync with remote Supabase failed:', e);
+      return false;
+    }
+  }
+
+  // --- Reset to Initial Seed ---
+  resetAllData(): void {
+    localStorage.removeItem(STORAGE_KEYS.USERS);
+    localStorage.removeItem(STORAGE_KEYS.MICROS);
+    localStorage.removeItem(STORAGE_KEYS.FUNCTIONS);
+    localStorage.removeItem(STORAGE_KEYS.FAMILIES);
+    localStorage.removeItem(STORAGE_KEYS.PEOPLE);
+    localStorage.removeItem(STORAGE_KEYS.AVAILABILITIES);
+    localStorage.removeItem(STORAGE_KEYS.SCHEDULES);
+    localStorage.removeItem(STORAGE_KEYS.ROTATION_HISTORY);
+    localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
+    this.addAuditLog('REINICIALIZACAO_SISTEMA', 'Banco de dados restaurado para os dados padrão do MEVAM Kids.', 'SYSTEM');
+  }
+}
+
+export const storageService = new StorageService();

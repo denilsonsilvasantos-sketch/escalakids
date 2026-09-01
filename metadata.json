@@ -1,0 +1,6 @@
+{
+  "name": "MEVAM Kids - Gestão e Escalas Inteligentes",
+  "description": "Sistema completo para gestão de voluntários, micros/frentes, funções, disponibilidades, aniversários e montagem inteligente de escalas com controle de conflitos e exportação profissional.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
