@@ -29,9 +29,12 @@ export default function App() {
   const [wizardPerson, setWizardPerson] = useState<Person | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
 
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+
+  const refreshData = () => setDataVersion((v) => v + 1);
 
   // Global Keyboard Shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -133,6 +136,7 @@ export default function App() {
 
           {currentView === 'volunteers' && (
             <VolunteerList
+              key={`volunteers-${dataVersion}`}
               currentUser={currentUser}
               onOpenWizard={handleOpenEditVolunteer}
               onViewDetail={setSelectedPersonForDetail}
@@ -140,7 +144,10 @@ export default function App() {
           )}
 
           {currentView === 'micros-functions' && (
-            <MicroManagement currentUser={currentUser} />
+            <MicroManagement
+              key={`micros-${dataVersion}`}
+              currentUser={currentUser}
+            />
           )}
 
           {currentView === 'families' && (
@@ -165,7 +172,7 @@ export default function App() {
         onNavigate={setCurrentView}
       />
 
-      {/* 8-Step Anti-Duplicate Guided Volunteer Wizard */}
+      {/* Modern Guided Volunteer Wizard */}
       <VolunteerWizardModal
         isOpen={isWizardOpen}
         onClose={() => {
@@ -176,6 +183,7 @@ export default function App() {
         onSaved={() => {
           setIsWizardOpen(false);
           setWizardPerson(null);
+          refreshData();
         }}
       />
 
