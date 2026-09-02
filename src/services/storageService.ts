@@ -24,6 +24,7 @@ import {
   INITIAL_AUDIT_LOGS
 } from '../data/seedData';
 import { supabaseService } from './supabaseService';
+import { syncSupabaseConfigFromServer } from './supabaseClient';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'mevam_kids_current_user_id',
@@ -38,12 +39,49 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'mevam_kids_audit_logs',
 };
 
+// Legacy mock demo IDs to ensure clean zero-state across all browsers
+const MOCK_PEOPLE_IDS = new Set([
+  'p-denilson',
+  'p-joao-silva',
+  'p-maria-silva',
+  'p-pedro-silva',
+  'p-lucas-almeida',
+  'p-camila-rocha',
+  'p-marcos-oliveira',
+  'p-aline-pereira',
+  'p-gabriel-ribeiro',
+  'p-juliana-santos',
+  'p-roberta-lima',
+  'p-carlos-lima',
+  'p-leticia-mendes',
+  'p-thiago-martins',
+  'p-ana-ferreira',
+  'p-felipe-ferreira',
+  'p-beatriz-souza',
+  'p-renato-costa'
+]);
+const MOCK_FAMILY_IDS = new Set(['fam-silva', 'fam-ferreira', 'fam-santos']);
+const MOCK_SCHEDULE_IDS = new Set(['sched-set-2026']);
+
 class StorageService {
+  private currentServerVersion = 0;
+  private isSyncingWithServer = false;
+  private pushDebounceTimer: any = null;
+  private isInitialized = false;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        this.initServerSync();
+      }, 50);
+    }
+  }
+
   private load<T>(key: string, fallback: T): T {
     try {
       const data = localStorage.getItem(key);
       if (!data) {
-        this.save(key, fallback);
+        this.save(key, fallback, false);
         return fallback;
       }
       return JSON.parse(data) as T;
@@ -52,12 +90,179 @@ class StorageService {
     }
   }
 
-  private save<T>(key: string, data: T): void {
+  private save<T>(key: string, data: T, syncToServer = true): void {
     try {
       localStorage.setItem(key, JSON.stringify(data));
+      if (syncToServer && key !== STORAGE_KEYS.CURRENT_USER_ID) {
+        this.pushToServerDebounced();
+      }
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
+  }
+
+  private pushToServerDebounced(): void {
+    if (typeof window === 'undefined') return;
+    if (this.pushDebounceTimer) {
+      clearTimeout(this.pushDebounceTimer);
+    }
+    this.pushDebounceTimer = setTimeout(() => {
+      this.syncAllToServer();
+    }, 350);
+  }
+
+  async syncAllToServer(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    try {
+      const payload = this.getAllDataForExport();
+      const res = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.version) {
+          this.currentServerVersion = data.version;
+        }
+        return true;
+      }
+    } catch (err) {
+      console.warn('Sync to server failed (offline or network):', err);
+    }
+    return false;
+  }
+
+  async pullFromServer(force = false): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    if (this.isSyncingWithServer) return false;
+    try {
+      this.isSyncingWithServer = true;
+
+      // Check version first if not forced
+      if (!force && this.currentServerVersion > 0) {
+        try {
+          const vRes = await fetch('/api/version');
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            if (vData.version <= this.currentServerVersion) {
+              this.isSyncingWithServer = false;
+              return false; // already up to date
+            }
+          }
+        } catch {
+          this.isSyncingWithServer = false;
+          return false;
+        }
+      }
+
+      const res = await fetch('/api/data');
+      if (!res.ok) {
+        this.isSyncingWithServer = false;
+        return false;
+      }
+
+      const body = await res.json();
+      if (!body.success || !body.data) {
+        this.isSyncingWithServer = false;
+        return false;
+      }
+
+      const serverData = body.data;
+      const localPeople = this.getPeople();
+
+      // If server has 0 people, but local storage already has registered volunteers, seed server with local data!
+      if ((!serverData.people || serverData.people.length === 0) && localPeople.length > 0) {
+        this.isSyncingWithServer = false;
+        await this.syncAllToServer();
+        return true;
+      }
+
+      let modified = false;
+
+      if (serverData.users && Array.isArray(serverData.users)) {
+        this.save(STORAGE_KEYS.USERS, serverData.users, false);
+        modified = true;
+      }
+      if (serverData.micros && Array.isArray(serverData.micros)) {
+        this.save(STORAGE_KEYS.MICROS, serverData.micros, false);
+        modified = true;
+      }
+      if (serverData.functions && Array.isArray(serverData.functions)) {
+        this.save(STORAGE_KEYS.FUNCTIONS, serverData.functions, false);
+        modified = true;
+      }
+      if (serverData.families && Array.isArray(serverData.families)) {
+        this.save(STORAGE_KEYS.FAMILIES, serverData.families, false);
+        modified = true;
+      }
+      if (serverData.people && Array.isArray(serverData.people)) {
+        this.save(STORAGE_KEYS.PEOPLE, serverData.people, false);
+        modified = true;
+      }
+      if (serverData.availabilities && Array.isArray(serverData.availabilities)) {
+        this.save(STORAGE_KEYS.AVAILABILITIES, serverData.availabilities, false);
+        modified = true;
+      }
+      if (serverData.schedules && Array.isArray(serverData.schedules)) {
+        this.save(STORAGE_KEYS.SCHEDULES, serverData.schedules, false);
+        modified = true;
+      }
+      if (serverData.rotationHistory && Array.isArray(serverData.rotationHistory)) {
+        this.save(STORAGE_KEYS.ROTATION_HISTORY, serverData.rotationHistory, false);
+        modified = true;
+      }
+      if (serverData.auditLogs && Array.isArray(serverData.auditLogs)) {
+        this.save(STORAGE_KEYS.AUDIT_LOGS, serverData.auditLogs, false);
+        modified = true;
+      }
+
+      if (serverData.version) {
+        this.currentServerVersion = serverData.version;
+      }
+
+      this.isSyncingWithServer = false;
+
+      if (modified) {
+        window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { version: this.currentServerVersion } }));
+      }
+      return true;
+    } catch (err) {
+      console.warn('Pull from server failed:', err);
+      this.isSyncingWithServer = false;
+      return false;
+    }
+  }
+
+  initServerSync(): void {
+    if (typeof window === 'undefined' || this.isInitialized) return;
+    this.isInitialized = true;
+
+    // 1. Sync Supabase config from server
+    syncSupabaseConfigFromServer().then((hasConfig) => {
+      if (hasConfig) {
+        this.syncWithSupabaseRemote();
+      }
+    });
+
+    // 2. Initial pull from central server
+    this.pullFromServer(true);
+
+    // 3. Periodic polling every 5s for real-time cross-device synchronization
+    setInterval(() => {
+      this.pullFromServer(false);
+    }, 5000);
+
+    // 4. On tab focus and visibility change
+    window.addEventListener('focus', () => {
+      this.pullFromServer(false);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.pullFromServer(false);
+      }
+    });
   }
 
   // --- Auth & Users ---
@@ -658,7 +863,13 @@ class StorageService {
 
   // --- People (Unified Single Volunteer Profile) ---
   getPeople(): Person[] {
-    return this.load<Person[]>(STORAGE_KEYS.PEOPLE, INITIAL_PEOPLE);
+    let people = this.load<Person[]>(STORAGE_KEYS.PEOPLE, INITIAL_PEOPLE);
+    const filtered = people.filter((p) => !MOCK_PEOPLE_IDS.has(p.id));
+    if (filtered.length !== people.length) {
+      people = filtered;
+      this.save(STORAGE_KEYS.PEOPLE, people);
+    }
+    return people;
   }
 
   getPersonById(id: string): Person | undefined {
@@ -704,8 +915,29 @@ class StorageService {
     const person = this.getPersonById(id);
     const people = this.getPeople().filter((p) => p.id !== id);
     this.save(STORAGE_KEYS.PEOPLE, people);
+
+    // Clean up availability rules of this person
+    const availabilities = this.getAvailabilities().filter((a) => a.personId !== id);
+    this.save(STORAGE_KEYS.AVAILABILITIES, availabilities);
+
+    // Clean up schedule assignments
+    const schedules = this.getSchedules();
+    let schedulesModified = false;
+    schedules.forEach((sched) => {
+      sched.slots?.forEach((slot) => {
+        if (slot.assignedPersonId === id) {
+          slot.assignedPersonId = undefined;
+          slot.assignedPersonName = undefined;
+          schedulesModified = true;
+        }
+      });
+    });
+    if (schedulesModified) {
+      this.save(STORAGE_KEYS.SCHEDULES, schedules);
+    }
+
     if (person) {
-      this.addAuditLog('EXCLUSAO_VOLUNTARIO', `Voluntário ${person.name} desativado.`, 'PERSON');
+      this.addAuditLog('EXCLUSAO_VOLUNTARIO', `Voluntário ${person.name} excluído do sistema.`, 'PERSON');
     }
     // Background cloud sync
     supabaseService.deletePerson(id);
@@ -713,7 +945,13 @@ class StorageService {
 
   // --- Families ---
   getFamilies(): Family[] {
-    return this.load<Family[]>(STORAGE_KEYS.FAMILIES, INITIAL_FAMILIES);
+    let families = this.load<Family[]>(STORAGE_KEYS.FAMILIES, INITIAL_FAMILIES);
+    const filtered = families.filter((f) => !MOCK_FAMILY_IDS.has(f.id));
+    if (filtered.length !== families.length) {
+      families = filtered;
+      this.save(STORAGE_KEYS.FAMILIES, families);
+    }
+    return families;
   }
 
   getFamilyById(id: string): Family | undefined {
@@ -791,7 +1029,13 @@ class StorageService {
 
   // --- Availability & Unavailability ---
   getAvailabilities(): AvailabilityRule[] {
-    return this.load<AvailabilityRule[]>(STORAGE_KEYS.AVAILABILITIES, INITIAL_AVAILABILITIES);
+    let avail = this.load<AvailabilityRule[]>(STORAGE_KEYS.AVAILABILITIES, INITIAL_AVAILABILITIES);
+    const filtered = avail.filter((a) => !MOCK_PEOPLE_IDS.has(a.personId));
+    if (filtered.length !== avail.length) {
+      avail = filtered;
+      this.save(STORAGE_KEYS.AVAILABILITIES, avail);
+    }
+    return avail;
   }
 
   getPersonAvailabilities(personId: string): AvailabilityRule[] {
@@ -879,7 +1123,13 @@ class StorageService {
 
   // --- Schedules ---
   getSchedules(): Schedule[] {
-    return this.load<Schedule[]>(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+    let schedules = this.load<Schedule[]>(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+    const filtered = schedules.filter((s) => !MOCK_SCHEDULE_IDS.has(s.id));
+    if (filtered.length !== schedules.length) {
+      schedules = filtered;
+      this.save(STORAGE_KEYS.SCHEDULES, schedules);
+    }
+    return schedules;
   }
 
   getScheduleById(id: string): Schedule | undefined {
@@ -1144,7 +1394,13 @@ class StorageService {
 
   // --- Rotation History ---
   getRotationHistory(): RotationHistoryItem[] {
-    return this.load<RotationHistoryItem[]>(STORAGE_KEYS.ROTATION_HISTORY, INITIAL_ROTATION_HISTORY);
+    let history = this.load<RotationHistoryItem[]>(STORAGE_KEYS.ROTATION_HISTORY, INITIAL_ROTATION_HISTORY);
+    const filtered = history.filter((h) => !MOCK_PEOPLE_IDS.has(h.personId) && !h.id.startsWith('rot-'));
+    if (filtered.length !== history.length) {
+      history = filtered;
+      this.save(STORAGE_KEYS.ROTATION_HISTORY, history);
+    }
+    return history;
   }
 
   recordRotationHistory(items: RotationHistoryItem[]): void {
@@ -1215,6 +1471,9 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.ROTATION_HISTORY);
     localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
     this.addAuditLog('REINICIALIZACAO_SISTEMA', 'Banco de dados restaurado para os dados padrão do MEVAM Kids.', 'SYSTEM');
+    if (typeof window !== 'undefined') {
+      fetch('/api/reset', { method: 'POST' }).catch(() => {});
+    }
   }
 }
 

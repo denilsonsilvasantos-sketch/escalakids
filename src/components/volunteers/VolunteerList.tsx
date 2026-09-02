@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -11,8 +11,11 @@ import {
   Heart,
   Briefcase,
   AlertCircle,
+  AlertTriangle,
   Phone,
-  MessageSquare
+  MessageSquare,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { Person, Micro, MicroFunction, Family, UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -22,21 +25,49 @@ interface VolunteerListProps {
   currentUser: UserAccount;
   onOpenWizard: (person?: Person) => void;
   onViewDetail: (person: Person) => void;
+  onPersonDeleted?: () => void;
 }
 
 export const VolunteerList: React.FC<VolunteerListProps> = ({
   currentUser,
   onOpenWizard,
-  onViewDetail
+  onViewDetail,
+  onPersonDeleted
 }) => {
+  const [people, setPeople] = useState<Person[]>(() => storageService.getPeople());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMicroFilter, setSelectedMicroFilter] = useState<string>('ALL');
   const [selectedFamilyFilter, setSelectedFamilyFilter] = useState<string>('ALL');
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const micros = storageService.getMicros();
   const functions = storageService.getFunctions();
   const families = storageService.getFamilies();
-  const people = storageService.getPeople();
+
+  // Keep list updated if storage changes
+  const reloadPeople = () => {
+    setPeople(storageService.getPeople());
+  };
+
+  useEffect(() => {
+    reloadPeople();
+  }, []);
+
+  const handlePromptDelete = (person: Person) => {
+    setPersonToDelete(person);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!personToDelete) return;
+    const name = personToDelete.name;
+    storageService.deletePerson(personToDelete.id);
+    setPeople(storageService.getPeople());
+    setPersonToDelete(null);
+    onPersonDeleted?.();
+    setToastMessage(`Voluntário ${name} excluído com sucesso.`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   // Filter based on user's authorized micros
   const visiblePeople = people.filter((p) => {
@@ -75,15 +106,16 @@ export const VolunteerList: React.FC<VolunteerListProps> = ({
     return true;
   });
 
-  const handleDelete = (person: Person) => {
-    if (confirm(`Deseja realmente desativar o cadastro de ${person.name}?`)) {
-      storageService.deletePerson(person.id);
-      window.location.reload(); // Refresh local view
-    }
-  };
-
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-800 flex items-center space-x-2.5 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-semibold">{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
@@ -266,9 +298,9 @@ export const VolunteerList: React.FC<VolunteerListProps> = ({
                           </button>
                           {currentUser.role === 'ADMIN_LIDERANCA' && (
                             <button
-                              onClick={() => handleDelete(person)}
+                              onClick={() => handlePromptDelete(person)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                              title="Desativar Voluntário"
+                              title="Excluir Voluntário"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -283,6 +315,52 @@ export const VolunteerList: React.FC<VolunteerListProps> = ({
           </table>
         </div>
       </div>
+
+      {/* In-App Delete Confirmation Modal */}
+      {personToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 font-display">
+                  Excluir Voluntário
+                </h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  Tem certeza que deseja excluir o cadastro de{' '}
+                  <strong className="text-slate-900 font-semibold">{personToDelete.name}</strong>?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+              <p>• O cadastro do voluntário será removido da base.</p>
+              <p>• Suas regras de disponibilidade e indisponibilidade serão apagadas.</p>
+              <p>• O histórico de auditoria registrará esta exclusão.</p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setPersonToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Sim, Excluir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

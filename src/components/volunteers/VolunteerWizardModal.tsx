@@ -13,7 +13,8 @@ import {
   Briefcase,
   Layers,
   Sparkles,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { Person, Micro, MicroFunction, Family, PersonMicroFunctionPreference } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -23,6 +24,7 @@ interface VolunteerWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: (person: Person) => void;
+  onDeleted?: () => void;
   initialPerson?: Person | null;
 }
 
@@ -30,9 +32,12 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
   isOpen,
   onClose,
   onSaved,
+  onDeleted,
   initialPerson
 }) => {
   if (!isOpen) return null;
+
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
 
   // Always load live fresh micros and functions from storage
   const [micros, setMicros] = useState<Micro[]>([]);
@@ -896,7 +901,7 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
 
         {/* Modal Footer Navigation */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
-          <div>
+          <div className="flex items-center space-x-2">
             {step > 1 && (
               <button
                 type="button"
@@ -905,6 +910,17 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Voltar</span>
+              </button>
+            )}
+
+            {initialPerson && (
+              <button
+                type="button"
+                onClick={() => setIsConfirmDeleteOpen(true)}
+                className="px-3 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors flex items-center space-x-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir Cadastro</span>
               </button>
             )}
           </div>
@@ -943,6 +959,50 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
             )}
           </div>
         </div>
+
+        {/* In-App Delete Confirmation Modal */}
+        {isConfirmDeleteOpen && initialPerson && (
+          <div className="fixed inset-0 z-60 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Excluir Voluntário {initialPerson.name}?
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Esta ação removerá o cadastro do voluntário e todas as suas disponibilidades vinculadas.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmDeleteOpen(false)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    storageService.deletePerson(initialPerson.id);
+                    setIsConfirmDeleteOpen(false);
+                    onClose();
+                    onDeleted?.();
+                  }}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Confirmar Exclusão</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

@@ -16,7 +16,7 @@ import {
   AlertTriangle,
   History
 } from 'lucide-react';
-import { Person, AvailabilityRule } from '../../types';
+import { Person, AvailabilityRule, UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
 import { formatDateBR } from '../../utils/dateUtils';
 
@@ -24,20 +24,28 @@ interface VolunteerDetailModalProps {
   person: Person | null;
   onClose: () => void;
   onEdit: (person: Person) => void;
+  onDeleted?: () => void;
+  currentUser?: UserAccount;
 }
 
 export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
   person,
   onClose,
-  onEdit
+  onEdit,
+  onDeleted,
+  currentUser
 }) => {
   if (!person) return null;
+
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [availabilitiesList, setAvailabilitiesList] = useState<AvailabilityRule[]>(() =>
+    storageService.getPersonAvailabilities(person.id)
+  );
 
   const micros = storageService.getMicros();
   const functions = storageService.getFunctions();
   const family = person.familyId ? storageService.getFamilyById(person.familyId) : null;
   const familyMembers = person.familyId ? storageService.getFamilyMembers(person.familyId) : [];
-  const availabilities = storageService.getPersonAvailabilities(person.id);
   const rotHistory = storageService.getRotationHistory().filter((h) => h.personId === person.id);
 
   // New Availability Rule Form
@@ -51,7 +59,6 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
 
   const handleAddRule = () => {
     if (ruleType === 'DATA_ESPECIFICA' && !specificDate) {
-      alert('Informe a data específica.');
       return;
     }
 
@@ -68,6 +75,7 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
     };
 
     storageService.saveAvailability(newRule);
+    setAvailabilitiesList(storageService.getPersonAvailabilities(person.id));
     setIsAddingRule(false);
     setReason('');
     setSpecificDate('');
@@ -75,6 +83,14 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
 
   const handleDeleteRule = (ruleId: string) => {
     storageService.deleteAvailability(ruleId);
+    setAvailabilitiesList(storageService.getPersonAvailabilities(person.id));
+  };
+
+  const handleConfirmDeletePerson = () => {
+    storageService.deletePerson(person.id);
+    setIsConfirmDeleteOpen(false);
+    onClose();
+    onDeleted?.();
   };
 
   return (
@@ -314,12 +330,12 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
 
             {/* List of Rules */}
             <div className="space-y-1.5">
-              {availabilities.length === 0 ? (
+              {availabilitiesList.length === 0 ? (
                 <div className="p-3 text-center text-xs text-slate-700 bg-slate-50 rounded-xl">
                   Nenhuma restrição registrada. Voluntário 100% disponível para escalas regulares.
                 </div>
               ) : (
-                availabilities.map((rule) => (
+                availabilitiesList.map((rule) => (
                   <div
                     key={rule.id}
                     className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
@@ -388,7 +404,66 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Danger Zone: Delete Volunteer */}
+          {(!currentUser || currentUser.role === 'ADMIN_LIDERANCA') && (
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between bg-rose-50/50 p-4 rounded-xl border border-rose-100">
+              <div>
+                <h4 className="text-xs font-bold text-rose-900">Excluir Cadastro</h4>
+                <p className="text-[11px] text-rose-700">
+                  Remove permanentemente este voluntário e suas disponibilidades.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfirmDeleteOpen(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir Voluntário</span>
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* In-App Delete Confirmation Dialog */}
+        {isConfirmDeleteOpen && (
+          <div className="fixed inset-0 z-60 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Confirmar Exclusão de {person.name}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Esta ação removerá definitivamente o voluntário da base de dados do MEVAM Kids.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmDeleteOpen(false)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeletePerson}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-xs transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Confirmar Exclusão</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

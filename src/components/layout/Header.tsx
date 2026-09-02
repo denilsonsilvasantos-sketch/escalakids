@@ -144,6 +144,15 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
+            {/* Multi-Device Live Sync Status Badge */}
+            <div
+              className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 text-slate-300 text-xs font-medium"
+              title="Sincronização em tempo real ativa: dados unificados em todos os celulares, tablets e computadores."
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span>Multi-Dispositivo Conectado</span>
+            </div>
+
             {/* Supabase Cloud Sync Status Button - ONLY FOR ADMIN */}
             {isAdmin && (
               <button

@@ -48,6 +48,19 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Listen to cross-device data updates in real time
+  useEffect(() => {
+    const handleDataSynced = () => {
+      refreshData();
+      const activeUser = storageService.getCurrentUser();
+      if (activeUser && activeUser.id === currentUser.id) {
+        setCurrentUser(activeUser);
+      }
+    };
+    window.addEventListener('mevam_data_synced', handleDataSynced);
+    return () => window.removeEventListener('mevam_data_synced', handleDataSynced);
+  }, [currentUser.id]);
+
   const handleUserChange = (user: UserAccount) => {
     setCurrentUser(user);
     setCurrentView('dashboard');
@@ -140,6 +153,7 @@ export default function App() {
               currentUser={currentUser}
               onOpenWizard={handleOpenEditVolunteer}
               onViewDetail={setSelectedPersonForDetail}
+              onPersonDeleted={refreshData}
             />
           )}
 
@@ -185,15 +199,25 @@ export default function App() {
           setWizardPerson(null);
           refreshData();
         }}
+        onDeleted={() => {
+          setIsWizardOpen(false);
+          setWizardPerson(null);
+          refreshData();
+        }}
       />
 
       {/* Volunteer Full Detail & Availability Modal */}
       <VolunteerDetailModal
         person={selectedPersonForDetail}
+        currentUser={currentUser}
         onClose={() => setSelectedPersonForDetail(null)}
         onEdit={(p) => {
           setSelectedPersonForDetail(null);
           handleOpenEditVolunteer(p);
+        }}
+        onDeleted={() => {
+          setSelectedPersonForDetail(null);
+          refreshData();
         }}
       />
 
