@@ -15,7 +15,8 @@ import {
   Users,
   KeyRound,
   LogOut,
-  UserPlus
+  UserPlus,
+  Menu
 } from 'lucide-react';
 import { UserAccount, SupabaseSyncState } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -30,6 +31,7 @@ interface HeaderProps {
   onOpenSupabaseModal: () => void;
   onOpenUserManagement: () => void;
   onLogout: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,7 +42,8 @@ export const Header: React.FC<HeaderProps> = ({
   onResetData,
   onOpenSupabaseModal,
   onOpenUserManagement,
-  onLogout
+  onLogout,
+  onToggleMobileMenu
 }) => {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [birthdayCount, setBirthdayCount] = useState(0);
@@ -91,25 +94,34 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Brand */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md font-extrabold text-lg tracking-tight">
-              MK
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-lg tracking-tight text-white font-display">
-                  MEVAM KIDS
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-950 text-blue-300 border border-blue-800/80 rounded-md uppercase tracking-wider">
-                  Escalas Pro
-                </span>
+          {/* Logo & Mobile Menu Hamburger */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              onClick={onToggleMobileMenu}
+              className="p-2 -ml-1 text-slate-400 hover:text-white md:hidden rounded-lg hover:bg-slate-800 transition-colors shrink-0"
+              aria-label="Abrir Menu de Navegação"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md font-extrabold text-base sm:text-lg tracking-tight shrink-0">
+                MK
               </div>
-              <p className="text-xs text-slate-400 font-medium hidden sm:block">
-                Gestão Unificada de Voluntários & Escalas
-              </p>
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-display">
+                    MEVAM KIDS
+                  </span>
+                  <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.5 bg-blue-950 text-blue-300 border border-blue-800/80 rounded-md uppercase tracking-wider">
+                    Escalas Pro
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                  Gestão Unificada de Voluntários & Escalas
+                </p>
+              </div>
             </div>
           </div>
 

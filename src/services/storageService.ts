@@ -169,14 +169,6 @@ class StorageService {
       }
 
       const serverData = body.data;
-      const localPeople = this.getPeople();
-
-      // If server has 0 people, but local storage already has registered volunteers, seed server with local data!
-      if ((!serverData.people || serverData.people.length === 0) && localPeople.length > 0) {
-        this.isSyncingWithServer = false;
-        await this.syncAllToServer();
-        return true;
-      }
 
       let modified = false;
 
@@ -231,6 +223,34 @@ class StorageService {
       console.warn('Pull from server failed:', err);
       this.isSyncingWithServer = false;
       return false;
+    }
+  }
+
+  async forcePullFromServer(): Promise<{ success: boolean; count: number }> {
+    this.currentServerVersion = 0;
+    await this.pullFromServer(true);
+    const count = this.getPeople().length;
+    return { success: true, count };
+  }
+
+  async clearAllVolunteers(): Promise<void> {
+    this.save(STORAGE_KEYS.PEOPLE, [], false);
+    this.save(STORAGE_KEYS.AVAILABILITIES, [], false);
+    const schedules = this.getSchedules();
+    const updatedSchedules = schedules.map(s => ({
+      ...s,
+      slots: s.slots.map(sl => ({
+        ...sl,
+        assignedPersonId: undefined,
+        personId: undefined,
+        personName: undefined
+      }))
+    }));
+    this.save(STORAGE_KEYS.SCHEDULES, updatedSchedules, false);
+    this.addAuditLog('LIMPEZA_VOLUNTARIOS', 'Lista de voluntários zerada no sistema.', 'SYSTEM');
+    await this.syncAllToServer();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { version: this.currentServerVersion } }));
     }
   }
 

@@ -374,7 +374,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
@@ -386,7 +386,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
               </span>
             </div>
             <div className="flex items-center space-x-3 mt-1">
-              <h1 className="text-2xl font-extrabold text-slate-900 font-display tracking-tight">
+              <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 font-display tracking-tight">
                 {currentSchedule.title}
               </h1>
               {schedules.length > 1 && (

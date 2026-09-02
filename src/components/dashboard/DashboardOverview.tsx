@@ -45,14 +45,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-slate-800/90 rounded-full text-xs font-semibold text-blue-300 border border-slate-700">
             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
             <span>Sistema Oficial MEVAM Kids</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold font-display tracking-tight leading-tight text-white">
+          <h1 className="text-xl sm:text-3xl font-extrabold font-display tracking-tight leading-tight text-white">
             Olá, {currentUser.name}!
           </h1>
 
@@ -86,82 +86,82 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Volunteers */}
         <div
           onClick={() => onNavigate('volunteers')}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-3"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2 sm:space-y-3"
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Users className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
               100% Únicos
             </span>
           </div>
           <div>
-            <span className="text-2xl font-extrabold text-slate-900 font-display">{people.length}</span>
-            <p className="text-xs text-slate-700 font-medium">Voluntários Ativos</p>
+            <span className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display">{people.length}</span>
+            <p className="text-[11px] sm:text-xs text-slate-700 font-medium">Voluntários Ativos</p>
           </div>
         </div>
 
         {/* Micros */}
         <div
           onClick={() => onNavigate('micros-functions')}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-3"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2 sm:space-y-3"
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Briefcase className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-md">
               Dinâmicos
             </span>
           </div>
           <div>
-            <span className="text-2xl font-extrabold text-slate-900 font-display">{micros.length}</span>
-            <p className="text-xs text-slate-700 font-medium">Micros / Frentes</p>
+            <span className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display">{micros.length}</span>
+            <p className="text-[11px] sm:text-xs text-slate-700 font-medium">Micros / Frentes</p>
           </div>
         </div>
 
         {/* Families */}
         <div
           onClick={() => onNavigate('families')}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-3"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2 sm:space-y-3"
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <Heart className="w-5 h-5 fill-rose-500" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 fill-rose-500" />
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-100 text-rose-800 rounded-md">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded-md">
               Vínculos
             </span>
           </div>
           <div>
-            <span className="text-2xl font-extrabold text-slate-900 font-display">{families.length}</span>
-            <p className="text-xs text-slate-700 font-medium">Núcleos Familiares</p>
+            <span className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display">{families.length}</span>
+            <p className="text-[11px] sm:text-xs text-slate-700 font-medium">Núcleos Familiares</p>
           </div>
         </div>
 
         {/* Birthdays */}
         <div
           onClick={() => onNavigate('birthdays')}
-          className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-3"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md cursor-pointer transition-all space-y-2 sm:space-y-3"
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Cake className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Cake className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-md">
               Próximos 7d
             </span>
           </div>
           <div>
-            <span className="text-2xl font-extrabold text-slate-900 font-display">
+            <span className="text-xl sm:text-2xl font-extrabold text-slate-900 font-display">
               {upcomingBirthdays.length}
             </span>
-            <p className="text-xs text-slate-700 font-medium">Aniversariantes</p>
+            <p className="text-[11px] sm:text-xs text-slate-700 font-medium">Aniversariantes</p>
           </div>
         </div>
       </div>

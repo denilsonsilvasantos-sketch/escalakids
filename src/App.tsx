@@ -33,6 +33,7 @@ export default function App() {
 
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const refreshData = () => setDataVersion((v) => v + 1);
 
@@ -108,24 +109,34 @@ export default function App() {
         currentUser={currentUser}
         onUserChange={handleUserChange}
         onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
-        onNavigate={setCurrentView}
+        onNavigate={(view) => {
+          setCurrentView(view);
+          setIsMobileMenuOpen(false);
+        }}
         onResetData={handleResetData}
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
         onOpenUserManagement={() => setIsUserManagementOpen(true)}
         onLogout={handleLogout}
+        onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
       />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex max-w-7xl w-full mx-auto relative">
         {/* Left Navigation Sidebar */}
         <Sidebar
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={(view) => {
+            setCurrentView(view);
+            setIsMobileMenuOpen(false);
+          }}
           currentUser={currentUser}
           onOpenNewVolunteerModal={handleOpenNewVolunteer}
+          isMobileOpen={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
         />
 
         {/* Main Content Workspace */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 overflow-y-auto">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 min-w-0 overflow-y-auto pb-24 md:pb-8">
           {currentView === 'volunteer-portal' && (
             <VolunteerPortalView currentUser={currentUser} onNavigate={setCurrentView} />
           )}
