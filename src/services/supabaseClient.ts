@@ -1,16 +1,21 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+// Built-in MEVAM Kids Central Cloud Project (automatic sync across all devices)
+export const DEFAULT_SUPABASE_URL = 'https://iimgcdddyuspagpsijut.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbWdjZGRkeXVzcGFncHNpanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNDI5NzUsImV4cCI6MjEwMzgxODk3NX0.CixePx8utvm1P6HiCzYwMdW9TTJZlDyWUTYsyoGgbds';
+
 // Read from Vite environment variables (Vercel / .env)
 const metaEnv = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
 const envSupabaseUrl = metaEnv.VITE_SUPABASE_URL || '';
 const envSupabaseAnonKey = metaEnv.VITE_SUPABASE_ANON_KEY || '';
 
-// Also allow localStorage override for testing in preview
+// Also allow localStorage override if needed
 let localSupabaseUrl = typeof window !== 'undefined' ? localStorage.getItem('mevam_kids_supabase_url') || '' : '';
 let localSupabaseAnonKey = typeof window !== 'undefined' ? localStorage.getItem('mevam_kids_supabase_key') || '' : '';
 
-export let SUPABASE_URL = localSupabaseUrl || envSupabaseUrl;
-export let SUPABASE_ANON_KEY = localSupabaseAnonKey || envSupabaseAnonKey;
+export let SUPABASE_URL = localSupabaseUrl || envSupabaseUrl || DEFAULT_SUPABASE_URL;
+export let SUPABASE_ANON_KEY = localSupabaseAnonKey || envSupabaseAnonKey || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = (): boolean => {
   return (
@@ -21,19 +26,21 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-let clientInstance: SupabaseClient | null = null;
+// Keep singleton on globalThis to prevent duplicate GoTrueClient warnings on hot reloads
+const globalForSupabase = globalThis as unknown as { __supabaseClient?: SupabaseClient | null };
 
 export const getSupabaseClient = (): SupabaseClient | null => {
   if (!isSupabaseConfigured()) {
     return null;
   }
 
-  if (!clientInstance) {
+  if (!globalForSupabase.__supabaseClient) {
     try {
-      clientInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      globalForSupabase.__supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
-          persistSession: true,
-          autoRefreshToken: true
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
         }
       });
     } catch (err) {
@@ -42,7 +49,7 @@ export const getSupabaseClient = (): SupabaseClient | null => {
     }
   }
 
-  return clientInstance;
+  return globalForSupabase.__supabaseClient;
 };
 
 export const setCustomSupabaseConfig = (url: string, key: string, syncToServer = true): void => {
@@ -62,7 +69,7 @@ export const setCustomSupabaseConfig = (url: string, key: string, syncToServer =
       localStorage.removeItem('mevam_kids_supabase_url');
       localStorage.removeItem('mevam_kids_supabase_key');
     }
-    clientInstance = null; // reset client instance
+    globalForSupabase.__supabaseClient = null; // reset client instance
   }
 
   if (syncToServer) {

@@ -24,21 +24,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = storageService.authenticate(loginInput, passwordInput);
-      setIsLoading(false);
+    let result = storageService.authenticate(loginInput, passwordInput);
 
-      if (result.success && result.user) {
-        onLoginSuccess(result.user);
-      } else {
-        setError(result.message || 'Nome de usuário ou senha incorretos. Verifique seus dados.');
-      }
-    }, 250);
+    // If not found locally, fetch latest data from cloud/server in real time and retry
+    if (!result.success) {
+      await Promise.allSettled([
+        storageService.syncWithSupabaseRemote(),
+        storageService.pullFromServer(true)
+      ]);
+      result = storageService.authenticate(loginInput, passwordInput);
+    }
+
+    setIsLoading(false);
+
+    if (result.success && result.user) {
+      onLoginSuccess(result.user);
+    } else {
+      setError(result.message || 'Nome de usuário ou senha incorretos. Verifique seus dados.');
+    }
   };
 
   return (

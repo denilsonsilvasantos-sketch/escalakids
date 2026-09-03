@@ -17,6 +17,22 @@ import {
   SupabaseSyncState
 } from '../types';
 
+const normalizeScheduleShift = (raw: string | undefined): 'MANHA' | 'NOITE' | 'AMBOS' | 'ESPECIAL' => {
+  if (!raw) return 'NOITE';
+  const upper = raw.toUpperCase();
+  if (upper.includes('MANH') || upper === 'MANHA') return 'MANHA';
+  if (upper.includes('AMB') || upper === 'AMBOS') return 'AMBOS';
+  if (upper.includes('ESP')) return 'ESPECIAL';
+  return 'NOITE';
+};
+
+const normalizeAvailabilityType = (raw: string | undefined): 'DIA_SEMANA_RECORRENTE' | 'DATA_ESPECIFICA' | 'TURNO_ESPECIFICO' => {
+  if (!raw) return 'DIA_SEMANA_RECORRENTE';
+  if (raw === 'DATA_ESPECIFICA' || raw === 'ESPECIFICA') return 'DATA_ESPECIFICA';
+  if (raw === 'TURNO_ESPECIFICO') return 'TURNO_ESPECIFICO';
+  return 'DIA_SEMANA_RECORRENTE';
+};
+
 class SupabaseService {
   private syncState: SupabaseSyncState = {
     isConnected: false,
@@ -56,7 +72,11 @@ class SupabaseService {
     this.listeners.forEach((l) => l(state));
   }
 
-  async testConnection(): Promise<{ success: boolean; message: string }> {
+  async testConnection(): Promise<{
+    success: boolean;
+    message: string;
+    missingProfilesTable?: boolean;
+  }> {
     const client = getSupabaseClient();
     if (!client) {
       this.syncState.isConnected = false;
@@ -70,11 +90,26 @@ class SupabaseService {
       this.syncState.isSyncing = true;
       this.notify();
 
-      // Quick probe on profiles or micros table
-      const { data, error } = await client.from('micros').select('id').limit(1);
+      // 1. Check micros table
+      const { error: microErr } = await client.from('micros').select('id').limit(1);
+      if (microErr) {
+        throw new Error(`Tabela 'micros' inacessível: ${microErr.message}`);
+      }
 
-      if (error) {
-        throw error;
+      // 2. Check profiles table (vital for users and leaders)
+      const { error: profileErr } = await client.from('profiles').select('id').limit(1);
+      if (profileErr) {
+        this.syncState.isConnected = true;
+        this.syncState.isConfigured = true;
+        this.syncState.syncError = `Atenção: A tabela "profiles" (líderes e acessos) não existe no Supabase (${profileErr.message}). Execute o script SQL para criá-la!`;
+        this.syncState.lastSyncedAt = new Date().toISOString();
+        this.syncState.isSyncing = false;
+        this.notify();
+        return {
+          success: false,
+          missingProfilesTable: true,
+          message: `Conectado ao Supabase, mas a tabela "profiles" (de líderes e senhas) não foi encontrada (${profileErr.message}). Execute o script SQL no painel do Supabase para que os líderes criados fiquem salvos na nuvem!`
+        };
       }
 
       this.syncState.isConnected = true;
@@ -83,7 +118,7 @@ class SupabaseService {
       this.syncState.lastSyncedAt = new Date().toISOString();
       this.syncState.isSyncing = false;
       this.notify();
-      return { success: true, message: 'Conectado com sucesso ao Supabase Cloud!' };
+      return { success: true, message: 'Conectado com sucesso ao Supabase Cloud! Tabelas e perfis verificados.' };
     } catch (err: any) {
       console.warn('Supabase test connection failed:', err);
       this.syncState.isConnected = false;
@@ -210,7 +245,7 @@ class SupabaseService {
         const availPayload = data.availabilities.map((a) => ({
           id: a.id,
           person_id: a.personId,
-          type: a.type,
+          type: normalizeAvailabilityType(a.type),
           day_of_week: a.dayOfWeek ?? null,
           shift: a.shift || null,
           specific_date: a.specificDate || null,
@@ -229,7 +264,7 @@ class SupabaseService {
           event_id: s.eventId || null,
           event_name: s.eventName,
           period: s.period || null,
-          shift: s.shift,
+          shift: normalizeScheduleShift(s.shift),
           dates: s.dates,
           micro_ids: s.microIds,
           status: s.status,
@@ -383,7 +418,7 @@ class SupabaseService {
         result.availabilities = availRes.data.map((a: any) => ({
           id: a.id,
           personId: a.person_id,
-          type: a.type,
+          type: a.type === 'DATA_ESPECIFICA' ? 'DATA_ESPECIFICA' : 'RECORRENTE',
           dayOfWeek: a.day_of_week ?? undefined,
           shift: a.shift || undefined,
           specificDate: a.specific_date || undefined,
@@ -400,7 +435,7 @@ class SupabaseService {
           eventId: s.event_id || undefined,
           eventName: s.event_name,
           period: s.period || undefined,
-          shift: s.shift,
+          shift: s.shift === 'MANHA' ? 'Manhã' : s.shift === 'NOITE' ? 'Noite' : s.shift === 'AMBOS' ? 'Ambos' : s.shift,
           dates: s.dates || [],
           microIds: s.micro_ids || [],
           status: s.status,
@@ -430,11 +465,11 @@ class SupabaseService {
   }
 
   // --- Background Upsert Methods ---
-  async syncPerson(person: Person): Promise<void> {
+  async syncPerson(person: Person): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('people').upsert(
+      const { error } = await client.from('people').upsert(
         {
           id: person.id,
           name: person.name,
@@ -453,23 +488,29 @@ class SupabaseService {
         },
         { onConflict: 'id' }
       );
-    } catch (e) {
+      if (error) {
+        console.error('Supabase syncPerson error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase syncPerson failed:', e);
+      return { success: false, error: e?.message || 'Falha de conexão' };
     }
   }
 
-  async syncSchedule(schedule: Schedule): Promise<void> {
+  async syncSchedule(schedule: Schedule): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('schedules').upsert(
+      const { error } = await client.from('schedules').upsert(
         {
           id: schedule.id,
           title: schedule.title,
           event_id: schedule.eventId || null,
           event_name: schedule.eventName,
           period: schedule.period || null,
-          shift: schedule.shift,
+          shift: normalizeScheduleShift(schedule.shift),
           dates: schedule.dates,
           micro_ids: schedule.microIds,
           status: schedule.status,
@@ -479,16 +520,22 @@ class SupabaseService {
         },
         { onConflict: 'id' }
       );
-    } catch (e) {
+      if (error) {
+        console.error('Supabase syncSchedule error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase syncSchedule failed:', e);
+      return { success: false, error: e?.message || 'Falha de conexão' };
     }
   }
 
-  async syncMicro(micro: Micro): Promise<void> {
+  async syncMicro(micro: Micro): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('micros').upsert(
+      const { error } = await client.from('micros').upsert(
         {
           id: micro.id,
           name: micro.name,
@@ -503,77 +550,197 @@ class SupabaseService {
         },
         { onConflict: 'id' }
       );
-    } catch (e) {
+      if (error) {
+        console.error('Supabase syncMicro error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase syncMicro failed:', e);
+      return { success: false, error: e?.message || 'Falha de conexão' };
     }
   }
 
-  async deleteMicro(microId: string): Promise<void> {
+  async deleteMicro(microId: string): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('micros').delete().eq('id', microId);
-    } catch (e) {
+      const { error } = await client.from('micros').delete().eq('id', microId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase deleteMicro failed:', e);
+      return { success: false, error: e?.message || 'Falha ao deletar micro' };
     }
   }
 
-  async syncProfile(user: UserAccount): Promise<void> {
+  async syncProfile(user: UserAccount): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      return {
+        success: false,
+        error: 'Supabase não inicializado.'
+      };
+    }
     try {
-      await client.from('profiles').upsert(
+      const payload = {
+        id: user.id,
+        name: user.name,
+        username: user.username || null,
+        email: user.email || null,
+        password: user.password || '123',
+        role: user.role,
+        avatar: user.avatar || null,
+        allowed_micro_ids: user.allowedMicroIds || [],
+        primary_micro_id: user.primaryMicroId || null,
+        person_id: user.personId || null,
+        whatsapp: user.whatsapp || null,
+        created_by: user.createdBy || null,
+        created_by_name: user.createdByName || null,
+        must_change_password: user.mustChangePassword ?? false,
+        last_login_at: user.lastLoginAt || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await client.from('profiles').upsert(payload, { onConflict: 'id' });
+
+      if (error) {
+        // If unique constraint on username fails, update by username
+        if (error.code === '23505' && user.username) {
+          const { error: updateErr } = await client
+            .from('profiles')
+            .update(payload)
+            .eq('username', user.username);
+
+          if (!updateErr) {
+            return { success: true };
+          }
+        }
+
+        console.error('Supabase syncProfile error:', error);
+        return {
+          success: false,
+          error: `${error.message}${error.code ? ` (código: ${error.code})` : ''}`
+        };
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('Supabase syncProfile exception:', e);
+      return {
+        success: false,
+        error: e?.message || 'Erro inesperado ao sincronizar perfil'
+      };
+    }
+  }
+
+  async syncFamily(family: Family): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não inicializado' };
+    try {
+      const { error } = await client.from('families').upsert(
         {
-          id: user.id,
-          name: user.name,
-          username: user.username || null,
-          email: user.email || null,
-          password: user.password || '123',
-          role: user.role,
-          avatar: user.avatar || null,
-          allowed_micro_ids: user.allowedMicroIds || [],
-          primary_micro_id: user.primaryMicroId || null,
-          person_id: user.personId || null,
-          whatsapp: user.whatsapp || null,
-          created_by: user.createdBy || null,
-          created_by_name: user.createdByName || null,
-          must_change_password: user.mustChangePassword ?? false,
-          last_login_at: user.lastLoginAt || null
+          id: family.id,
+          name: family.name,
+          priority: family.priority,
+          notes: family.notes || null,
+          created_at: family.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString()
         },
         { onConflict: 'id' }
       );
-    } catch (e) {
-      console.warn('Supabase syncProfile failed:', e);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Falha de conexão' };
     }
   }
 
-  async deleteProfile(userId: string): Promise<void> {
+  async deleteFamily(familyId: string): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não inicializado' };
     try {
-      await client.from('profiles').delete().eq('id', userId);
-    } catch (e) {
+      const { error } = await client.from('families').delete().eq('id', familyId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Falha ao deletar família' };
+    }
+  }
+
+  async syncAvailability(rule: AvailabilityRule): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não inicializado' };
+    try {
+      const { error } = await client.from('availability_rules').upsert(
+        {
+          id: rule.id,
+          person_id: rule.personId,
+          type: normalizeAvailabilityType(rule.type),
+          day_of_week: rule.dayOfWeek ?? null,
+          shift: rule.shift ?? null,
+          specific_date: rule.specificDate ?? null,
+          reason: rule.reason ?? null,
+          is_available: rule.isAvailable,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'id' }
+      );
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Falha de conexão' };
+    }
+  }
+
+  async deleteAvailability(ruleId: string): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não inicializado' };
+    try {
+      const { error } = await client.from('availability_rules').delete().eq('id', ruleId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Falha ao deletar disponibilidade' };
+    }
+  }
+
+  async deleteProfile(userId: string): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não configurado' };
+    try {
+      const { error } = await client.from('profiles').delete().eq('id', userId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase deleteProfile failed:', e);
+      return { success: false, error: e?.message || 'Falha ao deletar perfil' };
     }
   }
 
-  async deleteSchedule(scheduleId: string): Promise<void> {
+  async deleteSchedule(scheduleId: string): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('schedules').delete().eq('id', scheduleId);
-    } catch (e) {
+      const { error } = await client.from('schedules').delete().eq('id', scheduleId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase deleteSchedule failed:', e);
+      return { success: false, error: e?.message || 'Falha ao deletar escala' };
     }
   }
 
-  async deletePerson(personId: string): Promise<void> {
+  async deletePerson(personId: string): Promise<{ success: boolean; error?: string }> {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      await client.from('people').delete().eq('id', personId);
-    } catch (e) {
+      const { error } = await client.from('people').delete().eq('id', personId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
       console.warn('Supabase deletePerson failed:', e);
+      return { success: false, error: e?.message || 'Falha ao deletar voluntário' };
     }
   }
 }

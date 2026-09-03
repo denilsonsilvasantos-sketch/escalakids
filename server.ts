@@ -32,6 +32,10 @@ interface MevamDatabase {
   lastUpdated: string;
 }
 
+const DEFAULT_SUPABASE_URL = 'https://iimgcdddyuspagpsijut.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbWdjZGRkeXVzcGFncHNpanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNDI5NzUsImV4cCI6MjEwMzgxODk3NX0.CixePx8utvm1P6HiCzYwMdW9TTJZlDyWUTYsyoGgbds';
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 
@@ -60,8 +64,8 @@ function getDb(): MevamDatabase {
       rotationHistory: INITIAL_ROTATION_HISTORY,
       auditLogs: INITIAL_AUDIT_LOGS,
       supabaseConfig: {
-        url: process.env.VITE_SUPABASE_URL || '',
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY || ''
+        url: process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
+        anonKey: process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
       },
       version: 1,
       lastUpdated: new Date().toISOString()
@@ -91,7 +95,7 @@ function getDb(): MevamDatabase {
       schedules: [],
       rotationHistory: [],
       auditLogs: [],
-      supabaseConfig: { url: '', anonKey: '' },
+      supabaseConfig: { url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY },
       version: 1,
       lastUpdated: new Date().toISOString()
     };
@@ -165,8 +169,8 @@ async function startServer() {
   // API: Get active Supabase configuration (shared across devices)
   app.get('/api/config/supabase', (_req, res) => {
     const db = getDb();
-    const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || '';
-    const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || '';
+    const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+    const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
     res.json({
       url,
       anonKey,

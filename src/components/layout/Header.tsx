@@ -171,13 +171,13 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/60'
                     : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
                 }`}
-                title="Configurar Conexão com Supabase e Script SQL (Restrito ao ADMIN)"
+                title="Sincronização em Nuvem MEVAM Kids"
               >
                 <Database className={`w-3.5 h-3.5 ${syncState.isConnected ? 'text-emerald-400' : 'text-blue-400'} shrink-0`} />
                 <span className="hidden xl:inline">
-                  {syncState.isConnected ? 'Supabase Conectado' : 'Supabase SQL'}
+                  {syncState.isConnected ? 'Nuvem Conectada' : 'Sincronizar Nuvem'}
                 </span>
-                <span className="xl:hidden">Supabase</span>
+                <span className="xl:hidden">Nuvem</span>
               </button>
             )}
 

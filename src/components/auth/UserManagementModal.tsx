@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Shield,
@@ -16,7 +16,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { UserAccount, UserRole, Micro } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -41,6 +43,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingCloud, setIsCheckingCloud] = useState(false);
 
   // Form State for New User
   const [formData, setFormData] = useState({
@@ -54,11 +58,31 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     whatsapp: ''
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      refreshUsers();
+      storageService.syncWithSupabaseRemote().then(() => refreshUsers());
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const refreshUsers = () => {
     setUsers(storageService.getUsers());
     onUserUpdated?.();
+  };
+
+  const handleManualSync = async () => {
+    setIsCheckingCloud(true);
+    setFeedback({ type: 'success', message: 'Sincronizando com a Nuvem MEVAM Kids...' });
+    const ok = await storageService.syncWithSupabaseRemote();
+    setIsCheckingCloud(false);
+    if (ok) {
+      setFeedback({ type: 'success', message: 'Dados e líderes atualizados da nuvem com sucesso!' });
+      refreshUsers();
+    } else {
+      setFeedback({ type: 'error', message: 'Falha ao buscar dados da nuvem. Verifique a conexão.' });
+    }
   };
 
   const isAdmin = currentUser.role === 'ADMIN_LIDERANCA';
@@ -88,71 +112,94 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }));
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
+    setIsSubmitting(true);
 
-    const result = storageService.createDelegatedUser(
-      {
-        name: formData.name,
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        allowedMicroIds: formData.allowedMicroIds,
-        primaryMicroId: formData.primaryMicroId,
-        whatsapp: formData.whatsapp
-      },
-      currentUser
-    );
+    try {
+      const result = await storageService.createDelegatedUser(
+        {
+          name: formData.name,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          allowedMicroIds: formData.allowedMicroIds,
+          primaryMicroId: formData.primaryMicroId,
+          whatsapp: formData.whatsapp
+        },
+        currentUser
+      );
 
-    if (result.success) {
-      setFeedback({ type: 'success', message: result.message });
-      setIsCreatingUser(false);
-      setFormData({
-        name: '',
-        username: '',
-        email: '',
-        password: '',
-        role: isMacroLeader ? 'LIDER_MICRO' : 'LIDER_MACRO',
-        allowedMicroIds: [],
-        primaryMicroId: '',
-        whatsapp: ''
-      });
-      refreshUsers();
-    } else {
-      setFeedback({ type: 'error', message: result.message });
-    }
-  };
-
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUserForPassword) return;
-
-    const result = storageService.updateUserPassword(
-      selectedUserForPassword.id,
-      newPassword,
-      currentUser
-    );
-
-    if (result.success) {
-      setFeedback({ type: 'success', message: result.message });
-      setSelectedUserForPassword(null);
-      setNewPassword('');
-      refreshUsers();
-    } else {
-      setFeedback({ type: 'error', message: result.message });
-    }
-  };
-
-  const handleDeleteUser = (user: UserAccount) => {
-    if (confirm(`Tem certeza que deseja excluir a conta de "${user.name}"?`)) {
-      const res = storageService.deleteUserAccount(user.id, currentUser);
-      if (res.success) {
-        setFeedback({ type: 'success', message: res.message });
+      if (result.success) {
+        setFeedback({ type: 'success', message: result.message });
+        setIsCreatingUser(false);
+        setFormData({
+          name: '',
+          username: '',
+          email: '',
+          password: '',
+          role: isMacroLeader ? 'LIDER_MICRO' : 'LIDER_MACRO',
+          allowedMicroIds: [],
+          primaryMicroId: '',
+          whatsapp: ''
+        });
         refreshUsers();
       } else {
-        setFeedback({ type: 'error', message: res.message });
+        setFeedback({ type: 'error', message: result.message });
+      }
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: `Erro ao cadastrar líder: ${err?.message || 'Falha desconhecida'}`
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForPassword) return;
+    setIsSubmitting(true);
+
+    try {
+      const result = await storageService.updateUserPassword(
+        selectedUserForPassword.id,
+        newPassword,
+        currentUser
+      );
+
+      if (result.success) {
+        setFeedback({
+          type: result.supabaseSynced === false ? 'error' : 'success',
+          message: result.message
+        });
+        setSelectedUserForPassword(null);
+        setNewPassword('');
+        refreshUsers();
+      } else {
+        setFeedback({ type: 'error', message: result.message });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: UserAccount) => {
+    if (confirm(`Tem certeza que deseja excluir a conta de "${user.name}"?`)) {
+      setIsSubmitting(true);
+      try {
+        const res = await storageService.deleteUserAccount(user.id, currentUser);
+        if (res.success) {
+          setFeedback({ type: 'success', message: res.message });
+          refreshUsers();
+        } else {
+          setFeedback({ type: 'error', message: res.message });
+        }
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -234,6 +281,25 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         {/* Main Content Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          {/* Cloud Database Diagnostic & Status Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-300">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-semibold text-emerald-300">Sincronização em Tempo Real Ativa</span>
+              <span className="text-slate-500">•</span>
+              <span className="text-slate-400">Qualquer alteração ou novo líder aparece automaticamente em todos os celulares e computadores</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={isCheckingCloud}
+              className="flex items-center space-x-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors self-start sm:self-auto shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isCheckingCloud ? 'animate-spin' : ''}`} />
+              <span>Sincronizar Agora</span>
+            </button>
+          </div>
+
           {/* Top Actions Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
             <div>
@@ -427,16 +493,25 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <div className="flex items-center justify-end space-x-3 pt-3">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setIsCreatingUser(false)}
-                  className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 text-xs font-semibold"
+                  className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-slate-200 text-xs font-semibold disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-600/30"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-600/30 flex items-center space-x-2"
                 >
-                  Salvar e Conceder Acesso
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Salvando e Sincronizando...</span>
+                    </>
+                  ) : (
+                    <span>Salvar e Conceder Acesso</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -479,16 +554,19 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <div className="flex items-center justify-end space-x-3">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setSelectedUserForPassword(null)}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md"
+                  disabled={isSubmitting}
+                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 text-slate-950 disabled:text-amber-300 text-xs font-bold rounded-xl transition-all shadow-md flex items-center space-x-1.5"
                 >
-                  Atualizar Senha
+                  {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  <span>{isSubmitting ? 'Atualizando...' : 'Atualizar Senha'}</span>
                 </button>
               </div>
             </form>

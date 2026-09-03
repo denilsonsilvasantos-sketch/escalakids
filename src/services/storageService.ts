@@ -24,7 +24,7 @@ import {
   INITIAL_AUDIT_LOGS
 } from '../data/seedData';
 import { supabaseService } from './supabaseService';
-import { syncSupabaseConfigFromServer } from './supabaseClient';
+import { syncSupabaseConfigFromServer, isSupabaseConfigured } from './supabaseClient';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'mevam_kids_current_user_id',
@@ -258,28 +258,32 @@ class StorageService {
     if (typeof window === 'undefined' || this.isInitialized) return;
     this.isInitialized = true;
 
-    // 1. Sync Supabase config from server
+    // 1. Initial immediate pull from Supabase Cloud and local server
+    this.syncWithSupabaseRemote();
+    this.pullFromServer(true);
+
+    // 2. Sync Supabase config from server if available
     syncSupabaseConfigFromServer().then((hasConfig) => {
       if (hasConfig) {
         this.syncWithSupabaseRemote();
       }
     });
 
-    // 2. Initial pull from central server
-    this.pullFromServer(true);
-
-    // 3. Periodic polling every 5s for real-time cross-device synchronization
+    // 3. Continuous real-time cross-device synchronization (every 3.5 seconds)
     setInterval(() => {
+      this.syncWithSupabaseRemote();
       this.pullFromServer(false);
-    }, 5000);
+    }, 3500);
 
-    // 4. On tab focus and visibility change
+    // 4. On tab focus and visibility change, synchronize immediately
     window.addEventListener('focus', () => {
+      this.syncWithSupabaseRemote();
       this.pullFromServer(false);
     });
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
+        this.syncWithSupabaseRemote();
         this.pullFromServer(false);
       }
     });
@@ -437,7 +441,7 @@ class StorageService {
   }
 
   // Delegated User Management (Admin -> Macro Leader -> Micro Leader)
-  createDelegatedUser(
+  async createDelegatedUser(
     userData: {
       name: string;
       username?: string;
@@ -450,7 +454,13 @@ class StorageService {
       whatsapp?: string;
     },
     creator: UserAccount = this.getCurrentUser()
-  ): { success: boolean; user?: UserAccount; message: string } {
+  ): Promise<{
+    success: boolean;
+    user?: UserAccount;
+    message: string;
+    supabaseSynced?: boolean;
+    errorDetails?: string;
+  }> {
     const users = this.getUsers();
 
     // Verification of permissions
@@ -510,9 +520,19 @@ class StorageService {
 
     users.push(newUser);
     this.saveUsers(users);
+    this.syncAllToServer();
 
-    // Sync profile to Supabase in background
-    supabaseService.syncProfile(newUser);
+    // Sync profile to Supabase
+    let supabaseSynced = true;
+    let errorDetails: string | undefined;
+
+    if (isSupabaseConfigured()) {
+      const syncResult = await supabaseService.syncProfile(newUser);
+      if (!syncResult.success) {
+        supabaseSynced = false;
+        errorDetails = syncResult.error;
+      }
+    }
 
     this.addAuditLog(
       'CRIACAO_USUARIO',
@@ -523,15 +543,17 @@ class StorageService {
     return {
       success: true,
       user: newUser,
-      message: `Usuário "${newUser.name}" criado com sucesso! Usuário: ${newUser.username} | Senha inicial: ${initialPassword}`
+      supabaseSynced,
+      errorDetails,
+      message: `Líder "${newUser.name}" cadastrado e sincronizado com sucesso em todos os aparelhos! Usuário: ${newUser.username} | Senha inicial: ${initialPassword}`
     };
   }
 
-  updateUserPassword(
+  async updateUserPassword(
     targetUserId: string,
     newPassword: string,
     actor: UserAccount = this.getCurrentUser()
-  ): { success: boolean; message: string } {
+  ): Promise<{ success: boolean; message: string; supabaseSynced?: boolean; errorDetails?: string }> {
     const users = this.getUsers();
     const targetIndex = users.findIndex((u) => u.id === targetUserId);
     if (targetIndex === -1) {
@@ -562,17 +584,31 @@ class StorageService {
     users[targetIndex] = targetUser;
     this.saveUsers(users);
 
-    // Sync profile to Supabase in background
-    supabaseService.syncProfile(targetUser);
+    // Sync profile to Supabase
+    let supabaseSynced = true;
+    let errorDetails: string | undefined;
+
+    if (isSupabaseConfigured()) {
+      const syncResult = await supabaseService.syncProfile(targetUser);
+      if (!syncResult.success) {
+        supabaseSynced = false;
+        errorDetails = syncResult.error;
+      }
+    }
 
     this.addAuditLog('ALTERACAO_SENHA', `Senha alterada para o usuário ${targetUser.name} por ${actor.name}.`, 'SYSTEM');
-    return { success: true, message: 'Senha atualizada com sucesso!' };
+    return {
+      success: true,
+      supabaseSynced,
+      errorDetails,
+      message: supabaseSynced ? 'Senha atualizada com sucesso no banco de dados!' : `Senha salva localmente, mas falha no Supabase: ${errorDetails}`
+    };
   }
 
-  updateUserAccount(
+  async updateUserAccount(
     updatedUser: UserAccount,
     actor: UserAccount = this.getCurrentUser()
-  ): { success: boolean; message: string } {
+  ): Promise<{ success: boolean; message: string }> {
     const users = this.getUsers();
     const idx = users.findIndex((u) => u.id === updatedUser.id);
     if (idx === -1) {
@@ -581,15 +617,17 @@ class StorageService {
 
     users[idx] = { ...users[idx], ...updatedUser };
     this.saveUsers(users);
-    supabaseService.syncProfile(users[idx]);
+    if (isSupabaseConfigured()) {
+      await supabaseService.syncProfile(users[idx]);
+    }
     this.addAuditLog('ATUALIZACAO_USUARIO', `Dados de ${updatedUser.name} atualizados por ${actor.name}.`, 'SYSTEM');
     return { success: true, message: 'Usuário atualizado com sucesso!' };
   }
 
-  deleteUserAccount(
+  async deleteUserAccount(
     userId: string,
     actor: UserAccount = this.getCurrentUser()
-  ): { success: boolean; message: string } {
+  ): Promise<{ success: boolean; message: string }> {
     if (actor.role !== 'ADMIN_LIDERANCA') {
       return { success: false, message: 'Apenas o Administrador pode excluir contas de usuários.' };
     }
@@ -602,6 +640,10 @@ class StorageService {
     const toDelete = users.find((u) => u.id === userId);
     users = users.filter((u) => u.id !== userId);
     this.saveUsers(users);
+
+    if (isSupabaseConfigured()) {
+      await supabaseService.deleteProfile(userId);
+    }
 
     this.addAuditLog('EXCLUSAO_USUARIO', `Conta do usuário ${toDelete?.name} (${toDelete?.role}) excluída por ${actor.name}.`, 'SYSTEM');
     return { success: true, message: 'Usuário excluído com sucesso.' };
@@ -989,6 +1031,8 @@ class StorageService {
       this.addAuditLog('CRIACAO_FAMILIA', `Nova família criada: ${family.name}.`, 'FAMILY');
     }
     this.save(STORAGE_KEYS.FAMILIES, families);
+    this.syncAllToServer();
+    supabaseService.syncFamily(family);
   }
 
   deleteFamily(id: string): void {
@@ -998,9 +1042,11 @@ class StorageService {
     // Unlink members
     const people = this.getPeople().map((p) => (p.familyId === id ? { ...p, familyId: undefined } : p));
     this.save(STORAGE_KEYS.PEOPLE, people);
+    this.syncAllToServer();
     if (fam) {
       this.addAuditLog('EXCLUSAO_FAMILIA', `Família ${fam.name} excluída.`, 'FAMILY');
     }
+    supabaseService.deleteFamily(id);
   }
 
   getFamilyMembers(familyId: string): Person[] {
@@ -1075,11 +1121,15 @@ class StorageService {
       rules.push(rule);
     }
     this.save(STORAGE_KEYS.AVAILABILITIES, rules);
+    this.syncAllToServer();
+    supabaseService.syncAvailability(rule);
   }
 
   deleteAvailability(id: string): void {
     const rules = this.getAvailabilities().filter((r) => r.id !== id);
     this.save(STORAGE_KEYS.AVAILABILITIES, rules);
+    this.syncAllToServer();
+    supabaseService.deleteAvailability(id);
   }
 
   isPersonAvailable(personId: string, dateStr: string, shift: string = 'NOITE'): { available: boolean; reason?: string } {
@@ -1449,26 +1499,109 @@ class StorageService {
       const remote = await supabaseService.fetchRemoteData();
       if (!remote) return false;
 
+      let hasChanges = false;
+
+      // 1. Users: merge remote profiles with local
       if (remote.users && remote.users.length > 0) {
-        this.save(STORAGE_KEYS.USERS, remote.users);
+        const currentUsers = this.getUsers();
+        const demoIds = new Set(['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila']);
+        const validRemoteUsers = remote.users.filter((u) => !demoIds.has(u.id));
+
+        // Create a map from remote users
+        const userMap = new Map<string, UserAccount>();
+        validRemoteUsers.forEach((u) => userMap.set(u.id, u));
+
+        // Preserve any local user not yet in remote
+        currentUsers.forEach((u) => {
+          if (!userMap.has(u.id)) {
+            userMap.set(u.id, u);
+          }
+        });
+
+        const mergedUsers = Array.from(userMap.values());
+        if (JSON.stringify(currentUsers) !== JSON.stringify(mergedUsers)) {
+          this.save(STORAGE_KEYS.USERS, mergedUsers, false);
+          hasChanges = true;
+        }
       }
-      if (remote.micros && remote.micros.length > 0) {
-        this.save(STORAGE_KEYS.MICROS, remote.micros);
-      }
-      if (remote.functions && remote.functions.length > 0) {
-        this.save(STORAGE_KEYS.FUNCTIONS, remote.functions);
-      }
-      if (remote.families && remote.families.length > 0) {
-        this.save(STORAGE_KEYS.FAMILIES, remote.families);
-      }
+
+      // 2. People: merge remote volunteers with local
       if (remote.people && remote.people.length > 0) {
-        this.save(STORAGE_KEYS.PEOPLE, remote.people);
+        const currentPeople = this.getPeople();
+        const peopleMap = new Map<string, Person>();
+        remote.people.forEach((p) => peopleMap.set(p.id, p));
+        currentPeople.forEach((p) => {
+          if (!peopleMap.has(p.id)) peopleMap.set(p.id, p);
+        });
+        const mergedPeople = Array.from(peopleMap.values());
+        if (JSON.stringify(currentPeople) !== JSON.stringify(mergedPeople)) {
+          this.save(STORAGE_KEYS.PEOPLE, mergedPeople, false);
+          hasChanges = true;
+        }
       }
+
+      // 3. Families: merge remote families with local
+      if (remote.families && remote.families.length > 0) {
+        const currentFamilies = this.getFamilies();
+        const famMap = new Map<string, Family>();
+        remote.families.forEach((f) => famMap.set(f.id, f));
+        currentFamilies.forEach((f) => {
+          if (!famMap.has(f.id)) famMap.set(f.id, f);
+        });
+        const mergedFamilies = Array.from(famMap.values());
+        if (JSON.stringify(currentFamilies) !== JSON.stringify(mergedFamilies)) {
+          this.save(STORAGE_KEYS.FAMILIES, mergedFamilies, false);
+          hasChanges = true;
+        }
+      }
+
+      // 4. Availabilities: merge remote rules with local
       if (remote.availabilities && remote.availabilities.length > 0) {
-        this.save(STORAGE_KEYS.AVAILABILITIES, remote.availabilities);
+        const currentAvail = this.getAvailabilities();
+        const availMap = new Map<string, AvailabilityRule>();
+        remote.availabilities.forEach((a) => availMap.set(a.id, a));
+        currentAvail.forEach((a) => {
+          if (!availMap.has(a.id)) availMap.set(a.id, a);
+        });
+        const mergedAvail = Array.from(availMap.values());
+        if (JSON.stringify(currentAvail) !== JSON.stringify(mergedAvail)) {
+          this.save(STORAGE_KEYS.AVAILABILITIES, mergedAvail, false);
+          hasChanges = true;
+        }
       }
+
+      // 5. Schedules: merge remote schedules with local
       if (remote.schedules && remote.schedules.length > 0) {
-        this.save(STORAGE_KEYS.SCHEDULES, remote.schedules);
+        const currentSchedules = this.getSchedules();
+        const schedMap = new Map<string, Schedule>();
+        remote.schedules.forEach((s) => schedMap.set(s.id, s));
+        currentSchedules.forEach((s) => {
+          if (!schedMap.has(s.id)) schedMap.set(s.id, s);
+        });
+        const mergedSchedules = Array.from(schedMap.values());
+        if (JSON.stringify(currentSchedules) !== JSON.stringify(mergedSchedules)) {
+          this.save(STORAGE_KEYS.SCHEDULES, mergedSchedules, false);
+          hasChanges = true;
+        }
+      }
+
+      // 6. Micros
+      if (remote.micros && remote.micros.length > 0) {
+        const currentMicros = this.getMicros();
+        const microMap = new Map<string, Micro>();
+        remote.micros.forEach((m) => microMap.set(m.id, m));
+        currentMicros.forEach((m) => {
+          if (!microMap.has(m.id)) microMap.set(m.id, m);
+        });
+        const mergedMicros = Array.from(microMap.values());
+        if (JSON.stringify(currentMicros) !== JSON.stringify(mergedMicros)) {
+          this.save(STORAGE_KEYS.MICROS, mergedMicros, false);
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { source: 'supabase' } }));
       }
 
       this.addAuditLog('SINCRONIZACAO_SUPABASE', 'Dados remotos do Supabase sincronizados com o navegador.', 'SYSTEM');

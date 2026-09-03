@@ -4,19 +4,47 @@
       "id": "user-admin",
       "name": "Administrador",
       "username": "admin",
-      "email": "admin@mevamkids.org",
+      "email": "denilson.silva.santos@gmail.com",
       "password": "admin",
       "role": "ADMIN_LIDERANCA",
       "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "whatsapp": ""
+      "allowedMicroIds": [
+        "micro-lideranca",
+        "micro-louvor",
+        "micro-professor",
+        "micro-acolhimento",
+        "micro-refeitorio",
+        "micro-seguranca",
+        "micro-teatro"
+      ],
+      "whatsapp": "47998871122",
+      "createdByName": "Sistema MEVAM Kids",
+      "mustChangePassword": false
+    },
+    {
+      "id": "user-1788280023733",
+      "name": "Sheyla Ana Almozara",
+      "username": "sheyla",
+      "email": "sheyla@mevamkids.org",
+      "password": "123",
+      "role": "LIDER_MACRO",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=sheyla",
+      "allowedMicroIds": [
+        "micro-lideranca"
+      ],
+      "whatsapp": "47997874396",
+      "createdBy": "user-admin",
+      "createdByName": "Administrador (ADMIN_LIDERANCA)",
+      "mustChangePassword": true
     }
   ],
   "micros": [
     {
       "id": "micro-lideranca",
-      "name": "Liderança",
-      "description": "Coordenação geral, acolhimento de famílias e suporte às frentes do MEVAM Kids.",
+      "name": "Liderança & Coordenação",
+      "description": "Coordenação geral, acolhimento de famílias e suporte às frentes.",
       "leaderName": "Pr. Denilson Santos",
+      "leaderId": "user-admin",
       "status": "ATIVO",
       "color": "#6366F1",
       "iconName": "Crown",
@@ -25,21 +53,22 @@
         "Noite"
       ],
       "algorithmWeights": {
-        "availability": 100,
-        "correctFunction": 100,
-        "volunteerPreference": 80,
-        "frequencyBalance": 90,
+        "family": 60,
         "recency": 80,
         "rotation": 80,
-        "family": 60,
-        "experience": 60
+        "experience": 50,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 90,
+        "volunteerPreference": 80
       }
     },
     {
       "id": "micro-louvor",
-      "name": "Louvor",
+      "name": "Louvor Kids",
       "description": "Equipe responsável pela ministração do louvor e adoração no MEVAM Kids.",
-      "leaderName": "Denilson",
+      "leaderName": "Denilson Louvor",
+      "leaderId": "user-micro-louvor",
       "status": "ATIVO",
       "color": "#EC4899",
       "iconName": "Music",
@@ -48,21 +77,22 @@
         "Noite"
       ],
       "algorithmWeights": {
+        "family": 60,
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
         "availability": 100,
         "correctFunction": 100,
-        "volunteerPreference": 85,
-        "frequencyBalance": 85,
-        "recency": 75,
-        "rotation": 85,
-        "family": 50,
-        "experience": 70
+        "frequencyBalance": 90,
+        "volunteerPreference": 80
       }
     },
     {
       "id": "micro-professor",
-      "name": "Professor(a)",
-      "description": "Ensino bíblico pedagógico dividido por faixas etárias de 3 a 12 anos.",
+      "name": "Professores & Salas",
+      "description": "Ensino bíblico ministrado por faixas etárias nas salinhas temáticas.",
       "leaderName": "Roberta Lima",
+      "leaderId": "user-micro-prof",
       "status": "ATIVO",
       "color": "#3B82F6",
       "iconName": "BookOpen",
@@ -71,152 +101,108 @@
         "Noite"
       ],
       "algorithmWeights": {
-        "availability": 100,
-        "correctFunction": 100,
-        "volunteerPreference": 90,
-        "frequencyBalance": 90,
-        "recency": 80,
-        "rotation": 80,
         "family": 60,
-        "experience": 80
-      }
-    },
-    {
-      "id": "micro-auxiliar",
-      "name": "Auxiliar",
-      "description": "Apoio em sala de aula, organização de materiais e cuidado individual das crianças.",
-      "leaderName": "Camila Rocha",
-      "status": "ATIVO",
-      "color": "#06B6D4",
-      "iconName": "HandHelping",
-      "defaultShifts": [
-        "Manhã",
-        "Noite"
-      ],
-      "algorithmWeights": {
-        "availability": 100,
-        "correctFunction": 100,
-        "volunteerPreference": 80,
-        "frequencyBalance": 90,
         "recency": 80,
-        "rotation": 75,
-        "family": 65,
-        "experience": 40
-      }
-    },
-    {
-      "id": "micro-midia",
-      "name": "Mídia",
-      "description": "Operação de projeção de letras, câmeras, transmissão e captação de fotos.",
-      "leaderName": "Gabriel Ribeiro",
-      "status": "ATIVO",
-      "color": "#8B5CF6",
-      "iconName": "Tv",
-      "defaultShifts": [
-        "Manhã",
-        "Noite"
-      ],
-      "algorithmWeights": {
-        "availability": 100,
-        "correctFunction": 100,
-        "volunteerPreference": 75,
-        "frequencyBalance": 85,
-        "recency": 70,
         "rotation": 80,
-        "family": 40,
-        "experience": 75
-      }
-    },
-    {
-      "id": "micro-teatro",
-      "name": "Teatro",
-      "description": "Peças teatrais, fantoches e esquetes ilustrativas das mensagens bíblicas.",
-      "leaderName": "Letícia Mendes",
-      "status": "ATIVO",
-      "color": "#F59E0B",
-      "iconName": "Sparkles",
-      "defaultShifts": [
-        "Manhã",
-        "Noite"
-      ],
-      "algorithmWeights": {
+        "experience": 50,
         "availability": 100,
         "correctFunction": 100,
-        "volunteerPreference": 85,
-        "frequencyBalance": 80,
-        "recency": 75,
-        "rotation": 90,
-        "family": 55,
-        "experience": 65
+        "frequencyBalance": 90,
+        "volunteerPreference": 80
       }
     },
     {
-      "id": "micro-seguranca",
-      "name": "Segurança",
-      "description": "Monitoramento de entradas, portas de acesso e segurança das salas infantis.",
-      "leaderName": "Marcos Oliveira",
+      "id": "micro-acolhimento",
+      "name": "Acolhimento & Recepção",
+      "description": "Primeiro contato com pais e crianças, check-in, crachás e recepção.",
+      "leaderName": "Mariana Souza",
+      "leaderId": "user-macro-joao",
       "status": "ATIVO",
       "color": "#10B981",
-      "iconName": "ShieldCheck",
+      "iconName": "HeartHandshake",
       "defaultShifts": [
         "Manhã",
         "Noite"
       ],
       "algorithmWeights": {
+        "family": 60,
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
         "availability": 100,
         "correctFunction": 100,
-        "volunteerPreference": 80,
         "frequencyBalance": 90,
-        "recency": 80,
-        "rotation": 70,
-        "family": 50,
-        "experience": 60
+        "volunteerPreference": 80
       }
     },
     {
       "id": "micro-refeitorio",
-      "name": "Refeitório",
-      "description": "Preparo dos lanches, distribuição de pipoca e higienização do refeitório infantil.",
-      "leaderName": "Juliana Santos",
+      "name": "Refeitório & Lanche",
+      "description": "Preparo e distribuição do lanche e hidratação das crianças.",
+      "leaderName": "Carla Mendes",
+      "leaderId": "user-macro-joao",
       "status": "ATIVO",
-      "color": "#EF4444",
+      "color": "#F59E0B",
       "iconName": "Utensils",
       "defaultShifts": [
         "Manhã",
         "Noite"
       ],
       "algorithmWeights": {
+        "family": 60,
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
         "availability": 100,
         "correctFunction": 100,
-        "volunteerPreference": 70,
         "frequencyBalance": 90,
-        "recency": 80,
-        "rotation": 75,
-        "family": 70,
-        "experience": 30
+        "volunteerPreference": 80
       }
     },
     {
-      "id": "micro-recepcao",
-      "name": "Recepção",
-      "description": "Check-in das crianças, pulseiras de identificação e acolhimento dos visitantes.",
-      "leaderName": "Ana Paula Ferreira",
+      "id": "micro-seguranca",
+      "name": "Segurança & Apoio",
+      "description": "Monitoramento dos corredores, controle de acesso e segurança das crianças.",
+      "leaderName": "Marcos Rocha",
+      "leaderId": "user-macro-joao",
       "status": "ATIVO",
-      "color": "#14B8A6",
-      "iconName": "UserCheck",
+      "color": "#8B5CF6",
+      "iconName": "ShieldCheck",
       "defaultShifts": [
         "Manhã",
         "Noite"
       ],
       "algorithmWeights": {
-        "availability": 100,
-        "correctFunction": 100,
-        "volunteerPreference": 80,
-        "frequencyBalance": 85,
+        "family": 60,
         "recency": 80,
         "rotation": 80,
+        "experience": 50,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 90,
+        "volunteerPreference": 80
+      }
+    },
+    {
+      "id": "micro-recepcao",
+      "name": "Pipoca",
+      "description": "Fazer as pipocas para venda",
+      "status": "ATIVO",
+      "color": "#14B8A6",
+      "iconName": "Layers",
+      "defaultShifts": [
+        "Manhã",
+        "Noite"
+      ],
+      "algorithmWeights": {
         "family": 60,
-        "experience": 50
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 85,
+        "volunteerPreference": 80
       }
     }
   ],
@@ -802,6 +788,1428 @@
   "rotationHistory": [],
   "auditLogs": [
     {
+      "id": "log-1788451580355-piz1",
+      "timestamp": "2026-09-03T16:06:20.355Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451577349-xp87",
+      "timestamp": "2026-09-03T16:06:17.349Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451573587-jfu6",
+      "timestamp": "2026-09-03T16:06:13.587Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451570381-yt9z",
+      "timestamp": "2026-09-03T16:06:10.381Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451566651-o0r2",
+      "timestamp": "2026-09-03T16:06:06.651Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451565397-lpnd",
+      "timestamp": "2026-09-03T16:06:05.397Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451559376-0erh",
+      "timestamp": "2026-09-03T16:05:59.376Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451557210-67ss",
+      "timestamp": "2026-09-03T16:05:57.210Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451553009-0nta",
+      "timestamp": "2026-09-03T16:05:53.009Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451551261-kqc1",
+      "timestamp": "2026-09-03T16:05:51.261Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451551131-kvib",
+      "timestamp": "2026-09-03T16:05:51.131Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451551046-r56i",
+      "timestamp": "2026-09-03T16:05:51.046Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451538438-kchn",
+      "timestamp": "2026-09-03T16:05:38.438Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451536532-8tv5",
+      "timestamp": "2026-09-03T16:05:36.532Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451531405-fqz3",
+      "timestamp": "2026-09-03T16:05:31.405Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451527526-bgxw",
+      "timestamp": "2026-09-03T16:05:27.526Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451524413-ltyh",
+      "timestamp": "2026-09-03T16:05:24.413Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451520508-axnd",
+      "timestamp": "2026-09-03T16:05:20.508Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451517362-pshz",
+      "timestamp": "2026-09-03T16:05:17.362Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451513521-noqe",
+      "timestamp": "2026-09-03T16:05:13.521Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451510013-njkk",
+      "timestamp": "2026-09-03T16:05:10.013Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451506656-dlom",
+      "timestamp": "2026-09-03T16:05:06.656Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451503013-tknr",
+      "timestamp": "2026-09-03T16:05:03.013Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451499566-lb6o",
+      "timestamp": "2026-09-03T16:04:59.566Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451496044-qt30",
+      "timestamp": "2026-09-03T16:04:56.044Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451492508-6x3v",
+      "timestamp": "2026-09-03T16:04:52.508Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451489170-b637",
+      "timestamp": "2026-09-03T16:04:49.170Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451485512-2izy",
+      "timestamp": "2026-09-03T16:04:45.512Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451482058-137x",
+      "timestamp": "2026-09-03T16:04:42.058Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451478502-zv2v",
+      "timestamp": "2026-09-03T16:04:38.502Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451475107-loog",
+      "timestamp": "2026-09-03T16:04:35.107Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451471542-fk8j",
+      "timestamp": "2026-09-03T16:04:31.542Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451468017-pbo0",
+      "timestamp": "2026-09-03T16:04:28.017Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451464511-g3fi",
+      "timestamp": "2026-09-03T16:04:24.511Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451461001-hot6",
+      "timestamp": "2026-09-03T16:04:21.001Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451457519-he4f",
+      "timestamp": "2026-09-03T16:04:17.519Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451454027-w34j",
+      "timestamp": "2026-09-03T16:04:14.027Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451450552-9a9v",
+      "timestamp": "2026-09-03T16:04:10.552Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451447058-4865",
+      "timestamp": "2026-09-03T16:04:07.058Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451443559-49si",
+      "timestamp": "2026-09-03T16:04:03.559Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451440003-9xsb",
+      "timestamp": "2026-09-03T16:04:00.003Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451436538-nyh6",
+      "timestamp": "2026-09-03T16:03:56.538Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451433039-ph9g",
+      "timestamp": "2026-09-03T16:03:53.039Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451429676-evhl",
+      "timestamp": "2026-09-03T16:03:49.676Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451426018-br4z",
+      "timestamp": "2026-09-03T16:03:46.018Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451422575-9erp",
+      "timestamp": "2026-09-03T16:03:42.575Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451419009-iegn",
+      "timestamp": "2026-09-03T16:03:39.009Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451415557-5nds",
+      "timestamp": "2026-09-03T16:03:35.557Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451412014-qp1c",
+      "timestamp": "2026-09-03T16:03:32.014Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451408503-7wow",
+      "timestamp": "2026-09-03T16:03:28.503Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451405023-qd48",
+      "timestamp": "2026-09-03T16:03:25.023Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451401910-n300",
+      "timestamp": "2026-09-03T16:03:21.910Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451398013-2s5n",
+      "timestamp": "2026-09-03T16:03:18.013Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451394506-zck4",
+      "timestamp": "2026-09-03T16:03:14.506Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451391386-rp0n",
+      "timestamp": "2026-09-03T16:03:11.386Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451390426-8nbp",
+      "timestamp": "2026-09-03T16:03:10.426Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451390006-upvq",
+      "timestamp": "2026-09-03T16:03:10.006Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451344844-2v08",
+      "timestamp": "2026-09-03T16:02:24.844Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451285111-9zqn",
+      "timestamp": "2026-09-03T16:01:25.111Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451224505-d14a",
+      "timestamp": "2026-09-03T16:00:24.505Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451164734-4586",
+      "timestamp": "2026-09-03T15:59:24.734Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451104476-68em",
+      "timestamp": "2026-09-03T15:58:24.476Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788451044423-haai",
+      "timestamp": "2026-09-03T15:57:24.423Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450984426-8e37",
+      "timestamp": "2026-09-03T15:56:24.426Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450925062-0vcd",
+      "timestamp": "2026-09-03T15:55:25.062Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450864786-ivy4",
+      "timestamp": "2026-09-03T15:54:24.786Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450805059-2ml7",
+      "timestamp": "2026-09-03T15:53:25.059Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450744766-w2r3",
+      "timestamp": "2026-09-03T15:52:24.766Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450684679-e1o8",
+      "timestamp": "2026-09-03T15:51:24.679Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450624735-k6yo",
+      "timestamp": "2026-09-03T15:50:24.735Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450565171-l7z4",
+      "timestamp": "2026-09-03T15:49:25.171Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450504430-y14b",
+      "timestamp": "2026-09-03T15:48:24.430Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450445034-b083",
+      "timestamp": "2026-09-03T15:47:25.034Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450384812-diyj",
+      "timestamp": "2026-09-03T15:46:24.812Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450325075-etsx",
+      "timestamp": "2026-09-03T15:45:25.075Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450264797-106j",
+      "timestamp": "2026-09-03T15:44:24.797Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450236006-ck0i",
+      "timestamp": "2026-09-03T15:43:56.006Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450232511-0t8a",
+      "timestamp": "2026-09-03T15:43:52.512Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450229013-x4d2",
+      "timestamp": "2026-09-03T15:43:49.013Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450225519-g7rj",
+      "timestamp": "2026-09-03T15:43:45.519Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450222020-s8d9",
+      "timestamp": "2026-09-03T15:43:42.020Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450218511-5na1",
+      "timestamp": "2026-09-03T15:43:38.511Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450215033-27rd",
+      "timestamp": "2026-09-03T15:43:35.033Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450212120-bicf",
+      "timestamp": "2026-09-03T15:43:32.120Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450211897-j8tu",
+      "timestamp": "2026-09-03T15:43:31.897Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450210263-kcuz",
+      "timestamp": "2026-09-03T15:43:30.263Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450204893-yzll",
+      "timestamp": "2026-09-03T15:43:24.893Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450144920-eabe",
+      "timestamp": "2026-09-03T15:42:24.920Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450084795-q5d6",
+      "timestamp": "2026-09-03T15:41:24.795Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788450025164-0g0q",
+      "timestamp": "2026-09-03T15:40:25.164Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449964783-cvpn",
+      "timestamp": "2026-09-03T15:39:24.783Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449904979-674r",
+      "timestamp": "2026-09-03T15:38:24.979Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449845018-vn6k",
+      "timestamp": "2026-09-03T15:37:25.018Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449785364-3zgj",
+      "timestamp": "2026-09-03T15:36:25.364Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449724582-5lcx",
+      "timestamp": "2026-09-03T15:35:24.582Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449664950-9zaj",
+      "timestamp": "2026-09-03T15:34:24.950Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449604321-irg0",
+      "timestamp": "2026-09-03T15:33:24.321Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449586315-r7oa",
+      "timestamp": "2026-09-03T15:33:06.315Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449578322-hmz9",
+      "timestamp": "2026-09-03T15:32:58.322Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449570323-hpwe",
+      "timestamp": "2026-09-03T15:32:50.323Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449562323-u47r",
+      "timestamp": "2026-09-03T15:32:42.323Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449554326-mk56",
+      "timestamp": "2026-09-03T15:32:34.326Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449546318-l0wt",
+      "timestamp": "2026-09-03T15:32:26.318Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449538972-b74z",
+      "timestamp": "2026-09-03T15:32:18.972Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449530298-3hdk",
+      "timestamp": "2026-09-03T15:32:10.298Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449522267-mzwo",
+      "timestamp": "2026-09-03T15:32:02.267Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449514329-7yrr",
+      "timestamp": "2026-09-03T15:31:54.329Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449506259-vn4b",
+      "timestamp": "2026-09-03T15:31:46.259Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449498616-cwhy",
+      "timestamp": "2026-09-03T15:31:38.616Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449490238-lr36",
+      "timestamp": "2026-09-03T15:31:30.238Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449482470-0edd",
+      "timestamp": "2026-09-03T15:31:22.470Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449474273-jwdz",
+      "timestamp": "2026-09-03T15:31:14.273Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449466250-vpe4",
+      "timestamp": "2026-09-03T15:31:06.250Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449458582-998l",
+      "timestamp": "2026-09-03T15:30:58.582Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449450235-ufv7",
+      "timestamp": "2026-09-03T15:30:50.235Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449442247-hrta",
+      "timestamp": "2026-09-03T15:30:42.247Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449434303-ycw7",
+      "timestamp": "2026-09-03T15:30:34.303Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449426923-nwtb",
+      "timestamp": "2026-09-03T15:30:26.923Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449418687-dsye",
+      "timestamp": "2026-09-03T15:30:18.687Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449410249-fn68",
+      "timestamp": "2026-09-03T15:30:10.249Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449402245-xble",
+      "timestamp": "2026-09-03T15:30:02.245Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449394742-7i1c",
+      "timestamp": "2026-09-03T15:29:54.742Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449386251-iekq",
+      "timestamp": "2026-09-03T15:29:46.251Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449378241-7qdu",
+      "timestamp": "2026-09-03T15:29:38.241Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449370222-4n0w",
+      "timestamp": "2026-09-03T15:29:30.222Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449362258-w6ka",
+      "timestamp": "2026-09-03T15:29:22.258Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449354258-4ov1",
+      "timestamp": "2026-09-03T15:29:14.258Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449346239-s2t7",
+      "timestamp": "2026-09-03T15:29:06.239Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449338249-62kp",
+      "timestamp": "2026-09-03T15:28:58.249Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449330281-57bq",
+      "timestamp": "2026-09-03T15:28:50.281Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449322240-d5gm",
+      "timestamp": "2026-09-03T15:28:42.240Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449314241-tgab",
+      "timestamp": "2026-09-03T15:28:34.241Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449306246-dv3v",
+      "timestamp": "2026-09-03T15:28:26.246Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449298265-hasu",
+      "timestamp": "2026-09-03T15:28:18.265Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449290267-fjc3",
+      "timestamp": "2026-09-03T15:28:10.267Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449282242-1llt",
+      "timestamp": "2026-09-03T15:28:02.242Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449274253-kovi",
+      "timestamp": "2026-09-03T15:27:54.253Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449266465-r07w",
+      "timestamp": "2026-09-03T15:27:46.465Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449258270-b4jx",
+      "timestamp": "2026-09-03T15:27:38.270Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449250236-36hh",
+      "timestamp": "2026-09-03T15:27:30.236Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449242232-rmmr",
+      "timestamp": "2026-09-03T15:27:22.232Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449234244-pgfd",
+      "timestamp": "2026-09-03T15:27:14.244Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449226248-g4zo",
+      "timestamp": "2026-09-03T15:27:06.248Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449218281-x1rc",
+      "timestamp": "2026-09-03T15:26:58.281Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449210232-nvl1",
+      "timestamp": "2026-09-03T15:26:50.232Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449202264-6gw1",
+      "timestamp": "2026-09-03T15:26:42.264Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449194272-tkzu",
+      "timestamp": "2026-09-03T15:26:34.272Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449186255-ynkw",
+      "timestamp": "2026-09-03T15:26:26.255Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449178631-muhb",
+      "timestamp": "2026-09-03T15:26:18.631Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449170236-16v6",
+      "timestamp": "2026-09-03T15:26:10.236Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449162236-nfbe",
+      "timestamp": "2026-09-03T15:26:02.236Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449154246-wekb",
+      "timestamp": "2026-09-03T15:25:54.246Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449148073-81gf",
+      "timestamp": "2026-09-03T15:25:48.074Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788449148010-iu6w",
+      "timestamp": "2026-09-03T15:25:48.010Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788446506113-dkpb",
+      "timestamp": "2026-09-03T14:41:46.113Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788444517998-2vas",
+      "timestamp": "2026-09-03T14:08:37.998Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788444324607-ks8d",
+      "timestamp": "2026-09-03T14:05:24.607Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
+      "id": "log-1788444074243-fc5p",
+      "timestamp": "2026-09-03T14:01:14.243Z",
+      "userName": "Administrador",
+      "userRole": "ADMIN_LIDERANCA",
+      "action": "SINCRONIZACAO_SUPABASE",
+      "details": "Dados remotos do Supabase sincronizados com o navegador.",
+      "targetType": "SYSTEM"
+    },
+    {
       "id": "log-init",
       "timestamp": "2026-09-02T22:31:23.233Z",
       "userName": "Sistema MEVAM Kids",
@@ -815,6 +2223,6 @@
     "url": "https://iimgcdddyuspagpsijut.supabase.co",
     "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbWdjZGRkeXVzcGFncHNpanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNDI5NzUsImV4cCI6MjEwMzgxODk3NX0.CixePx8utvm1P6HiCzYwMdW9TTJZlDyWUTYsyoGgbds"
   },
-  "version": 1,
-  "lastUpdated": "2026-09-02T22:31:31.778Z"
+  "version": 155,
+  "lastUpdated": "2026-09-03T16:06:21.549Z"
 }
