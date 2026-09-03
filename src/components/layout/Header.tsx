@@ -15,8 +15,7 @@ import {
   Users,
   KeyRound,
   LogOut,
-  UserPlus,
-  Menu
+  UserPlus
 } from 'lucide-react';
 import { UserAccount, SupabaseSyncState } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -96,15 +95,8 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo & Mobile Menu Hamburger */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              onClick={onToggleMobileMenu}
-              className="p-2 -ml-1 text-slate-400 hover:text-white md:hidden rounded-lg hover:bg-slate-800 transition-colors shrink-0"
-              aria-label="Abrir Menu de Navegação"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+          {/* Logo */}
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md font-extrabold text-base sm:text-lg tracking-tight shrink-0">
                 MK
@@ -126,60 +118,66 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Center Search Bar */}
-          <div className="flex-1 max-w-md mx-4 hidden md:block">
+          <div className="flex-1 max-w-sm lg:max-w-md mx-3 lg:mx-6 min-w-0 hidden md:block">
             <button
+              type="button"
               onClick={onOpenGlobalSearch}
-              className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-slate-300 bg-slate-800/90 hover:bg-slate-800 hover:text-white rounded-lg transition-colors border border-slate-700/80"
-              title="Buscar voluntários, famílias, micros ou funções"
+              className="w-full h-9 flex items-center justify-between px-3 text-xs text-slate-400 bg-slate-800/80 hover:bg-slate-800 hover:text-slate-200 rounded-xl transition-all border border-slate-700/70 hover:border-slate-600 shadow-inner group cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-blue-500/50"
+              title="Buscar voluntários, micros, escalas ou funções (⌘K / Ctrl+K)"
             >
-              <div className="flex items-center space-x-2">
-                <Search className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-300 font-medium">Buscar pessoa, micro, família ou função...</span>
+              <div className="flex items-center space-x-2 min-w-0 overflow-hidden">
+                <Search className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors shrink-0" />
+                <span className="truncate whitespace-nowrap text-slate-400 group-hover:text-slate-200 font-medium text-xs">
+                  Buscar no MEVAM Kids...
+                </span>
               </div>
-              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[11px] font-semibold text-slate-300 bg-slate-700 border border-slate-600 rounded">
-                ⌘K
+              <kbd className="hidden sm:inline-flex items-center space-x-0.5 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-400 bg-slate-900/90 border border-slate-700/90 rounded-md shrink-0 ml-2 group-hover:border-slate-600 group-hover:text-slate-300">
+                <span>⌘K</span>
               </kbd>
             </button>
           </div>
 
           {/* Right Action Icons & Role Switcher */}
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2 shrink-0">
             {/* User Management Shortcut for Admins and Macro Leaders */}
             {(isAdmin || isMacroLeader) && (
               <button
                 onClick={onOpenUserManagement}
-                className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800/90 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all"
+                className="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all shrink-0"
                 title="Gestão de Líderes, Senhas e Acessos"
               >
-                <Users className="w-3.5 h-3.5 text-amber-400" />
-                <span>Gestão de Acessos</span>
+                <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden xl:inline">Gestão de Acessos</span>
+                <span className="xl:hidden">Acessos</span>
               </button>
             )}
 
             {/* Multi-Device Live Sync Status Badge */}
             <div
-              className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 text-slate-300 text-xs font-medium"
+              className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 text-slate-300 text-xs font-medium shrink-0"
               title="Sincronização em tempo real ativa: dados unificados em todos os celulares, tablets e computadores."
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span>Multi-Dispositivo Conectado</span>
+              <span className="hidden xl:inline">Multi-Dispositivo Conectado</span>
+              <span className="xl:hidden">Sincronizado</span>
             </div>
 
             {/* Supabase Cloud Sync Status Button - ONLY FOR ADMIN */}
             {isAdmin && (
               <button
                 onClick={onOpenSupabaseModal}
-                className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all shrink-0 ${
                   syncState.isConnected
                     ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/60'
                     : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
                 }`}
                 title="Configurar Conexão com Supabase e Script SQL (Restrito ao ADMIN)"
               >
-                <Database className={`w-3.5 h-3.5 ${syncState.isConnected ? 'text-emerald-400' : 'text-blue-400'}`} />
-                <span className="hidden sm:inline">
+                <Database className={`w-3.5 h-3.5 ${syncState.isConnected ? 'text-emerald-400' : 'text-blue-400'} shrink-0`} />
+                <span className="hidden xl:inline">
                   {syncState.isConnected ? 'Supabase Conectado' : 'Supabase SQL'}
                 </span>
+                <span className="xl:hidden">Supabase</span>
               </button>
             )}
 
@@ -195,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Birthday Alert Button */}
             <button
               onClick={() => onNavigate('birthdays')}
-              className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="relative p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors shrink-0"
               title="Aniversários Próximos"
             >
               <Cake className="w-5 h-5 text-rose-400" />
@@ -207,12 +205,12 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Role & Profile Switcher */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-200 transition-all text-left"
               >
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden ring-1 ring-slate-600">
+                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden ring-1 ring-slate-600 shrink-0">
                   {currentUser.avatar ? (
                     <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
@@ -220,14 +218,14 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </div>
                 <div className="hidden lg:block text-left">
-                  <div className="text-xs font-bold text-slate-100 leading-tight truncate max-w-[130px]">
+                  <div className="text-xs font-bold text-slate-100 leading-tight truncate max-w-[110px] xl:max-w-[140px]">
                     {currentUser.name}
                   </div>
-                  <div className="text-[10px] text-slate-400 font-medium">
+                  <div className="text-[10px] text-slate-400 font-medium truncate max-w-[110px] xl:max-w-[140px]">
                     {badge.label}
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {/* Role Dropdown */}
