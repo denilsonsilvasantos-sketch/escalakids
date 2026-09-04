@@ -90,8 +90,8 @@ export default function App() {
     setIsWizardOpen(true);
   };
 
-  const handleResetData = () => {
-    storageService.resetAllData();
+  const handleResetData = async () => {
+    await storageService.resetAllData();
     window.location.reload();
   };
 

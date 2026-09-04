@@ -130,42 +130,56 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
 
     const client = createClient(url, anonKey);
 
-    // 1. Profiles (clean up demo users)
-    if (db.users && db.users.length > 0) {
-      const demoIds = ['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila'];
+    // 1. Profiles (clean up demo users and delete removed users)
+    const demoIds = ['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila'];
+    const validUsers = (db.users || []).filter((u: any) => !demoIds.includes(u.id));
+    const keepUserIds = validUsers.map((u: any) => u.id);
+    if (keepUserIds.length > 0) {
       try {
-        await client.from('profiles').delete().in('id', demoIds);
+        const { data: existingProfiles } = await client.from('profiles').select('id');
+        const toDeleteProfiles = (existingProfiles || []).map((p: any) => p.id).filter((id: string) => !keepUserIds.includes(id));
+        if (toDeleteProfiles.length > 0) {
+          await client.from('profiles').delete().in('id', toDeleteProfiles);
+        }
       } catch {
         // ignore
       }
 
-      const validUsers = db.users.filter((u: any) => !demoIds.includes(u.id));
-      if (validUsers.length > 0) {
-        const userPayload = validUsers.map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          username: u.username || null,
-          email: u.email || null,
-          password: u.password || '123',
-          role: u.role,
-          avatar: u.avatar || null,
-          allowed_micro_ids: u.allowedMicroIds || [],
-          primary_micro_id: u.primaryMicroId || null,
-          person_id: u.personId || null,
-          whatsapp: u.whatsapp || null,
-          created_by: u.createdBy || null,
-          created_by_name: u.createdByName || null,
-          must_change_password: u.mustChangePassword ?? false,
-          last_login_at: u.lastLoginAt || null,
-          created_at: u.createdAt || new Date().toISOString(),
-          updated_at: u.updatedAt || new Date().toISOString()
-        }));
-        await client.from('profiles').upsert(userPayload, { onConflict: 'id' });
-      }
+      const userPayload = validUsers.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        username: u.username || null,
+        email: u.email || null,
+        password: u.password || '123',
+        role: u.role,
+        avatar: u.avatar || null,
+        allowed_micro_ids: u.allowedMicroIds || [],
+        primary_micro_id: u.primaryMicroId || null,
+        person_id: u.personId || null,
+        whatsapp: u.whatsapp || null,
+        created_by: u.createdBy || null,
+        created_by_name: u.createdByName || null,
+        must_change_password: u.mustChangePassword ?? false,
+        last_login_at: u.lastLoginAt || null,
+        created_at: u.createdAt || new Date().toISOString(),
+        updated_at: u.updatedAt || new Date().toISOString()
+      }));
+      await client.from('profiles').upsert(userPayload, { onConflict: 'id' });
     }
 
     // 2. Micros
-    if (db.micros && db.micros.length > 0) {
+    const keepMicroIds = (db.micros || []).map((m: any) => m.id);
+    if (keepMicroIds.length > 0) {
+      try {
+        const { data: existingMicros } = await client.from('micros').select('id');
+        const toDeleteMicros = (existingMicros || []).map((m: any) => m.id).filter((id: string) => !keepMicroIds.includes(id));
+        if (toDeleteMicros.length > 0) {
+          await client.from('micros').delete().in('id', toDeleteMicros);
+        }
+      } catch {
+        // ignore
+      }
+
       const microPayload = db.micros.map((m: any) => ({
         id: m.id,
         name: m.name,
@@ -181,11 +195,29 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
         updated_at: m.updatedAt || new Date().toISOString()
       }));
       await client.from('micros').upsert(microPayload, { onConflict: 'id' });
+    } else {
+      try {
+        await client.from('micro_functions').delete().neq('id', 'none');
+        await client.from('micros').delete().neq('id', 'none');
+      } catch {
+        // ignore
+      }
     }
 
     // 3. Micro Functions (ensure FK to micros)
-    if (db.functions && db.functions.length > 0 && db.micros && db.micros.length > 0) {
-      const microIdSet = new Set(db.micros.map((m: any) => m.id));
+    const keepFnIds = (db.functions || []).map((f: any) => f.id);
+    if (keepFnIds.length > 0 && keepMicroIds.length > 0) {
+      try {
+        const { data: existingFns } = await client.from('micro_functions').select('id');
+        const toDeleteFns = (existingFns || []).map((f: any) => f.id).filter((id: string) => !keepFnIds.includes(id));
+        if (toDeleteFns.length > 0) {
+          await client.from('micro_functions').delete().in('id', toDeleteFns);
+        }
+      } catch {
+        // ignore
+      }
+
+      const microIdSet = new Set(keepMicroIds);
       const validFns = db.functions.filter((f: any) => microIdSet.has(f.microId));
       if (validFns.length > 0) {
         const fnPayload = validFns.map((f: any) => ({
@@ -201,10 +233,27 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
         }));
         await client.from('micro_functions').upsert(fnPayload, { onConflict: 'id' });
       }
+    } else {
+      try {
+        await client.from('micro_functions').delete().neq('id', 'none');
+      } catch {
+        // ignore
+      }
     }
 
     // 4. Families
-    if (db.families && db.families.length > 0) {
+    const keepFamilyIds = (db.families || []).map((f: any) => f.id);
+    if (keepFamilyIds.length > 0) {
+      try {
+        const { data: existingFamilies } = await client.from('families').select('id');
+        const toDeleteFamilies = (existingFamilies || []).map((f: any) => f.id).filter((id: string) => !keepFamilyIds.includes(id));
+        if (toDeleteFamilies.length > 0) {
+          await client.from('families').delete().in('id', toDeleteFamilies);
+        }
+      } catch {
+        // ignore
+      }
+
       const familyPayload = db.families.map((f: any) => ({
         id: f.id,
         name: f.name,
@@ -214,11 +263,28 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
         updated_at: f.updatedAt || new Date().toISOString()
       }));
       await client.from('families').upsert(familyPayload, { onConflict: 'id' });
+    } else {
+      try {
+        await client.from('families').delete().neq('id', 'none');
+      } catch {
+        // ignore
+      }
     }
 
     // 5. People
-    if (db.people && db.people.length > 0) {
-      const familyIdSet = new Set((db.families || []).map((f: any) => f.id));
+    const keepPeopleIds = (db.people || []).map((p: any) => p.id);
+    if (keepPeopleIds.length > 0) {
+      try {
+        const { data: existingPeople } = await client.from('people').select('id');
+        const toDeletePeople = (existingPeople || []).map((p: any) => p.id).filter((id: string) => !keepPeopleIds.includes(id));
+        if (toDeletePeople.length > 0) {
+          await client.from('people').delete().in('id', toDeletePeople);
+        }
+      } catch {
+        // ignore
+      }
+
+      const familyIdSet = new Set(keepFamilyIds);
       const peoplePayload = db.people.map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -240,6 +306,13 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
       if (error && error.code === '23503') {
         const safePayload = peoplePayload.map((p: any) => ({ ...p, family_id: null }));
         await client.from('people').upsert(safePayload, { onConflict: 'id' });
+      }
+    } else {
+      try {
+        await client.from('availability_rules').delete().neq('id', 'none');
+        await client.from('people').delete().neq('id', 'none');
+      } catch {
+        // ignore
       }
     }
 
@@ -383,27 +456,70 @@ async function startServer() {
     res.json({ success: true, config: db.supabaseConfig });
   });
 
-  // API: Reset server database to initial clean state
-  app.post('/api/reset', (_req, res) => {
-    const initial: MevamDatabase = {
+  // API: Reset server database to initial clean state (Empty micros, 0 people, only Admin user)
+  app.post('/api/reset', async (_req, res) => {
+    const currentDb = getDb();
+    const cleanDb: MevamDatabase = {
       users: INITIAL_USERS,
-      micros: INITIAL_MICROS,
-      functions: INITIAL_FUNCTIONS,
-      families: INITIAL_FAMILIES,
-      people: INITIAL_PEOPLE,
-      availabilities: INITIAL_AVAILABILITIES,
-      schedules: INITIAL_SCHEDULES,
-      rotationHistory: INITIAL_ROTATION_HISTORY,
-      auditLogs: INITIAL_AUDIT_LOGS,
-      supabaseConfig: {
-        url: process.env.VITE_SUPABASE_URL || '',
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY || ''
+      micros: [],
+      functions: [],
+      families: [],
+      people: [],
+      availabilities: [],
+      schedules: [],
+      rotationHistory: [],
+      auditLogs: [],
+      supabaseConfig: currentDb.supabaseConfig || {
+        url: process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
+        anonKey: process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
       },
-      version: 1,
+      version: Date.now(),
       lastUpdated: new Date().toISOString()
     };
-    saveDb(initial);
-    res.json({ success: true, message: 'Dados restaurados para o padrão.' });
+    saveDb(cleanDb);
+
+    // Clean up Supabase tables completely
+    try {
+      const url = cleanDb.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+      const anonKey = cleanDb.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+      if (url && anonKey && !url.includes('your-project-id')) {
+        const client = createClient(url, anonKey);
+        await client.from('audit_logs').delete().neq('id', 'none');
+        await client.from('rotation_history').delete().neq('id', 'none');
+        await client.from('schedules').delete().neq('id', 'none');
+        await client.from('availability_rules').delete().neq('id', 'none');
+        await client.from('people').delete().neq('id', 'none');
+        await client.from('families').delete().neq('id', 'none');
+        await client.from('micro_functions').delete().neq('id', 'none');
+        await client.from('micros').delete().neq('id', 'none');
+        await client.from('profiles').delete().neq('id', 'user-admin');
+
+        const adminProfile = {
+          id: 'user-admin',
+          name: 'Administrador',
+          username: 'admin',
+          email: 'denilson.silva.santos@gmail.com',
+          password: 'admin',
+          role: 'ADMIN_LIDERANCA',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          allowed_micro_ids: [],
+          primary_micro_id: null,
+          person_id: null,
+          whatsapp: '47998871122',
+          created_by: null,
+          created_by_name: 'Sistema MEVAM Kids',
+          must_change_password: false,
+          last_login_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        await client.from('profiles').upsert(adminProfile, { onConflict: 'id' });
+      }
+    } catch (e) {
+      console.warn('Error resetting Supabase tables:', e);
+    }
+
+    res.json({ success: true, message: 'Banco de dados resetado do zero com sucesso! Usuários e micros limpos.' });
   });
 
   // Vite middleware for development vs Static serving in production
