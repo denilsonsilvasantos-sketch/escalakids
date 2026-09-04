@@ -66,6 +66,7 @@ const MOCK_SCHEDULE_IDS = new Set(['sched-set-2026']);
 class StorageService {
   private currentServerVersion = 0;
   private isSyncingWithServer = false;
+  private isSyncingSupabase = false;
   private pushDebounceTimer: any = null;
   private pushSupabaseDebounceTimer: any = null;
   private isInitialized = false;
@@ -293,13 +294,17 @@ class StorageService {
       }
     });
 
-    // 3. Continuous real-time cross-device synchronization (every 3.5 seconds)
+    // 3. Continuous local server synchronization (checks /api/version every 5 seconds)
+    setInterval(() => {
+      this.pullFromServer(false);
+    }, 5000);
+
+    // 4. Periodic Supabase synchronization (every 30 seconds)
     setInterval(() => {
       this.syncWithSupabaseRemote();
-      this.pullFromServer(false);
-    }, 3500);
+    }, 30000);
 
-    // 4. On tab focus and visibility change, synchronize immediately
+    // 5. On tab focus and visibility change, synchronize immediately
     window.addEventListener('focus', () => {
       this.syncWithSupabaseRemote();
       this.pullFromServer(false);
@@ -1543,6 +1548,8 @@ class StorageService {
   }
 
   async syncWithSupabaseRemote(): Promise<boolean> {
+    if (this.isSyncingSupabase) return false;
+    this.isSyncingSupabase = true;
     try {
       const remote = await supabaseService.fetchRemoteData();
       if (!remote) return false;
@@ -1631,6 +1638,8 @@ class StorageService {
     } catch (e) {
       console.warn('Sync with remote Supabase failed:', e);
       return false;
+    } finally {
+      this.isSyncingSupabase = false;
     }
   }
 

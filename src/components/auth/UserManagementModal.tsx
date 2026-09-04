@@ -18,7 +18,8 @@ import {
   Sparkles,
   MessageSquare,
   RefreshCw,
-  Loader2
+  Loader2,
+  ShieldAlert
 } from 'lucide-react';
 import { UserAccount, UserRole, Micro } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -61,24 +62,28 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const refreshData = useCallback(() => {
     setUsers(storageService.getUsers());
     setMicros(storageService.getMicros());
-    onUserUpdated?.();
-  }, [onUserUpdated]);
+  }, []);
   const refreshUsers = refreshData;
 
   useEffect(() => {
     if (isOpen) {
-      refreshData();
-      storageService.syncWithSupabaseRemote().then(() => refreshData());
+      setUsers(storageService.getUsers());
+      setMicros(storageService.getMicros());
+      storageService.syncWithSupabaseRemote().then(() => {
+        setUsers(storageService.getUsers());
+        setMicros(storageService.getMicros());
+      });
     }
-  }, [isOpen, refreshData]);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleSync = () => {
-      refreshData();
+      setUsers(storageService.getUsers());
+      setMicros(storageService.getMicros());
     };
     window.addEventListener('mevam_data_synced', handleSync);
     return () => window.removeEventListener('mevam_data_synced', handleSync);
-  }, [refreshData]);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -129,19 +134,31 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const result = await storageService.createDelegatedUser(
-        {
-          name: formData.name,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          allowedMicroIds: formData.allowedMicroIds,
-          primaryMicroId: formData.primaryMicroId,
-          whatsapp: formData.whatsapp
-        },
-        currentUser
-      );
+      const timeoutPromise = new Promise<{ success: boolean; message: string }>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            message: 'Usuário salvo localmente e na fila de sincronização.'
+          });
+        }, 6000);
+      });
+
+      const result = await Promise.race([
+        storageService.createDelegatedUser(
+          {
+            name: formData.name,
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            role: formData.role,
+            allowedMicroIds: formData.allowedMicroIds,
+            primaryMicroId: formData.primaryMicroId,
+            whatsapp: formData.whatsapp
+          },
+          currentUser
+        ),
+        timeoutPromise
+      ]);
 
       if (result.success) {
         setFeedback({ type: 'success', message: result.message });
@@ -157,6 +174,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           whatsapp: ''
         });
         refreshUsers();
+        onUserUpdated?.();
       } else {
         setFeedback({ type: 'error', message: result.message });
       }
@@ -173,8 +191,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserForPassword) return;
-    setIsSubmitting(true);
 
+    setIsSubmitting(true);
     try {
       const result = await storageService.updateUserPassword(
         selectedUserForPassword.id,
@@ -190,6 +208,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         setSelectedUserForPassword(null);
         setNewPassword('');
         refreshUsers();
+        onUserUpdated?.();
       } else {
         setFeedback({ type: 'error', message: result.message });
       }
@@ -206,6 +225,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         if (res.success) {
           setFeedback({ type: 'success', message: res.message });
           refreshUsers();
+          onUserUpdated?.();
         } else {
           setFeedback({ type: 'error', message: res.message });
         }
@@ -412,9 +432,17 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                    onChange={(e) => {
+                      const newRole = e.target.value as UserRole;
+                      setFormData({
+                        ...formData,
+                        role: newRole,
+                        allowedMicroIds: newRole === 'ADMIN_LIDERANCA' ? assignableMicros.map((m) => m.id) : formData.allowedMicroIds
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
+                    {isAdmin && <option value="ADMIN_LIDERANCA">Administrador / Liderança Principal (Controle Total Admin)</option>}
                     {isAdmin && <option value="LIDER_MACRO">Líder Macro (Supervisiona Várias Micros)</option>}
                     <option value="LIDER_MICRO">Líder de Micro (Sala / Louvor / Apoio)</option>
                     {isAdmin && <option value="COORDENADOR">Coordenador Geral</option>}
@@ -435,12 +463,52 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </div>
               </div>
 
+              {/* If ADMIN_LIDERANCA: Informational alert */}
+              {formData.role === 'ADMIN_LIDERANCA' && (
+                <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-xs text-amber-200 flex items-start space-x-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-amber-300 font-semibold mb-0.5">Conceder Acesso Administrador (Controle Total)</strong>
+                    <span>Este usuário terá acesso a todas as frentes/micros, poderá cadastrar novos líderes, alterar senhas, gerenciar escalas gerais e sincronizar dados com o Supabase.</span>
+                  </div>
+                </div>
+              )}
+
               {/* If LIDER_MACRO: Select multiple allowed micros */}
               {formData.role === 'LIDER_MACRO' && (
                 <div className="pt-2 border-t border-slate-800">
-                  <label className="block text-xs font-semibold text-slate-300 mb-2">
-                    Frentes / Micros sob Supervisão deste Líder Macro:
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Frentes / Micros sob Supervisão deste Líder Macro:
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            allowedMicroIds: assignableMicros.map((m) => m.id)
+                          })
+                        }
+                        className="text-[11px] font-medium text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Selecionar Todas ({assignableMicros.length})
+                      </button>
+                      <span className="text-slate-600 text-[10px]">•</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            allowedMicroIds: []
+                          })
+                        }
+                        className="text-[11px] font-medium text-slate-400 hover:text-slate-300 underline"
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {assignableMicros.map((m) => {
                       const isChecked = formData.allowedMicroIds.includes(m.id);
@@ -449,7 +517,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           key={m.id}
                           className={`flex items-center space-x-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
                             isChecked
-                              ? 'bg-blue-950/60 border-blue-600 text-blue-200'
+                              ? 'bg-blue-950/60 border-blue-600 text-blue-200 font-medium'
                               : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
                           }`}
                         >

@@ -377,11 +377,15 @@ class SupabaseService {
     schedules?: Schedule[];
   } | null> {
     const client = getSupabaseClient();
-    if (!client) return null;
+    if (!client || this.syncState.isSyncing) return null;
 
     try {
       this.syncState.isSyncing = true;
       this.notify();
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Tempo limite excedido ao buscar dados')), 8000)
+      );
 
       const [
         usersRes,
@@ -391,14 +395,17 @@ class SupabaseService {
         peopleRes,
         availRes,
         schedRes
-      ] = await Promise.all([
-        client.from('profiles').select('*'),
-        client.from('micros').select('*'),
-        client.from('micro_functions').select('*'),
-        client.from('families').select('*'),
-        client.from('people').select('*'),
-        client.from('availability_rules').select('*'),
-        client.from('schedules').select('*')
+      ] = await Promise.race([
+        Promise.all([
+          client.from('profiles').select('*'),
+          client.from('micros').select('*'),
+          client.from('micro_functions').select('*'),
+          client.from('families').select('*'),
+          client.from('people').select('*'),
+          client.from('availability_rules').select('*'),
+          client.from('schedules').select('*')
+        ]),
+        timeoutPromise
       ]);
 
       const result: any = {};
@@ -720,7 +727,15 @@ class SupabaseService {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await client.from('profiles').upsert(payload, { onConflict: 'id' });
+      const timeoutPromise = new Promise<{ error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('Tempo limite excedido ao sincronizar perfil com Supabase')), 6000)
+      );
+
+      const res = await Promise.race([
+        client.from('profiles').upsert(payload, { onConflict: 'id' }),
+        timeoutPromise
+      ]);
+      const error = res.error;
 
       if (error) {
         // If unique constraint on username fails, update by username

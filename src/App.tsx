@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
@@ -36,6 +36,16 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const refreshData = () => setDataVersion((v) => v + 1);
+
+  const handleUserUpdated = useCallback(() => {
+    const active = storageService.getCurrentUser();
+    setCurrentUser((prev) => {
+      if (JSON.stringify(prev) !== JSON.stringify(active)) {
+        return active;
+      }
+      return prev;
+    });
+  }, []);
 
   // Global Keyboard Shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -246,9 +256,7 @@ export default function App() {
         isOpen={isUserManagementOpen}
         onClose={() => setIsUserManagementOpen(false)}
         currentUser={currentUser}
-        onUserUpdated={() => {
-          setCurrentUser(storageService.getCurrentUser());
-        }}
+        onUserUpdated={handleUserUpdated}
       />
     </div>
   );
