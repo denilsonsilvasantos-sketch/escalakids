@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Heart,
   Plus,
@@ -9,7 +9,8 @@ import {
   Sliders,
   Check,
   Search,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react';
 import { Family, Person, UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -29,11 +30,23 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
   const [editingFamily, setEditingFamily] = useState<Family | null>(null);
   const [familyName, setFamilyName] = useState('');
   const [familyPriority, setFamilyPriority] = useState<Family['priority']>('ALTA');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [familyToDelete, setFamilyToDelete] = useState<Family | null>(null);
 
   // Member linking state inside modal
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [targetFamilyForLink, setTargetFamilyForLink] = useState<Family | null>(null);
   const [personSearch, setPersonSearch] = useState('');
+
+  // Synchronize data without closing modals
+  useEffect(() => {
+    const handleSync = () => {
+      setFamilies(storageService.getFamilies());
+      setPeople(storageService.getPeople());
+    };
+    window.addEventListener('mevam_data_synced', handleSync);
+    return () => window.removeEventListener('mevam_data_synced', handleSync);
+  }, []);
 
   const handleOpenNewFamily = () => {
     setEditingFamily(null);

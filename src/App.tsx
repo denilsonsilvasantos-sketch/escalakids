@@ -55,12 +55,14 @@ export default function App() {
       refreshData();
       const activeUser = storageService.getCurrentUser();
       if (activeUser && activeUser.id === currentUser.id) {
-        setCurrentUser(activeUser);
+        if (JSON.stringify(activeUser) !== JSON.stringify(currentUser)) {
+          setCurrentUser(activeUser);
+        }
       }
     };
     window.addEventListener('mevam_data_synced', handleDataSynced);
     return () => window.removeEventListener('mevam_data_synced', handleDataSynced);
-  }, [currentUser.id]);
+  }, [currentUser]);
 
   const handleUserChange = (user: UserAccount) => {
     setCurrentUser(user);
@@ -160,7 +162,6 @@ export default function App() {
 
           {currentView === 'volunteers' && (
             <VolunteerList
-              key={`volunteers-${dataVersion}`}
               currentUser={currentUser}
               onOpenWizard={handleOpenEditVolunteer}
               onViewDetail={setSelectedPersonForDetail}
@@ -170,7 +171,6 @@ export default function App() {
 
           {currentView === 'micros-functions' && (
             <MicroManagement
-              key={`micros-${dataVersion}`}
               currentUser={currentUser}
             />
           )}

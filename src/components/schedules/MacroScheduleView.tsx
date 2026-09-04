@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   Sparkles,
@@ -89,6 +89,20 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   const allPeople = storageService.getPeople();
 
   const canManage = currentUser.role === 'ADMIN_LIDERANCA' || currentUser.role === 'LIDER_MACRO';
+
+  // Synchronize schedules when background sync fires without unmounting active modals
+  useEffect(() => {
+    const handleSync = () => {
+      const updated = storageService.getSchedules();
+      setSchedules(updated);
+      setSelectedScheduleId((prev) => {
+        if (!prev) return updated[0]?.id || '';
+        return updated.some((s) => s.id === prev) ? prev : updated[0]?.id || '';
+      });
+    };
+    window.addEventListener('mevam_data_synced', handleSync);
+    return () => window.removeEventListener('mevam_data_synced', handleSync);
+  }, []);
 
   // Handle Generate Intelligent Schedule
   const handleRunAlgorithm = () => {

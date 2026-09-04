@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Briefcase,
   Plus,
@@ -6,6 +6,7 @@ import {
   Trash2,
   Sliders,
   CheckCircle2,
+  Check,
   Settings,
   Layers,
   ChevronRight,
@@ -58,11 +59,29 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   // New / Edit Function Modal state
   const [isFnModalOpen, setIsFnModalOpen] = useState(false);
   const [editingFn, setEditingFn] = useState<MicroFunction | null>(null);
+  const [fnToDelete, setFnToDelete] = useState<MicroFunction | null>(null);
   const [fnName, setFnName] = useState('');
   const [fnCategory, setFnCategory] = useState('');
   const [fnCount, setFnCount] = useState<number>(1);
   const [hasAgePref, setHasAgePref] = useState(false);
   const [hasShiftPref, setHasShiftPref] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync listener to update micros/functions when storage changes without destroying open modals
+  useEffect(() => {
+    const handleSync = () => {
+      const updatedMicros = storageService.getMicros();
+      const updatedFunctions = storageService.getFunctions();
+      setMicros(updatedMicros);
+      setFunctions(updatedFunctions);
+      setSelectedMicro((prev) => {
+        if (!prev) return updatedMicros[0] || null;
+        return updatedMicros.find((m) => m.id === prev.id) || updatedMicros[0] || null;
+      });
+    };
+    window.addEventListener('mevam_data_synced', handleSync);
+    return () => window.removeEventListener('mevam_data_synced', handleSync);
+  }, []);
 
   const canEdit = currentUser.role === 'ADMIN_LIDERANCA' || storageService.canAccessMicro(selectedMicro?.id || '', currentUser);
 
@@ -172,7 +191,8 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     };
     storageService.saveMicro(updatedMicro);
     setSelectedMicro(updatedMicro);
-    alert('Pesos e critérios do algoritmo salvos com sucesso para ' + selectedMicro.name);
+    setToastMessage(`Critérios e pesos salvos com sucesso para ${selectedMicro.name}!`);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const handleOpenNewFunction = () => {
@@ -214,13 +234,18 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     storageService.saveFunction(fnToSave);
     setFunctions(storageService.getFunctions());
     setIsFnModalOpen(false);
+    setToastMessage(`Função "${fnToSave.name}" salva com sucesso!`);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleDeleteFunction = (fnId: string) => {
-    if (confirm('Deseja excluir esta função? Ela será desvinculada de voluntários e escalas.')) {
-      storageService.deleteFunction(fnId);
-      setFunctions(storageService.getFunctions());
-    }
+  const handleConfirmDeleteFunction = () => {
+    if (!fnToDelete) return;
+    const name = fnToDelete.name;
+    storageService.deleteFunction(fnToDelete.id);
+    setFunctions(storageService.getFunctions());
+    setFnToDelete(null);
+    setToastMessage(`Função "${name}" excluída.`);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const microFunctions = functions.filter((f) => f.microId === selectedMicro?.id);
@@ -447,7 +472,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteFunction(fn.id)}
+                            onClick={() => setFnToDelete(fn)}
                             className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
                             title="Excluir Função"
                           >
@@ -836,6 +861,54 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Delete Function */}
+      {fnToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
+            <div className="flex items-center space-x-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 font-display">
+                  Excluir Função
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Deseja excluir a função "{fnToDelete.name}"?
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Esta função será desvinculada de voluntários e escalas futuras.
+            </p>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                onClick={() => setFnToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDeleteFunction}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs"
+              >
+                Confirmar Exclusão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-4">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

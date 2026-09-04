@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layers,
   Sparkles,
@@ -37,6 +37,20 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
 
   const [activeSlot, setActiveSlot] = useState<ScheduleSlot | null>(null);
   const [activeSlotCandidates, setActiveSlotCandidates] = useState<CandidateScore[]>([]);
+
+  // Synchronize schedules without closing active slot picker modal
+  useEffect(() => {
+    const handleSync = () => {
+      const updated = storageService.getSchedules();
+      setSchedules(updated);
+      setSelectedScheduleId((prev) => {
+        if (!prev) return updated[0]?.id || '';
+        return updated.some((s) => s.id === prev) ? prev : updated[0]?.id || '';
+      });
+    };
+    window.addEventListener('mevam_data_synced', handleSync);
+    return () => window.removeEventListener('mevam_data_synced', handleSync);
+  }, []);
 
   const currentSchedule = schedules.find((s) => s.id === selectedScheduleId) || schedules[0];
   const currentMicro = allMicros.find((m) => m.id === selectedMicroId) || accessibleMicros[0];

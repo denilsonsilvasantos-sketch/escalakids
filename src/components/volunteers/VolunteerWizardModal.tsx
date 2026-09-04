@@ -83,9 +83,15 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
   const [targetFamily, setTargetFamily] = useState<Family | null>(
     initialPerson?.familyId ? storageService.getFamilyById(initialPerson.familyId) || null : null
   );
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Reload data when opening modal
   useEffect(() => {
+    if (!isOpen) {
+      setStep(1);
+      setValidationError(null);
+      return;
+    }
     const loadedMicros = storageService.getMicros().filter((m) => m.status === 'ATIVO');
     const loadedFunctions = storageService.getFunctions();
     const loadedPeople = storageService.getPeople();
@@ -110,8 +116,22 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
       setFunctionPreferences(initialPerson.functionPreferences || []);
       setHasFamilyMember(!!initialPerson.familyId);
       setTargetFamily(initialPerson.familyId ? storageService.getFamilyById(initialPerson.familyId) || null : null);
+    } else {
+      setName('');
+      setNickname('');
+      setBirthDate('');
+      setBirthDateInput('');
+      setPhone('');
+      setWhatsapp('');
+      setEmail('');
+      setNotes('');
+      setAvatarUrl('');
+      setSelectedMicroIds([]);
+      setFunctionPreferences([]);
+      setHasFamilyMember(false);
+      setTargetFamily(null);
     }
-  }, [isOpen, initialPerson]);
+  }, [isOpen, initialPerson?.id]);
 
   // Handle Birth Date Changes (Single unified handler)
   const handleBirthDateChange = (val: string) => {
@@ -260,23 +280,24 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
 
   // Validation before advancing step
   const validateCurrentStep = (): boolean => {
+    setValidationError(null);
     if (step === 1) {
       if (!name.trim()) {
-        alert('Por favor, informe o Nome Completo do voluntário.');
+        setValidationError('Por favor, informe o Nome Completo do voluntário.');
         return false;
       }
       if (!birthDate) {
-        alert('Por favor, informe uma Data de Nascimento válida (DD/MM/AAAA).');
+        setValidationError('Por favor, informe uma Data de Nascimento válida (DD/MM/AAAA).');
         return false;
       }
       if (!phone.trim() && !whatsapp.trim()) {
-        alert('Por favor, informe o WhatsApp / Telefone de contato.');
+        setValidationError('Por favor, informe o WhatsApp ou Telefone de contato.');
         return false;
       }
     }
     if (step === 2) {
       if (selectedMicroIds.length === 0) {
-        alert('Selecione pelo menos um Micro / Frente onde este voluntário atuará.');
+        setValidationError('Selecione pelo menos um Micro / Frente onde este voluntário atuará.');
         return false;
       }
     }
@@ -285,8 +306,9 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
 
   // Final Save
   const handleSaveVolunteer = () => {
+    setValidationError(null);
     if (!name || !birthDate) {
-      alert('Nome e Data de Nascimento são obrigatórios.');
+      setValidationError('Nome e Data de Nascimento são obrigatórios.');
       return;
     }
 
@@ -898,6 +920,14 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
           )}
 
         </div>
+
+        {/* Validation Error Banner */}
+        {validationError && (
+          <div className="mx-6 mb-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium flex items-center space-x-2 animate-in fade-in slide-in-from-top-1">
+            <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
 
         {/* Modal Footer Navigation */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
