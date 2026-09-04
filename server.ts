@@ -373,6 +373,91 @@ function scheduleBackendSupabaseSync(db: MevamDatabase) {
   }, 1500);
 }
 
+async function syncFromSupabaseToBackend(): Promise<void> {
+  const db = getDb();
+  const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+  if (!url || !anonKey || url.includes('your-project-id')) return;
+
+  const client = createClient(url, anonKey);
+  if (!client) return;
+
+  try {
+    const [microsRes, fnsRes, profilesRes] = await Promise.all([
+      client.from('micros').select('*'),
+      client.from('micro_functions').select('*'),
+      client.from('profiles').select('*')
+    ]);
+
+    const db = getDb();
+    let changed = false;
+
+    if (microsRes.data && microsRes.data.length > 0) {
+      db.micros = microsRes.data.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description || '',
+        leaderName: m.leader_name || '',
+        leaderId: m.leader_id || null,
+        status: m.status || 'ATIVO',
+        color: m.color || '#3b82f6',
+        iconName: m.icon_name || 'Layers',
+        defaultShifts: m.default_shifts || ['Manhã', 'Noite'],
+        algorithmWeights: m.algorithm_weights || {},
+        createdAt: m.created_at,
+        updatedAt: m.updated_at
+      }));
+      changed = true;
+    }
+
+    if (fnsRes.data && fnsRes.data.length > 0) {
+      db.functions = fnsRes.data.map((f: any) => ({
+        id: f.id,
+        microId: f.micro_id,
+        name: f.name,
+        description: f.description || '',
+        category: f.category || 'Geral',
+        requiredCount: f.required_count || 1,
+        orderIndex: f.order_index || 0,
+        hasAgePreference: f.has_age_preference || false,
+        hasShiftPreference: f.has_shift_preference || false,
+        createdAt: f.created_at,
+        updatedAt: f.updated_at
+      }));
+      changed = true;
+    }
+
+    if (profilesRes.data && profilesRes.data.length > 0) {
+      db.users = profilesRes.data.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        email: u.email,
+        password: u.password || '123',
+        role: u.role,
+        avatar: u.avatar,
+        allowedMicroIds: u.allowed_micro_ids || [],
+        primaryMicroId: u.primary_micro_id,
+        whatsapp: u.whatsapp,
+        createdByName: u.created_by_name,
+        mustChangePassword: u.must_change_password ?? false,
+        createdAt: u.created_at,
+        updatedAt: u.updated_at
+      }));
+      changed = true;
+    }
+
+    if (changed) {
+      db.version = (db.version || 0) + 1;
+      db.lastUpdated = new Date().toISOString();
+      saveDb(db);
+      console.log('Central server synced from Supabase cloud on boot.');
+    }
+  } catch (err) {
+    console.warn('Startup sync from Supabase skipped:', err);
+  }
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -536,6 +621,9 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  // Initial cloud sync on startup to guarantee database.json matches Supabase
+  syncFromSupabaseToBackend().catch((e) => console.warn('Initial cloud sync error:', e));
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`MEVAM Kids Server running on http://0.0.0.0:${PORT}`);

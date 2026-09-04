@@ -1623,6 +1623,7 @@ class StorageService {
       }
 
       if (hasChanges && typeof window !== 'undefined') {
+        this.syncAllToServer();
         window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { source: 'supabase' } }));
       }
 

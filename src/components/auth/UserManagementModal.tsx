@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X,
   Shield,
@@ -58,19 +58,29 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     whatsapp: ''
   });
 
+  const refreshData = useCallback(() => {
+    setUsers(storageService.getUsers());
+    setMicros(storageService.getMicros());
+    onUserUpdated?.();
+  }, [onUserUpdated]);
+  const refreshUsers = refreshData;
+
   useEffect(() => {
     if (isOpen) {
-      refreshUsers();
-      storageService.syncWithSupabaseRemote().then(() => refreshUsers());
+      refreshData();
+      storageService.syncWithSupabaseRemote().then(() => refreshData());
     }
-  }, [isOpen]);
+  }, [isOpen, refreshData]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      refreshData();
+    };
+    window.addEventListener('mevam_data_synced', handleSync);
+    return () => window.removeEventListener('mevam_data_synced', handleSync);
+  }, [refreshData]);
 
   if (!isOpen) return null;
-
-  const refreshUsers = () => {
-    setUsers(storageService.getUsers());
-    onUserUpdated?.();
-  };
 
   const handleManualSync = async () => {
     setIsCheckingCloud(true);
@@ -79,7 +89,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setIsCheckingCloud(false);
     if (ok) {
       setFeedback({ type: 'success', message: 'Dados e líderes atualizados da nuvem com sucesso!' });
-      refreshUsers();
+      refreshData();
     } else {
       setFeedback({ type: 'error', message: 'Falha ao buscar dados da nuvem. Verifique a conexão.' });
     }
@@ -88,10 +98,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const isAdmin = currentUser.role === 'ADMIN_LIDERANCA';
   const isMacroLeader = currentUser.role === 'LIDER_MACRO';
 
-  // Allowed micros to supervise/assign
-  const assignableMicros = isAdmin
+  // Allowed micros to supervise/assign - deduplicated and strictly active
+  const assignableMicros = (isAdmin
     ? micros
-    : micros.filter((m) => currentUser.allowedMicroIds?.includes(m.id));
+    : micros.filter((m) => currentUser.allowedMicroIds?.includes(m.id))
+  ).filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx);
 
   // Filter users displayed based on hierarchy
   const displayedUsers = storageService.getManageableUsers(currentUser);
@@ -431,7 +442,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     Frentes / Micros sob Supervisão deste Líder Macro:
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {micros.map((m) => {
+                    {assignableMicros.map((m) => {
                       const isChecked = formData.allowedMicroIds.includes(m.id);
                       return (
                         <label
