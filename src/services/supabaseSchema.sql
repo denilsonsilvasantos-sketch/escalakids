@@ -150,10 +150,23 @@ CREATE INDEX IF NOT EXISTS idx_avail_person ON public.availability_rules(person_
 CREATE INDEX IF NOT EXISTS idx_schedules_status ON public.schedules(status);
 
 -- ===================================================================
--- ROW LEVEL SECURITY (RLS) E POLÍTICAS DE ACESSO POR HIERARQUIA
+-- ROW LEVEL SECURITY (RLS)
 -- ===================================================================
+--
+-- IMPORTANTE: o navegador do usuário NUNCA acessa o Supabase diretamente.
+-- Toda a sincronização acontece no servidor Node (server.ts), autenticado,
+-- usando a chave "service_role" (que ignora RLS por definição e NUNCA deve
+-- ser exposta ao navegador — configure-a apenas em SUPABASE_SERVICE_ROLE_KEY
+-- no ambiente do servidor).
+--
+-- Por isso, nenhuma política é criada para "anon"/"authenticated": com RLS
+-- habilitado e nenhuma política permissiva, o acesso via chave anônima fica
+-- bloqueado por padrão (negar por padrão) em todas as tabelas, incluindo
+-- "profiles" (que guarda hashes de senha) e "people" (dados de crianças e
+-- famílias). Se uma versão anterior deste schema já foi aplicada no seu
+-- projeto, rode os comandos DROP POLICY abaixo para remover as políticas
+-- antigas que liberavam leitura/escrita anônima total.
 
--- Habilitar RLS em todas as tabelas
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.micros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.micro_functions ENABLE ROW LEVEL SECURITY;
@@ -164,31 +177,28 @@ ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rotation_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 1. Políticas com suporte a chave anon pública para leitura/escrita sincronizada
--- (Permite o funcionamento contínuo do frontend conectado via chave Anon/Service)
-CREATE POLICY "Permitir leitura anonima pública" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita anonima" ON public.profiles FOR ALL USING (true);
+-- Remove as políticas antigas (era: "permitir tudo para qualquer um com a chave anon").
+-- Seguro rodar mesmo se elas nunca existiram no seu projeto.
+DROP POLICY IF EXISTS "Permitir leitura anonima pública" ON public.profiles;
+DROP POLICY IF EXISTS "Permitir escrita anonima" ON public.profiles;
+DROP POLICY IF EXISTS "Permitir leitura micros" ON public.micros;
+DROP POLICY IF EXISTS "Permitir escrita micros" ON public.micros;
+DROP POLICY IF EXISTS "Permitir leitura funcoes" ON public.micro_functions;
+DROP POLICY IF EXISTS "Permitir escrita funcoes" ON public.micro_functions;
+DROP POLICY IF EXISTS "Permitir leitura familias" ON public.families;
+DROP POLICY IF EXISTS "Permitir escrita familias" ON public.families;
+DROP POLICY IF EXISTS "Permitir leitura pessoas" ON public.people;
+DROP POLICY IF EXISTS "Permitir escrita pessoas" ON public.people;
+DROP POLICY IF EXISTS "Permitir leitura disponibilidade" ON public.availability_rules;
+DROP POLICY IF EXISTS "Permitir escrita disponibilidade" ON public.availability_rules;
+DROP POLICY IF EXISTS "Permitir leitura escalas" ON public.schedules;
+DROP POLICY IF EXISTS "Permitir escrita escalas" ON public.schedules;
+DROP POLICY IF EXISTS "Permitir leitura historico" ON public.rotation_history;
+DROP POLICY IF EXISTS "Permitir escrita historico" ON public.rotation_history;
+DROP POLICY IF EXISTS "Permitir leitura auditoria" ON public.audit_logs;
+DROP POLICY IF EXISTS "Permitir escrita auditoria" ON public.audit_logs;
 
-CREATE POLICY "Permitir leitura micros" ON public.micros FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita micros" ON public.micros FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura funcoes" ON public.micro_functions FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita funcoes" ON public.micro_functions FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura familias" ON public.families FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita familias" ON public.families FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura pessoas" ON public.people FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita pessoas" ON public.people FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura disponibilidade" ON public.availability_rules FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita disponibilidade" ON public.availability_rules FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura escalas" ON public.schedules FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita escalas" ON public.schedules FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura historico" ON public.rotation_history FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita historico" ON public.rotation_history FOR ALL USING (true);
-
-CREATE POLICY "Permitir leitura auditoria" ON public.audit_logs FOR SELECT USING (true);
-CREATE POLICY "Permitir escrita auditoria" ON public.audit_logs FOR ALL USING (true);
+-- Nenhuma política é (re)criada de propósito: RLS habilitado + zero políticas
+-- para anon/authenticated = acesso negado por padrão para o navegador.
+-- O servidor (service_role) continua funcionando normalmente, pois esse papel
+-- ignora RLS.

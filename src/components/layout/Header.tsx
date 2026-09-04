@@ -20,6 +20,7 @@ import {
 import { UserAccount, SupabaseSyncState } from '../../types';
 import { storageService } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface HeaderProps {
   currentUser: UserAccount;
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [birthdayCount, setBirthdayCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [syncState, setSyncState] = useState<SupabaseSyncState>(supabaseService.getSyncState());
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const isAdmin = currentUser.role === 'ADMIN_LIDERANCA';
   const isMacroLeader = currentUser.role === 'LIDER_MACRO';
@@ -92,6 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
   const badge = getRoleBadge(currentUser.role);
 
   return (
+    <>
     <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -237,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <span>Usuário Ativo: {currentUser.name}</span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Senha configurada: <strong className="text-amber-300 font-mono">{currentUser.password || (isAdmin ? 'ADMIN' : '123')}</strong>
+                      Use "Alterar Minha Senha" abaixo para trocar sua senha de acesso.
                     </p>
                   </div>
 
@@ -310,10 +313,8 @@ export const Header: React.FC<HeaderProps> = ({
                     {isAdmin ? (
                       <button
                         onClick={() => {
-                          if (confirm('Deseja restaurar todos os dados iniciais do MEVAM Kids?')) {
-                            onResetData();
-                            setIsDropdownOpen(false);
-                          }
+                          setIsDropdownOpen(false);
+                          setIsResetConfirmOpen(true);
                         }}
                         className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center space-x-1"
                       >
@@ -340,6 +341,26 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
     </header>
+
+    <ConfirmDialog
+      isOpen={isResetConfirmOpen}
+      title="Restaurar Dados de Fábrica"
+      message="Isso apaga permanentemente TODOS os voluntários, escalas, micros, famílias e líderes cadastrados, mantendo apenas sua conta de administrador. Esta ação não pode ser desfeita."
+      details={[
+        'Todos os voluntários e famílias serão excluídos.',
+        'Todas as escalas e o histórico de rodízio serão apagados.',
+        'Todos os micros/frentes e funções serão removidos.',
+        'Sua conta de administrador e senha atual serão preservadas.'
+      ]}
+      confirmLabel="Sim, Apagar Tudo"
+      tone="danger"
+      onCancel={() => setIsResetConfirmOpen(false)}
+      onConfirm={() => {
+        setIsResetConfirmOpen(false);
+        onResetData();
+      }}
+    />
+    </>
   );
 };
 

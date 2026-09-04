@@ -1,6 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -27,22 +30,151 @@ interface MevamDatabase {
   auditLogs: any[];
   supabaseConfig: {
     url: string;
-    anonKey: string;
   };
   version: number;
   lastUpdated: string;
 }
 
-const DEFAULT_SUPABASE_URL = 'https://iimgcdddyuspagpsijut.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbWdjZGRkeXVzcGFncHNpanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNDI5NzUsImV4cCI6MjEwMzgxODk3NX0.CixePx8utvm1P6HiCzYwMdW9TTJZlDyWUTYsyoGgbds';
+// --- Server-only secrets. Never prefix these with VITE_ (that would bundle them into the client). ---
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const ADMIN_BOOTSTRAP_EMAIL = process.env.ADMIN_BOOTSTRAP_EMAIL || '';
+const ADMIN_BOOTSTRAP_PASSWORD = process.env.ADMIN_BOOTSTRAP_PASSWORD || '';
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 
 let memoryDb: MevamDatabase | null = null;
 
-function getDb(): MevamDatabase {
+// --- Session store (in-memory: server restart requires re-login, which is an acceptable trade-off for this app's scale) ---
+interface Session {
+  userId: string;
+  role: string;
+  expiresAt: number;
+}
+const sessions = new Map<string, Session>();
+
+function createSession(userId: string, role: string): string {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, { userId, role, expiresAt: Date.now() + SESSION_TTL_MS });
+  return token;
+}
+
+function getSession(token: string | null): Session | null {
+  if (!token) return null;
+  const session = sessions.get(token);
+  if (!session) return null;
+  if (session.expiresAt < Date.now()) {
+    sessions.delete(token);
+    return null;
+  }
+  return session;
+}
+
+// Periodically sweep expired sessions so the map doesn't grow unbounded.
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of sessions) {
+    if (session.expiresAt < now) sessions.delete(token);
+  }
+}, 60 * 60 * 1000);
+
+// --- Basic login rate limiting (per normalized login identifier) ---
+const LOGIN_MAX_ATTEMPTS = 8;
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+const loginAttempts = new Map<string, { count: number; firstAttemptAt: number; lockedUntil?: number }>();
+
+function checkLoginRateLimit(key: string): { allowed: boolean; retryAfterMs?: number } {
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (!entry) return { allowed: true };
+  if (entry.lockedUntil && entry.lockedUntil > now) {
+    return { allowed: false, retryAfterMs: entry.lockedUntil - now };
+  }
+  if (now - entry.firstAttemptAt > LOGIN_WINDOW_MS) {
+    loginAttempts.delete(key);
+    return { allowed: true };
+  }
+  return { allowed: true };
+}
+
+function recordLoginFailure(key: string): void {
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (!entry || now - entry.firstAttemptAt > LOGIN_WINDOW_MS) {
+    loginAttempts.set(key, { count: 1, firstAttemptAt: now });
+    return;
+  }
+  entry.count += 1;
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) {
+    entry.lockedUntil = now + LOGIN_LOCKOUT_MS;
+  }
+}
+
+function clearLoginFailures(key: string): void {
+  loginAttempts.delete(key);
+}
+
+// Strips the password hash from a user object before it ever leaves the server.
+function sanitizeUser(u: any) {
+  if (!u) return u;
+  const { password, ...rest } = u;
+  return rest;
+}
+
+function sanitizeDbForClient(db: MevamDatabase) {
+  return {
+    ...db,
+    users: (db.users || []).map(sanitizeUser)
+  };
+}
+
+function isBcryptHash(value: unknown): value is string {
+  return typeof value === 'string' && /^\$2[aby]?\$/.test(value);
+}
+
+async function bootstrapAdminUser(): Promise<any> {
+  const email = ADMIN_BOOTSTRAP_EMAIL || undefined;
+  let plainPassword = ADMIN_BOOTSTRAP_PASSWORD;
+  let generated = false;
+  if (!plainPassword) {
+    plainPassword = crypto.randomBytes(9).toString('base64url');
+    generated = true;
+  }
+  const passwordHash = await bcrypt.hash(plainPassword, 10);
+
+  if (generated) {
+    console.log('==================================================================');
+    console.log('MEVAM Kids: nenhuma senha de administrador foi configurada via env.');
+    console.log('Uma senha inicial foi gerada automaticamente para o usuário "admin":');
+    console.log(`  Usuário: admin`);
+    console.log(`  Senha:   ${plainPassword}`);
+    console.log('Guarde esta senha agora e troque-a no primeiro acesso.');
+    console.log('Para definir a senha manualmente, configure ADMIN_BOOTSTRAP_PASSWORD no .env.local.');
+    console.log('==================================================================');
+  }
+
+  return {
+    id: 'user-admin',
+    name: 'Administrador',
+    username: 'admin',
+    email,
+    password: passwordHash,
+    role: 'ADMIN_LIDERANCA',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    allowedMicroIds: [],
+    primaryMicroId: null,
+    whatsapp: '',
+    createdByName: 'Sistema MEVAM Kids',
+    mustChangePassword: !ADMIN_BOOTSTRAP_PASSWORD,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function getDb(): Promise<MevamDatabase> {
   if (memoryDb) return memoryDb;
 
   if (!fs.existsSync(DATA_DIR)) {
@@ -54,8 +186,9 @@ function getDb(): MevamDatabase {
   }
 
   if (!fs.existsSync(DB_FILE)) {
+    const admin = await bootstrapAdminUser();
     const initial: MevamDatabase = {
-      users: INITIAL_USERS,
+      users: [admin],
       micros: INITIAL_MICROS,
       functions: INITIAL_FUNCTIONS,
       families: INITIAL_FAMILIES,
@@ -64,10 +197,7 @@ function getDb(): MevamDatabase {
       schedules: INITIAL_SCHEDULES,
       rotationHistory: INITIAL_ROTATION_HISTORY,
       auditLogs: INITIAL_AUDIT_LOGS,
-      supabaseConfig: {
-        url: process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
-      },
+      supabaseConfig: { url: SUPABASE_URL },
       version: 1,
       lastUpdated: new Date().toISOString()
     };
@@ -86,8 +216,9 @@ function getDb(): MevamDatabase {
     return memoryDb!;
   } catch (err) {
     console.error('Failed to read db file:', err);
+    const admin = await bootstrapAdminUser();
     memoryDb = {
-      users: INITIAL_USERS,
+      users: [admin],
       micros: INITIAL_MICROS,
       functions: INITIAL_FUNCTIONS,
       families: [],
@@ -96,7 +227,7 @@ function getDb(): MevamDatabase {
       schedules: [],
       rotationHistory: [],
       auditLogs: [],
-      supabaseConfig: { url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY },
+      supabaseConfig: { url: SUPABASE_URL },
       version: 1,
       lastUpdated: new Date().toISOString()
     };
@@ -118,21 +249,84 @@ function saveDb(updated: MevamDatabase): void {
   }
 }
 
+// The client-side RBAC rules (who can create/edit which users) live in
+// storageService.ts, but nothing enforced them here: since /api/data accepts a
+// whole `users` array, a crafted request from any authenticated non-admin
+// session could otherwise grant itself (or a new account) ADMIN_LIDERANCA.
+// This filters the incoming array down to only the changes that session is
+// actually allowed to make, silently dropping the rest (never rejecting the
+// whole sync — a stale/offline client's payload should still merge safely for
+// the parts it IS allowed to touch, e.g. its own name/whatsapp/password).
+function authorizeUsersPayload(incomingUsers: any[] | undefined, currentUsers: any[], session: Session): any[] {
+  if (!Array.isArray(incomingUsers)) return currentUsers;
+  if (session.role === 'ADMIN_LIDERANCA') return incomingUsers;
+
+  const currentById = new Map(currentUsers.map((u) => [u.id, u]));
+  const incomingById = new Map(incomingUsers.map((u) => [u.id, u]));
+  const authorized: any[] = [];
+
+  for (const existing of currentUsers) {
+    const incoming = incomingById.get(existing.id);
+    if (!incoming) {
+      // Non-admins can never delete a user via bulk sync; keep the server's copy.
+      authorized.push(existing);
+      continue;
+    }
+    const canEdit = incoming.id === session.userId || existing.createdBy === session.userId;
+    if (!canEdit) {
+      authorized.push(existing);
+      continue;
+    }
+    // Editing is allowed, but never let role/id/createdBy be changed this way.
+    authorized.push({ ...existing, ...incoming, id: existing.id, role: existing.role, createdBy: existing.createdBy });
+  }
+
+  for (const incoming of incomingUsers) {
+    if (currentById.has(incoming.id)) continue; // already handled above
+    // New account creation: only a LIDER_MACRO creating a LIDER_MICRO is allowed,
+    // mirroring createDelegatedUser()'s rule in storageService.ts.
+    if (session.role === 'LIDER_MACRO' && incoming.role === 'LIDER_MICRO') {
+      authorized.push(incoming);
+    }
+    // Anything else (a non-macro-leader trying to create any account, or a
+    // macro leader trying to create anything other than a micro leader) is
+    // silently dropped rather than applied.
+  }
+
+  return authorized;
+}
+
+// Merges an incoming users array without ever losing a stored password hash:
+// the client never receives password hashes back (see sanitizeUser), so any
+// user record it echoes back has no `password` field unless it just set one.
+function mergeUsers(incomingUsers: any[] | undefined, currentUsers: any[]): any[] {
+  if (!Array.isArray(incomingUsers)) return currentUsers;
+  const currentById = new Map(currentUsers.map((u) => [u.id, u]));
+  return incomingUsers.map((incoming) => {
+    const existing = currentById.get(incoming.id);
+    const password = incoming.password || existing?.password;
+    return { ...existing, ...incoming, password };
+  });
+}
+
+function getServiceSupabaseClient() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+}
+
 let backendSupabaseSyncTimer: NodeJS.Timeout | null = null;
 
 async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: boolean; message?: string }> {
+  const client = getServiceSupabaseClient();
+  if (!client) {
+    return { success: false, message: 'Supabase não configurado no servidor (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY ausentes).' };
+  }
+
   try {
-    const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-    const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-    if (!url || !anonKey || url.includes('your-project-id')) {
-      return { success: false, message: 'Supabase não configurado no servidor' };
-    }
-
-    const client = createClient(url, anonKey);
-
-    // 1. Profiles (clean up demo users and delete removed users)
-    const demoIds = ['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila'];
-    const validUsers = (db.users || []).filter((u: any) => !demoIds.includes(u.id));
+    // 1. Profiles
+    const validUsers = db.users || [];
     const keepUserIds = validUsers.map((u: any) => u.id);
     if (keepUserIds.length > 0) {
       try {
@@ -150,7 +344,7 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
         name: u.name,
         username: u.username || null,
         email: u.email || null,
-        password: u.password || '123',
+        password: u.password || null,
         role: u.role,
         avatar: u.avatar || null,
         allowed_micro_ids: u.allowedMicroIds || [],
@@ -204,7 +398,7 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
       }
     }
 
-    // 3. Micro Functions (ensure FK to micros)
+    // 3. Micro Functions
     const keepFnIds = (db.functions || []).map((f: any) => f.id);
     if (keepFnIds.length > 0 && keepMicroIds.length > 0) {
       try {
@@ -374,12 +568,7 @@ function scheduleBackendSupabaseSync(db: MevamDatabase) {
 }
 
 async function syncFromSupabaseToBackend(): Promise<void> {
-  const db = getDb();
-  const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-  if (!url || !anonKey || url.includes('your-project-id')) return;
-
-  const client = createClient(url, anonKey);
+  const client = getServiceSupabaseClient();
   if (!client) return;
 
   try {
@@ -389,7 +578,7 @@ async function syncFromSupabaseToBackend(): Promise<void> {
       client.from('profiles').select('*')
     ]);
 
-    const db = getDb();
+    const db = await getDb();
     let changed = false;
 
     if (microsRes.data && microsRes.data.length > 0) {
@@ -417,10 +606,8 @@ async function syncFromSupabaseToBackend(): Promise<void> {
         name: f.name,
         description: f.description || '',
         category: f.category || 'Geral',
-        requiredCount: f.required_count || 1,
-        orderIndex: f.order_index || 0,
-        hasAgePreference: f.has_age_preference || false,
-        hasShiftPreference: f.has_shift_preference || false,
+        defaultRequiredCount: f.default_required_count || 1,
+        criteria: f.criteria || {},
         createdAt: f.created_at,
         updatedAt: f.updated_at
       }));
@@ -428,22 +615,25 @@ async function syncFromSupabaseToBackend(): Promise<void> {
     }
 
     if (profilesRes.data && profilesRes.data.length > 0) {
-      db.users = profilesRes.data.map((u: any) => ({
-        id: u.id,
-        name: u.name,
-        username: u.username,
-        email: u.email,
-        password: u.password || '123',
-        role: u.role,
-        avatar: u.avatar,
-        allowedMicroIds: u.allowed_micro_ids || [],
-        primaryMicroId: u.primary_micro_id,
-        whatsapp: u.whatsapp,
-        createdByName: u.created_by_name,
-        mustChangePassword: u.must_change_password ?? false,
-        createdAt: u.created_at,
-        updatedAt: u.updated_at
-      }));
+      db.users = mergeUsers(
+        profilesRes.data.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          email: u.email,
+          password: isBcryptHash(u.password) ? u.password : undefined,
+          role: u.role,
+          avatar: u.avatar,
+          allowedMicroIds: u.allowed_micro_ids || [],
+          primaryMicroId: u.primary_micro_id,
+          whatsapp: u.whatsapp,
+          createdByName: u.created_by_name,
+          mustChangePassword: u.must_change_password ?? false,
+          createdAt: u.created_at,
+          updatedAt: u.updated_at
+        })),
+        db.users
+      );
       changed = true;
     }
 
@@ -460,38 +650,149 @@ async function syncFromSupabaseToBackend(): Promise<void> {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
-  app.use(express.json({ limit: '20mb' }));
+  app.use(express.json({ limit: '5mb' }));
+
+  function getBearerToken(req: express.Request): string | null {
+    const auth = req.headers['authorization'];
+    if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
+    return null;
+  }
+
+  function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+    const session = getSession(getBearerToken(req));
+    if (!session) {
+      res.status(401).json({ success: false, message: 'Sessão inválida ou expirada. Faça login novamente.' });
+      return;
+    }
+    (req as any).authSession = session;
+    next();
+  }
+
+  function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+    const session = (req as any).authSession as Session | undefined;
+    if (!session || session.role !== 'ADMIN_LIDERANCA') {
+      res.status(403).json({ success: false, message: 'Apenas o Administrador pode executar esta ação.' });
+      return;
+    }
+    next();
+  }
 
   // API: Health check
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
+  // API: Login (server-side credential check, issues a session token)
+  app.post('/api/login', async (req, res) => {
+    const { login, password } = req.body || {};
+    const cleanId = String(login || '').trim().toLowerCase();
+    const cleanPass = String(password || '').trim();
+
+    if (!cleanId || !cleanPass) {
+      res.status(400).json({ success: false, message: 'Informe usuário e senha.' });
+      return;
+    }
+
+    const rate = checkLoginRateLimit(cleanId);
+    if (!rate.allowed) {
+      const minutes = Math.ceil((rate.retryAfterMs || 0) / 60000);
+      res.status(429).json({ success: false, message: `Muitas tentativas. Tente novamente em ${minutes} minuto(s).` });
+      return;
+    }
+
+    const db = await getDb();
+    const users = db.users || [];
+
+    let user = users.find((u: any) => {
+      if (cleanId === 'admin' || cleanId === 'administrador') {
+        return u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin' || u.username === 'admin';
+      }
+      const matchUsername = u.username && u.username.toLowerCase() === cleanId;
+      const matchId = u.id.toLowerCase() === cleanId;
+      const normalizedName = (u.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const matchFirstName = normalizedName.split(' ')[0] === cleanId;
+      return matchUsername || matchId || matchFirstName;
+    });
+
+    if (!user) {
+      recordLoginFailure(cleanId);
+      res.status(401).json({ success: false, message: 'Usuário ou senha incorretos.' });
+      return;
+    }
+
+    if (user.role === 'VOLUNTARIO') {
+      res.status(403).json({ success: false, message: 'O acesso ao painel é exclusivo para a Liderança.' });
+      return;
+    }
+
+    let passwordOk = false;
+    if (isBcryptHash(user.password)) {
+      passwordOk = await bcrypt.compare(cleanPass, user.password);
+    } else if (user.password) {
+      // Legacy plaintext password from before hashing was introduced: verify once, then migrate transparently.
+      passwordOk = cleanPass === user.password;
+      if (passwordOk) {
+        user.password = await bcrypt.hash(cleanPass, 10);
+        saveDb(db);
+      }
+    }
+
+    if (!passwordOk) {
+      recordLoginFailure(cleanId);
+      res.status(401).json({ success: false, message: 'Usuário ou senha incorretos.' });
+      return;
+    }
+
+    clearLoginFailures(cleanId);
+    user.lastLoginAt = new Date().toISOString();
+    saveDb(db);
+
+    const token = createSession(user.id, user.role);
+    res.json({ success: true, token, user: sanitizeUser(user) });
+  });
+
+  // API: Logout (invalidate session token)
+  app.post('/api/logout', (req, res) => {
+    const token = getBearerToken(req);
+    if (token) sessions.delete(token);
+    res.json({ success: true });
+  });
+
+  // API: Current session's user
+  app.get('/api/me', requireAuth, async (req, res) => {
+    const session = (req as any).authSession as Session;
+    const db = await getDb();
+    const user = (db.users || []).find((u: any) => u.id === session.userId);
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
+      return;
+    }
+    res.json({ success: true, user: sanitizeUser(user) });
+  });
+
   // API: Version check for lightweight cross-device polling
-  app.get('/api/version', (_req, res) => {
-    const db = getDb();
+  app.get('/api/version', requireAuth, async (_req, res) => {
+    const db = await getDb();
     res.json({ version: db.version, lastUpdated: db.lastUpdated });
   });
 
-  // API: Get complete unified database (shared across all devices)
-  app.get('/api/data', (_req, res) => {
-    const db = getDb();
-    res.json({
-      success: true,
-      data: db
-    });
+  // API: Get complete unified database (shared across all devices) - password hashes are never sent to clients
+  app.get('/api/data', requireAuth, async (_req, res) => {
+    const db = await getDb();
+    res.json({ success: true, data: sanitizeDbForClient(db) });
   });
 
   // API: Sync/Save data from any client device to the central server
-  app.post('/api/data', (req, res) => {
-    const incoming = req.body;
-    const db = getDb();
+  app.post('/api/data', requireAuth, async (req, res) => {
+    const incoming = req.body || {};
+    const db = await getDb();
+    const session = (req as any).authSession as Session;
 
     const merged: MevamDatabase = {
       ...db,
-      users: incoming.users || db.users,
+      users: mergeUsers(authorizeUsersPayload(incoming.users, db.users, session), db.users),
       micros: incoming.micros || db.micros,
       functions: incoming.functions || db.functions,
       families: incoming.families || db.families,
@@ -500,52 +801,43 @@ async function startServer() {
       schedules: incoming.schedules || db.schedules,
       rotationHistory: incoming.rotationHistory || db.rotationHistory,
       auditLogs: incoming.auditLogs || db.auditLogs,
-      supabaseConfig: incoming.supabaseConfig || db.supabaseConfig,
+      supabaseConfig: db.supabaseConfig
     };
 
     saveDb(merged);
-    // Background cloud sync from backend
     scheduleBackendSupabaseSync(merged);
 
     res.json({ success: true, version: merged.version, lastUpdated: merged.lastUpdated });
   });
 
-  // API: Trigger immediate Supabase sync
-  app.post('/api/supabase/sync', async (_req, res) => {
-    const db = getDb();
+  // API: Trigger immediate Supabase sync (push local -> cloud). Admin only.
+  app.post('/api/supabase/sync', requireAuth, requireAdmin, async (_req, res) => {
+    const db = await getDb();
     const result = await syncToSupabaseFromBackend(db);
     res.json(result);
   });
 
-  // API: Get active Supabase configuration (shared across devices)
-  app.get('/api/config/supabase', (_req, res) => {
-    const db = getDb();
-    const url = db.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-    const anonKey = db.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+  // API: Trigger immediate Supabase pull (cloud -> local). Admin only.
+  app.post('/api/supabase/pull', requireAuth, requireAdmin, async (_req, res) => {
+    await syncFromSupabaseToBackend();
+    const db = await getDb();
+    res.json({ success: true, data: sanitizeDbForClient(db) });
+  });
+
+  // API: Get active Supabase configuration status (no keys are ever exposed to the client)
+  app.get('/api/config/supabase', requireAuth, async (_req, res) => {
     res.json({
-      url,
-      anonKey,
-      isConfigured: Boolean(url && anonKey && !url.includes('your-project-id'))
+      isConfigured: Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
     });
   });
 
-  // API: Set Supabase configuration on the server so all devices inherit it
-  app.post('/api/config/supabase', (req, res) => {
-    const { url, anonKey } = req.body;
-    const db = getDb();
-    db.supabaseConfig = {
-      url: (url || '').trim(),
-      anonKey: (anonKey || '').trim()
-    };
-    saveDb(db);
-    res.json({ success: true, config: db.supabaseConfig });
-  });
+  // API: Reset server database to initial clean state. Admin only. Preserves the current admin's credentials.
+  app.post('/api/reset', requireAuth, requireAdmin, async (_req, res) => {
+    const currentDb = await getDb();
+    const currentAdmin = (currentDb.users || []).find((u: any) => u.id === 'user-admin') || (await bootstrapAdminUser());
 
-  // API: Reset server database to initial clean state (Empty micros, 0 people, only Admin user)
-  app.post('/api/reset', async (_req, res) => {
-    const currentDb = getDb();
     const cleanDb: MevamDatabase = {
-      users: INITIAL_USERS,
+      users: [currentAdmin],
       micros: [],
       functions: [],
       families: [],
@@ -554,21 +846,15 @@ async function startServer() {
       schedules: [],
       rotationHistory: [],
       auditLogs: [],
-      supabaseConfig: currentDb.supabaseConfig || {
-        url: process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
-      },
+      supabaseConfig: currentDb.supabaseConfig || { url: SUPABASE_URL },
       version: Date.now(),
       lastUpdated: new Date().toISOString()
     };
     saveDb(cleanDb);
 
-    // Clean up Supabase tables completely
-    try {
-      const url = cleanDb.supabaseConfig?.url || process.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-      const anonKey = cleanDb.supabaseConfig?.anonKey || process.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-      if (url && anonKey && !url.includes('your-project-id')) {
-        const client = createClient(url, anonKey);
+    const client = getServiceSupabaseClient();
+    if (client) {
+      try {
         await client.from('audit_logs').delete().neq('id', 'none');
         await client.from('rotation_history').delete().neq('id', 'none');
         await client.from('schedules').delete().neq('id', 'none');
@@ -578,33 +864,29 @@ async function startServer() {
         await client.from('micro_functions').delete().neq('id', 'none');
         await client.from('micros').delete().neq('id', 'none');
         await client.from('profiles').delete().neq('id', 'user-admin');
-
-        const adminProfile = {
-          id: 'user-admin',
-          name: 'Administrador',
-          username: 'admin',
-          email: 'denilson.silva.santos@gmail.com',
-          password: 'admin',
-          role: 'ADMIN_LIDERANCA',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-          allowed_micro_ids: [],
-          primary_micro_id: null,
-          person_id: null,
-          whatsapp: '47998871122',
-          created_by: null,
-          created_by_name: 'Sistema MEVAM Kids',
-          must_change_password: false,
-          last_login_at: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        await client.from('profiles').upsert(adminProfile, { onConflict: 'id' });
+        await client.from('profiles').upsert(
+          {
+            id: currentAdmin.id,
+            name: currentAdmin.name,
+            username: currentAdmin.username,
+            email: currentAdmin.email || null,
+            password: currentAdmin.password,
+            role: currentAdmin.role,
+            avatar: currentAdmin.avatar || null,
+            allowed_micro_ids: [],
+            primary_micro_id: null,
+            whatsapp: currentAdmin.whatsapp || null,
+            must_change_password: currentAdmin.mustChangePassword ?? false,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'id' }
+        );
+      } catch (e) {
+        console.warn('Error resetting Supabase tables:', e);
       }
-    } catch (e) {
-      console.warn('Error resetting Supabase tables:', e);
     }
 
-    res.json({ success: true, message: 'Banco de dados resetado do zero com sucesso! Usuários e micros limpos.' });
+    res.json({ success: true, message: 'Banco de dados resetado com sucesso! Suas credenciais de administrador foram mantidas.' });
   });
 
   // Vite middleware for development vs Static serving in production
@@ -627,6 +909,9 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`MEVAM Kids Server running on http://0.0.0.0:${PORT}`);
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.log('Aviso: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY não configurados — sincronização em nuvem desativada (dados ficam apenas no servidor local).');
+    }
   });
 }
 

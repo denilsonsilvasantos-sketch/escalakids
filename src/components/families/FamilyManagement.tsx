@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Family, Person, UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface FamilyManagementProps {
   currentUser: UserAccount;
@@ -31,7 +32,7 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
   const [familyName, setFamilyName] = useState('');
   const [familyPriority, setFamilyPriority] = useState<Family['priority']>('ALTA');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [familyToDelete, setFamilyToDelete] = useState<Family | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Member linking state inside modal
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -78,11 +79,15 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
   };
 
   const handleDeleteFamily = (famId: string) => {
-    if (confirm('Deseja excluir este núcleo familiar? Os voluntários permanecerão no sistema sem vínculo.')) {
-      storageService.deleteFamily(famId);
-      setFamilies(storageService.getFamilies());
-      setPeople(storageService.getPeople());
-    }
+    setPendingConfirm({
+      title: 'Excluir Núcleo Familiar',
+      message: 'Deseja excluir este núcleo familiar? Os voluntários permanecerão no sistema sem vínculo.',
+      onConfirm: () => {
+        storageService.deleteFamily(famId);
+        setFamilies(storageService.getFamilies());
+        setPeople(storageService.getPeople());
+      }
+    });
   };
 
   const handleUpdatePriority = (family: Family, priority: Family['priority']) => {
@@ -100,25 +105,36 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
   const handleLinkPerson = (person: Person) => {
     if (!targetFamilyForLink) return;
 
+    const applyLink = () => {
+      const updatedPerson = { ...person, familyId: targetFamilyForLink.id };
+      storageService.savePerson(updatedPerson);
+      setPeople(storageService.getPeople());
+      setIsLinkModalOpen(false);
+    };
+
     if (person.familyId && person.familyId !== targetFamilyForLink.id) {
       const currentFam = storageService.getFamilyById(person.familyId);
-      if (!confirm(`${person.name} já pertence à ${currentFam?.name}. Deseja transferi-lo para ${targetFamilyForLink.name}?`)) {
-        return;
-      }
+      setPendingConfirm({
+        title: 'Transferir Voluntário de Família',
+        message: `${person.name} já pertence à ${currentFam?.name}. Deseja transferi-lo para ${targetFamilyForLink.name}?`,
+        onConfirm: applyLink
+      });
+      return;
     }
 
-    const updatedPerson = { ...person, familyId: targetFamilyForLink.id };
-    storageService.savePerson(updatedPerson);
-    setPeople(storageService.getPeople());
-    setIsLinkModalOpen(false);
+    applyLink();
   };
 
   const handleUnlinkPerson = (person: Person) => {
-    if (confirm(`Remover ${person.name} desta família?`)) {
-      const updatedPerson = { ...person, familyId: undefined };
-      storageService.savePerson(updatedPerson);
-      setPeople(storageService.getPeople());
-    }
+    setPendingConfirm({
+      title: 'Remover da Família',
+      message: `Remover ${person.name} desta família?`,
+      onConfirm: () => {
+        const updatedPerson = { ...person, familyId: undefined };
+        storageService.savePerson(updatedPerson);
+        setPeople(storageService.getPeople());
+      }
+    });
   };
 
   const getPriorityBadge = (p: Family['priority']) => {
@@ -404,6 +420,17 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!pendingConfirm}
+        title={pendingConfirm?.title || ''}
+        message={pendingConfirm?.message || ''}
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          pendingConfirm?.onConfirm();
+          setPendingConfirm(null);
+        }}
+      />
     </div>
   );
 };

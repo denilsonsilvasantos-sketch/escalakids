@@ -210,8 +210,14 @@ CREATE INDEX IF NOT EXISTS idx_rotation_history_person ON public.rotation_histor
 CREATE INDEX IF NOT EXISTS idx_rotation_history_date ON public.rotation_history(date);
 
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
+-- O navegador do usuário NUNCA acessa o Supabase diretamente: toda sincronização
+-- acontece no servidor Node (server.ts), autenticado, usando a chave "service_role"
+-- (que ignora RLS e nunca deve ser exposta ao navegador — configure-a apenas em
+-- SUPABASE_SERVICE_ROLE_KEY no ambiente do servidor). Por isso nenhuma política é
+-- criada para "anon"/"authenticated": RLS habilitado + zero políticas permissivas
+-- = acesso negado por padrão via chave anônima, em todas as tabelas.
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.micros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.micro_functions ENABLE ROW LEVEL SECURITY;
@@ -222,108 +228,31 @@ ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rotation_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Políticas de Acesso Público Sincronizado para Aplicação Web
-CREATE POLICY "Permitir leitura para todos" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Permitir insercao/atualizacao de perfis" ON public.profiles FOR ALL USING (true);
-
-CREATE POLICY "Permitir gerenciamento de micros" ON public.micros FOR ALL USING (true);
-CREATE POLICY "Permitir gerenciamento de funcoes" ON public.micro_functions FOR ALL USING (true);
-CREATE POLICY "Permitir gerenciamento de familias" ON public.families FOR ALL USING (true);
-CREATE POLICY "Permitir gerenciamento de pessoas" ON public.people FOR ALL USING (true);
-CREATE POLICY "Permitir gerenciamento de disponibilidade" ON public.availability_rules FOR ALL USING (true);
-CREATE POLICY "Permitir gerenciamento de escalas" ON public.schedules FOR ALL USING (true);
-CREATE POLICY "Permitir leitura de historico" ON public.rotation_history FOR ALL USING (true);
-CREATE POLICY "Permitir auditoria" ON public.audit_logs FOR ALL USING (true);
+-- Remove políticas antigas ("permitir tudo para qualquer um com a chave anon"),
+-- caso uma versão anterior deste script já tenha sido rodada no seu projeto.
+DROP POLICY IF EXISTS "Permitir leitura para todos" ON public.profiles;
+DROP POLICY IF EXISTS "Permitir insercao/atualizacao de perfis" ON public.profiles;
+DROP POLICY IF EXISTS "Permitir gerenciamento de micros" ON public.micros;
+DROP POLICY IF EXISTS "Permitir gerenciamento de funcoes" ON public.micro_functions;
+DROP POLICY IF EXISTS "Permitir gerenciamento de familias" ON public.families;
+DROP POLICY IF EXISTS "Permitir gerenciamento de pessoas" ON public.people;
+DROP POLICY IF EXISTS "Permitir gerenciamento de disponibilidade" ON public.availability_rules;
+DROP POLICY IF EXISTS "Permitir gerenciamento de escalas" ON public.schedules;
+DROP POLICY IF EXISTS "Permitir leitura de historico" ON public.rotation_history;
+DROP POLICY IF EXISTS "Permitir auditoria" ON public.audit_logs;
 
 -- ==============================================================================
--- DADOS INICIAIS (SEED DATA) COM ADMIN (SENHA: ADMIN) E LÍDERES
+-- DADOS INICIAIS (SEED DATA)
 -- ==============================================================================
-
--- 1. Inserir Usuário ADMIN Principal (Senha: ADMIN) e Líderes Iniciais
-INSERT INTO public.profiles (id, name, username, email, password, role, avatar, allowed_micro_ids, primary_micro_id, person_id, whatsapp, created_by, created_by_name)
-VALUES
-  (
-    'user-admin',
-    'Denilson Santos',
-    'admin',
-    'denilson.silva.santos@gmail.com',
-    'ADMIN',
-    'ADMIN_LIDERANCA',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    '["micro-lideranca", "micro-louvor", "micro-professor", "micro-acolhimento", "micro-refeitorio", "micro-seguranca", "micro-teatro"]'::jsonb,
-    NULL,
-    'p-denilson',
-    '47998871122',
-    NULL,
-    'Sistema MEVAM Kids'
-  ),
-  (
-    'user-macro-joao',
-    'João Silva',
-    'joao',
-    'joao.silva@mevamkids.org',
-    '123',
-    'LIDER_MACRO',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    '["micro-louvor", "micro-teatro", "micro-refeitorio", "micro-seguranca"]'::jsonb,
-    NULL,
-    NULL,
-    '47997762233',
-    'user-admin',
-    'Denilson Santos (ADMIN)'
-  ),
-  (
-    'user-micro-louvor',
-    'Denilson Louvor',
-    'denilson',
-    'louvor@mevamkids.org',
-    '123',
-    'LIDER_MICRO',
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    '[]'::jsonb,
-    'micro-louvor',
-    'p-denilson',
-    '47998871122',
-    'user-macro-joao',
-    'João Silva (Líder Macro)'
-  ),
-  (
-    'user-micro-prof',
-    'Roberta Lima',
-    'roberta',
-    'professores@mevamkids.org',
-    '123',
-    'LIDER_MICRO',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    '[]'::jsonb,
-    'micro-professor',
-    'p-roberta',
-    '47991122334',
-    'user-admin',
-    'Denilson Santos (ADMIN)'
-  ),
-  (
-    'user-vol-lucas',
-    'Lucas Oliveira',
-    'lucas',
-    'lucas.oliveira@mevamkids.org',
-    '123',
-    'VOLUNTARIO',
-    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    '[]'::jsonb,
-    NULL,
-    'p-lucas',
-    '47993344556',
-    'user-micro-louvor',
-    'Denilson Louvor'
-  )
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  username = EXCLUDED.username,
-  password = EXCLUDED.password,
-  role = EXCLUDED.role,
-  allowed_micro_ids = EXCLUDED.allowed_micro_ids,
-  primary_micro_id = EXCLUDED.primary_micro_id;
+-- O bloco de INSERTs que existia aqui foi removido: ele criava um usuário ADMIN
+-- com senha em texto puro ("ADMIN") e um e-mail/telefone pessoal reais, além de
+-- líderes e um voluntário de demonstração com senha "123". Isso nunca deve ser
+-- aplicado a um projeto Supabase de produção.
+--
+-- O usuário administrador real é criado automaticamente pelo servidor (server.ts)
+-- no primeiro boot, com uma senha aleatória seguramente gerada (ou a senha definida
+-- em ADMIN_BOOTSTRAP_PASSWORD no ambiente do servidor) — veja bootstrapAdminUser()
+-- em server.ts e o .env.example na raiz do projeto.
 
 -- 2. Inserir Micros / Frentes Padrão
 INSERT INTO public.micros (id, name, description, leader_name, leader_id, status, color, icon_name)

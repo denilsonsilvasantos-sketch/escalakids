@@ -29,6 +29,7 @@ import { schedulerAlgorithm, CandidateScore } from '../../services/schedulerAlgo
 import { exportService } from '../../services/exportService';
 import { formatDateBR, parseDateBRToISO } from '../../utils/dateUtils';
 import { CLASSROOM_PRESETS } from '../../data/classroomPresets';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface MacroScheduleViewProps {
   currentUser: UserAccount;
@@ -77,6 +78,9 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   // Apply Preset Modal
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [targetMicroForPreset, setTargetMicroForPreset] = useState<Micro | null>(null);
+
+  // Shared confirmation dialog for destructive actions in this view (replaces window.confirm)
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Slot Selection & Candidate Modal
   const [activeSlot, setActiveSlot] = useState<ScheduleSlot | null>(null);
@@ -246,12 +250,16 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
 
   const handleDeleteCurrentSchedule = () => {
     if (!currentSchedule) return;
-    if (confirm(`Deseja realmente excluir a escala "${currentSchedule.title}"?`)) {
-      storageService.deleteSchedule(currentSchedule.id);
-      const remaining = storageService.getSchedules();
-      setSchedules(remaining);
-      setSelectedScheduleId(remaining[0]?.id || '');
-    }
+    setPendingConfirm({
+      title: 'Excluir Escala',
+      message: `Deseja realmente excluir a escala "${currentSchedule.title}"? Todas as vagas e atribuições desta escala serão perdidas.`,
+      onConfirm: () => {
+        storageService.deleteSchedule(currentSchedule.id);
+        const remaining = storageService.getSchedules();
+        setSchedules(remaining);
+        setSelectedScheduleId(remaining[0]?.id || '');
+      }
+    });
   };
 
   const handleUpdateStatus = (status: Schedule['status']) => {
@@ -272,10 +280,14 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   // Remove Micro / Sector from current schedule
   const handleRemoveMicroFromSchedule = (mId: string, microName: string) => {
     if (!currentSchedule) return;
-    if (confirm(`Deseja remover o setor "${microName}" e todas as suas vagas desta escala?`)) {
-      storageService.removeMicroFromSchedule(currentSchedule.id, mId);
-      setSchedules(storageService.getSchedules());
-    }
+    setPendingConfirm({
+      title: 'Remover Setor da Escala',
+      message: `Deseja remover o setor "${microName}" e todas as suas vagas desta escala?`,
+      onConfirm: () => {
+        storageService.removeMicroFromSchedule(currentSchedule.id, mId);
+        setSchedules(storageService.getSchedules());
+      }
+    });
   };
 
   // Add Function to current schedule
@@ -310,10 +322,14 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   // Remove Function from current schedule
   const handleRemoveFunctionFromSchedule = (_microId: string, fnId: string, fnName: string) => {
     if (!currentSchedule) return;
-    if (confirm(`Deseja remover a função "${fnName}" desta escala?`)) {
-      storageService.removeFunctionFromSchedule(currentSchedule.id, fnId);
-      setSchedules(storageService.getSchedules());
-    }
+    setPendingConfirm({
+      title: 'Remover Função da Escala',
+      message: `Deseja remover a função "${fnName}" desta escala?`,
+      onConfirm: () => {
+        storageService.removeFunctionFromSchedule(currentSchedule.id, fnId);
+        setSchedules(storageService.getSchedules());
+      }
+    });
   };
 
   // Add extra slot for a function
@@ -362,22 +378,170 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
     setTargetMicroForPreset(null);
   };
 
+  // Defined once and reused both by the "no schedules yet" empty state below and by
+  // the main grid view, since a fresh install has zero schedules and must still be
+  // able to reach this modal from the empty state's "Criar Primeira Escala" button.
+  const newScheduleModal = isNewScheduleModalOpen && (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
+        <h3 className="text-base font-bold text-slate-900 font-display">
+          Criar Nova Escala MEVAM Kids
+        </h3>
+
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">TÍTULO DA ESCALA *</label>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Ex: Escala Oficial MEVAM Kids - Outubro"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">EVENTO / CULTO</label>
+              <input
+                type="text"
+                value={newEventName}
+                onChange={(e) => setNewEventName(e.target.value)}
+                placeholder="Ex: Cultos de Domingo"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">TURNO PRINCIPAL</label>
+              <select
+                value={newShift}
+                onChange={(e) => setNewShift(e.target.value as any)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+              >
+                <option value="NOITE">Noite (18h / 19h)</option>
+                <option value="MANHA">Manhã (09h / 10h)</option>
+                <option value="AMBOS">Todos os Turnos</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dates Selector in Brazilian Format */}
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">DATAS DO PERÍODO (PADRÃO BRASIL)</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {newDates.map((d) => (
+                <span
+                  key={d}
+                  className="inline-flex items-center space-x-1 text-xs bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200 font-semibold"
+                >
+                  <span>{formatDateBR(d)}</span>
+                  <button
+                    type="button"
+                    onClick={() => setNewDates(newDates.filter((x) => x !== d))}
+                    className="text-blue-400 hover:text-blue-700 font-bold ml-1"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="date"
+                value={newDateInput}
+                onChange={(e) => setNewDateInput(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newDateInput && !newDates.includes(newDateInput)) {
+                    setNewDates([...newDates, newDateInput]);
+                    setNewDateInput('');
+                  }
+                }}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg"
+              >
+                + Adicionar Data
+              </button>
+            </div>
+          </div>
+
+          {/* Micros Selector */}
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">MICROS / SETORES NESTA ESCALA</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {allMicros.map((m) => {
+                const isChecked = selectedMicroIdsForNew.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    className={`p-2 rounded-lg border cursor-pointer flex items-center space-x-2 text-xs font-semibold ${
+                      isChecked ? 'bg-blue-50 border-blue-500 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedMicroIdsForNew([...selectedMicroIdsForNew, m.id]);
+                        } else {
+                          setSelectedMicroIdsForNew(selectedMicroIdsForNew.filter((id) => id !== m.id));
+                        }
+                      }}
+                      className="w-3.5 h-3.5 rounded text-blue-600"
+                    />
+                    <span className="truncate">{m.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end space-x-2 pt-2">
+          <button
+            onClick={() => setIsNewScheduleModalOpen(false)}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreateNewSchedule}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
+          >
+            Criar Grade de Escala
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (!currentSchedule) {
     return (
-      <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-          <Calendar className="w-6 h-6" />
+      <div className="space-y-6">
+        <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-base font-extrabold text-slate-900 font-display">Nenhuma escala cadastrada</h2>
+            <p className="text-xs text-slate-600 mt-1">Crie a primeira grade de escala macro do MEVAM Kids.</p>
+          </div>
+          <button
+            onClick={() => setIsNewScheduleModalOpen(true)}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs"
+          >
+            + Criar Primeira Escala
+          </button>
         </div>
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900 font-display">Nenhuma escala cadastrada</h2>
-          <p className="text-xs text-slate-600 mt-1">Crie a primeira grade de escala macro do MEVAM Kids.</p>
-        </div>
-        <button
-          onClick={() => setIsNewScheduleModalOpen(true)}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs"
-        >
-          + Criar Primeira Escala
-        </button>
+
+        {/* This modal must also be reachable from the empty state above, not only once
+            a schedule already exists — otherwise a fresh install can never create its
+            first schedule. */}
+        {newScheduleModal}
       </div>
     );
   }
@@ -932,143 +1096,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
       )}
 
       {/* Modal: Create New Schedule */}
-      {isNewScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
-            <h3 className="text-base font-bold text-slate-900 font-display">
-              Criar Nova Escala MEVAM Kids
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">TÍTULO DA ESCALA *</label>
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ex: Escala Oficial MEVAM Kids - Outubro"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">EVENTO / CULTO</label>
-                  <input
-                    type="text"
-                    value={newEventName}
-                    onChange={(e) => setNewEventName(e.target.value)}
-                    placeholder="Ex: Cultos de Domingo"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">TURNO PRINCIPAL</label>
-                  <select
-                    value={newShift}
-                    onChange={(e) => setNewShift(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                  >
-                    <option value="NOITE">Noite (18h / 19h)</option>
-                    <option value="MANHA">Manhã (09h / 10h)</option>
-                    <option value="AMBOS">Todos os Turnos</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Dates Selector in Brazilian Format */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">DATAS DO PERÍODO (PADRÃO BRASIL)</label>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {newDates.map((d) => (
-                    <span
-                      key={d}
-                      className="inline-flex items-center space-x-1 text-xs bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200 font-semibold"
-                    >
-                      <span>{formatDateBR(d)}</span>
-                      <button
-                        type="button"
-                        onClick={() => setNewDates(newDates.filter((x) => x !== d))}
-                        className="text-blue-400 hover:text-blue-700 font-bold ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="date"
-                    value={newDateInput}
-                    onChange={(e) => setNewDateInput(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newDateInput && !newDates.includes(newDateInput)) {
-                        setNewDates([...newDates, newDateInput]);
-                        setNewDateInput('');
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg"
-                  >
-                    + Adicionar Data
-                  </button>
-                </div>
-              </div>
-
-              {/* Micros Selector */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">MICROS / SETORES NESTA ESCALA</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {allMicros.map((m) => {
-                    const isChecked = selectedMicroIdsForNew.includes(m.id);
-                    return (
-                      <label
-                        key={m.id}
-                        className={`p-2 rounded-lg border cursor-pointer flex items-center space-x-2 text-xs font-semibold ${
-                          isChecked ? 'bg-blue-50 border-blue-500 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedMicroIdsForNew([...selectedMicroIdsForNew, m.id]);
-                            } else {
-                              setSelectedMicroIdsForNew(selectedMicroIdsForNew.filter((id) => id !== m.id));
-                            }
-                          }}
-                          className="w-3.5 h-3.5 rounded text-blue-600"
-                        />
-                        <span className="truncate">{m.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setIsNewScheduleModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateNewSchedule}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
-              >
-                Criar Grade de Escala
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {newScheduleModal}
 
       {/* Modal: Edit Current Schedule */}
       {isEditScheduleModalOpen && (
@@ -1345,6 +1373,17 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!pendingConfirm}
+        title={pendingConfirm?.title || ''}
+        message={pendingConfirm?.message || ''}
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          pendingConfirm?.onConfirm();
+          setPendingConfirm(null);
+        }}
+      />
     </div>
   );
 };

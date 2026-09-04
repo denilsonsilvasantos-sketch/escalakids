@@ -29,16 +29,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setError(null);
     setIsLoading(true);
 
-    let result = storageService.authenticate(loginInput, passwordInput);
-
-    // If not found locally, fetch latest data from cloud/server in real time and retry
-    if (!result.success) {
-      await Promise.allSettled([
-        storageService.syncWithSupabaseRemote(),
-        storageService.pullFromServer(true)
-      ]);
-      result = storageService.authenticate(loginInput, passwordInput);
-    }
+    const result = await storageService.authenticate(loginInput, passwordInput);
 
     setIsLoading(false);
 

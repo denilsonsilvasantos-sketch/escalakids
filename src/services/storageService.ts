@@ -23,8 +23,11 @@ import {
   INITIAL_ROTATION_HISTORY,
   INITIAL_AUDIT_LOGS
 } from '../data/seedData';
+import bcrypt from 'bcryptjs';
 import { supabaseService } from './supabaseService';
-import { syncSupabaseConfigFromServer, isSupabaseConfigured } from './supabaseClient';
+
+const TOKEN_KEY = 'mevam_kids_token';
+const SESSION_FLAG_KEY = 'mevam_kids_session_authenticated';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'mevam_kids_current_user_id',
@@ -68,15 +71,22 @@ class StorageService {
   private isSyncingWithServer = false;
   private isSyncingSupabase = false;
   private pushDebounceTimer: any = null;
-  private pushSupabaseDebounceTimer: any = null;
   private isInitialized = false;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        this.initServerSync();
-      }, 50);
-    }
+    // Sync no longer starts automatically: pulling the full dataset requires an
+    // authenticated session now, so App.tsx calls startSync() only after login
+    // succeeds (or after a stored session token is confirmed valid).
+  }
+
+  private getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  private authHeaders(): Record<string, string> {
+    const token = this.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   private load<T>(key: string, fallback: T): T {
@@ -97,7 +107,6 @@ class StorageService {
       localStorage.setItem(key, JSON.stringify(data));
       if (syncToServer && key !== STORAGE_KEYS.CURRENT_USER_ID) {
         this.pushToServerDebounced();
-        this.pushToSupabaseDebounced();
       }
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
@@ -114,37 +123,20 @@ class StorageService {
     }, 350);
   }
 
-  pushToSupabaseDebounced(): void {
-    if (typeof window === 'undefined') return;
-    if (this.pushSupabaseDebounceTimer) {
-      clearTimeout(this.pushSupabaseDebounceTimer);
-    }
-    this.pushSupabaseDebounceTimer = setTimeout(() => {
-      this.syncAllToSupabase();
-    }, 1000);
-  }
-
-  async syncAllToSupabase(): Promise<boolean> {
-    if (!isSupabaseConfigured()) return false;
-    try {
-      const payload = this.getAllDataForExport();
-      const res = await supabaseService.exportAllToSupabase(payload);
-      return res.success;
-    } catch (err) {
-      console.warn('Auto sync to Supabase failed:', err);
-      return false;
-    }
-  }
-
   async syncAllToServer(): Promise<boolean> {
     if (typeof window === 'undefined') return false;
+    if (!this.getToken()) return false;
     try {
       const payload = this.getAllDataForExport();
       const res = await fetch('/api/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
         body: JSON.stringify(payload)
       });
+      if (res.status === 401) {
+        this.forceLogout();
+        return false;
+      }
       if (res.ok) {
         const data = await res.json();
         if (data.version) {
@@ -160,6 +152,7 @@ class StorageService {
 
   async pullFromServer(force = false): Promise<boolean> {
     if (typeof window === 'undefined') return false;
+    if (!this.getToken()) return false;
     if (this.isSyncingWithServer) return false;
     try {
       this.isSyncingWithServer = true;
@@ -167,7 +160,12 @@ class StorageService {
       // Check version first if not forced
       if (!force && this.currentServerVersion > 0) {
         try {
-          const vRes = await fetch('/api/version');
+          const vRes = await fetch('/api/version', { headers: this.authHeaders() });
+          if (vRes.status === 401) {
+            this.isSyncingWithServer = false;
+            this.forceLogout();
+            return false;
+          }
           if (vRes.ok) {
             const vData = await vRes.json();
             if (vData.version <= this.currentServerVersion) {
@@ -181,7 +179,12 @@ class StorageService {
         }
       }
 
-      const res = await fetch('/api/data');
+      const res = await fetch('/api/data', { headers: this.authHeaders() });
+      if (res.status === 401) {
+        this.isSyncingWithServer = false;
+        this.forceLogout();
+        return false;
+      }
       if (!res.ok) {
         this.isSyncingWithServer = false;
         return false;
@@ -279,43 +282,46 @@ class StorageService {
     }
   }
 
-  initServerSync(): void {
+  // Starts cross-device sync. Must only be called once a valid session token exists
+  // (i.e. after a successful login or a successful checkSession() restore) — every
+  // sync endpoint now requires authentication.
+  startSync(): void {
     if (typeof window === 'undefined' || this.isInitialized) return;
     this.isInitialized = true;
 
-    // 1. Initial immediate pull from Supabase Cloud and local server
-    this.syncWithSupabaseRemote();
+    // 1. Initial immediate pull from the local server (which is itself kept in sync
+    //    with Supabase server-side, using credentials that never reach the browser)
     this.pullFromServer(true);
+    supabaseService.refreshStatus();
 
-    // 2. Sync Supabase config from server if available
-    syncSupabaseConfigFromServer().then((hasConfig) => {
-      if (hasConfig) {
-        this.syncWithSupabaseRemote();
-      }
-    });
-
-    // 3. Continuous local server synchronization (checks /api/version every 5 seconds)
+    // 2. Continuous local server synchronization (checks /api/version every 5 seconds)
     setInterval(() => {
       this.pullFromServer(false);
     }, 5000);
 
-    // 4. Periodic Supabase synchronization (every 30 seconds)
-    setInterval(() => {
-      this.syncWithSupabaseRemote();
-    }, 30000);
-
-    // 5. On tab focus and visibility change, synchronize immediately
+    // 3. On tab focus and visibility change, synchronize immediately
     window.addEventListener('focus', () => {
-      this.syncWithSupabaseRemote();
       this.pullFromServer(false);
     });
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        this.syncWithSupabaseRemote();
         this.pullFromServer(false);
       }
     });
+  }
+
+  // Backward-compatible alias used by the login/session-restore flow.
+  initServerSync(): void {
+    this.startSync();
+  }
+
+  private forceLogout(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(SESSION_FLAG_KEY);
+    this.isInitialized = false;
+    window.dispatchEvent(new CustomEvent('mevam_session_expired'));
   }
 
   // --- Auth & Users ---
@@ -336,38 +342,23 @@ class StorageService {
       modified = true;
     }
 
-    // Ensure admin user exists and is properly configured
+    // Ensure an admin placeholder exists locally so the UI has something to render
+    // before the first successful sync. Its real credentials (and password hash)
+    // live only on the server — this placeholder never carries a working password.
     let admin = users.find((u) => u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin');
     if (!admin) {
       admin = {
         id: 'user-admin',
         name: 'Administrador',
         username: 'admin',
-        email: 'admin@mevamkids.org',
-        password: 'admin',
         role: 'ADMIN_LIDERANCA',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        whatsapp: ''
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
       };
       users.unshift(admin);
       modified = true;
-    } else {
-      if (admin.name !== 'Administrador') {
-        admin.name = 'Administrador';
-        modified = true;
-      }
-      if (admin.username !== 'admin') {
-        admin.username = 'admin';
-        modified = true;
-      }
-      if (admin.password !== 'admin') {
-        admin.password = 'admin';
-        modified = true;
-      }
-      if (admin.personId) {
-        delete admin.personId;
-        modified = true;
-      }
+    } else if (admin.personId) {
+      delete admin.personId;
+      modified = true;
     }
 
     // Ensure all other users have valid usernames
@@ -396,73 +387,102 @@ class StorageService {
     const users = this.getUsers();
     const user = users.find((u) => u.id === userId) || users[0];
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
-    localStorage.setItem('mevam_kids_session_authenticated', 'true');
+    localStorage.setItem(SESSION_FLAG_KEY, 'true');
     this.addAuditLog('TROCA_USUARIO', `Usuário ativo alterado para ${user.name} (${user.role})`, 'SYSTEM');
     return user;
   }
 
   isAuthenticated(): boolean {
-    return localStorage.getItem('mevam_kids_session_authenticated') === 'true';
+    if (typeof window === 'undefined') return false;
+    return Boolean(localStorage.getItem(TOKEN_KEY)) && localStorage.getItem(SESSION_FLAG_KEY) === 'true';
   }
 
-  authenticate(loginIdentifier: string, passwordInput: string): { success: boolean; user?: UserAccount; message?: string } {
-    const users = this.getUsers();
-    const cleanId = (loginIdentifier || '').trim().toLowerCase();
+  // Credentials are verified on the server (which holds the password hashes) — the
+  // client never sees or compares any password. A successful call returns a session
+  // token that must be attached to every subsequent /api/* request.
+  async authenticate(loginIdentifier: string, passwordInput: string): Promise<{ success: boolean; user?: UserAccount; message?: string }> {
+    const cleanId = (loginIdentifier || '').trim();
     const cleanPass = (passwordInput || '').trim();
 
     if (!cleanId || !cleanPass) {
       return { success: false, message: 'Por favor, informe o nome de usuário e a senha.' };
     }
 
-    // Direct match for admin
-    let user = users.find((u) => {
-      if (cleanId === 'admin' || cleanId === 'administrador') {
-        return u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin' || u.username === 'admin';
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: cleanId, password: cleanPass })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.message || 'Usuário ou senha incorretos.' };
       }
-      const matchUsername = u.username && u.username.toLowerCase() === cleanId;
-      const matchId = u.id.toLowerCase() === cleanId;
-      const normalizedName = u.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const matchFirstName = normalizedName.split(' ')[0] === cleanId;
-      return matchUsername || matchId || matchFirstName;
-    });
 
-    // Fallback if looking for admin and not found
-    if (!user && (cleanId === 'admin' || cleanId === 'administrador')) {
-      user = users.find((u) => u.role === 'ADMIN_LIDERANCA') || users[0];
+      const user: UserAccount = data.user;
+      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem(SESSION_FLAG_KEY, 'true');
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+
+      // Merge the authenticated user into the local cache so the UI has it immediately.
+      const users = this.load<UserAccount[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+      const idx = users.findIndex((u) => u.id === user.id);
+      if (idx >= 0) users[idx] = { ...users[idx], ...user };
+      else users.unshift(user);
+      this.save(STORAGE_KEYS.USERS, users, false);
+
+      this.addAuditLog('LOGIN_USUARIO', `Login realizado com sucesso: ${user.name} (${user.role}) - Usuário: ${user.username || user.id}`, 'SYSTEM');
+
+      return { success: true, user };
+    } catch (err) {
+      console.warn('Login request failed:', err);
+      return { success: false, message: 'Não foi possível conectar ao servidor. Verifique sua conexão.' };
     }
-
-    if (!user) {
-      return { success: false, message: 'Nome de usuário não encontrado. Verifique seu usuário.' };
-    }
-
-    if (user.role === 'VOLUNTARIO') {
-      return { success: false, message: 'O acesso ao sistema é exclusivo para a Liderança. Voluntários não possuem acesso ao painel.' };
-    }
-
-    // Check password: If ADMIN role, also allow 'ADMIN' or 'admin' master password by default
-    const expectedPassword = user.password || (user.role === 'ADMIN_LIDERANCA' ? 'ADMIN' : '123');
-    const isPasswordCorrect = user.role === 'ADMIN_LIDERANCA'
-      ? (cleanPass === expectedPassword || cleanPass.toUpperCase() === 'ADMIN')
-      : cleanPass === expectedPassword;
-
-    if (!isPasswordCorrect) {
-      return { success: false, message: 'Senha incorreta. Tente novamente.' };
-    }
-
-    // Update lastLoginAt
-    user.lastLoginAt = new Date().toISOString();
-    this.saveUsers(users);
-
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
-    localStorage.setItem('mevam_kids_session_authenticated', 'true');
-    this.addAuditLog('LOGIN_USUARIO', `Login realizado com sucesso: ${user.name} (${user.role}) - Usuário: ${user.username || user.id}`, 'SYSTEM');
-
-    return { success: true, user };
   }
 
-  logout(): void {
-    localStorage.removeItem('mevam_kids_session_authenticated');
+  // Restores a session from a previously stored token (called on app boot). Returns
+  // the current user if the token is still valid, or null if the user must log in again.
+  async checkSession(): Promise<UserAccount | null> {
+    if (typeof window === 'undefined') return null;
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const res = await fetch('/api/me', { headers: this.authHeaders() });
+      if (!res.ok) {
+        this.forceLogout();
+        return null;
+      }
+      const data = await res.json();
+      if (!data.success || !data.user) {
+        this.forceLogout();
+        return null;
+      }
+      localStorage.setItem(SESSION_FLAG_KEY, 'true');
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, data.user.id);
+      return data.user as UserAccount;
+    } catch (err) {
+      console.warn('Session check failed (offline?). Keeping local session for now.', err);
+      // Network error, not an invalid session: let the user keep working offline
+      // with locally cached data rather than forcing a logout.
+      return this.getCurrentUser();
+    }
+  }
+
+  async logout(): Promise<void> {
+    const token = this.getToken();
     this.addAuditLog('LOGOUT_USUARIO', 'Sessão encerrada.', 'SYSTEM');
+    if (token) {
+      try {
+        await fetch('/api/logout', { method: 'POST', headers: this.authHeaders() });
+      } catch {
+        // ignore
+      }
+    }
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(SESSION_FLAG_KEY);
+    this.isInitialized = false;
   }
 
   saveUsers(users: UserAccount[]): void {
@@ -489,6 +509,7 @@ class StorageService {
     message: string;
     supabaseSynced?: boolean;
     errorDetails?: string;
+    plainPassword?: string;
   }> {
     const users = this.getUsers();
 
@@ -529,13 +550,14 @@ class StorageService {
 
     // Default initial password: provided password, or first name + '123', or '123'
     const initialPassword = userData.password?.trim() || `${firstName}123`;
+    const passwordHash = bcrypt.hashSync(initialPassword, 10);
 
     const newUser: UserAccount = {
       id: `user-${Date.now()}`,
       name: cleanName,
       username: cleanUsername,
       email: userData.email?.trim() || `${cleanUsername}@mevamkids.org`,
-      password: initialPassword,
+      password: passwordHash,
       role: userData.role,
       allowedMicroIds: userData.allowedMicroIds || [],
       primaryMicroId: userData.primaryMicroId,
@@ -549,19 +571,7 @@ class StorageService {
 
     users.push(newUser);
     this.saveUsers(users);
-    this.syncAllToServer();
-
-    // Sync profile to Supabase
-    let supabaseSynced = true;
-    let errorDetails: string | undefined;
-
-    if (isSupabaseConfigured()) {
-      const syncResult = await supabaseService.syncProfile(newUser);
-      if (!syncResult.success) {
-        supabaseSynced = false;
-        errorDetails = syncResult.error;
-      }
-    }
+    await this.syncAllToServer();
 
     this.addAuditLog(
       'CRIACAO_USUARIO',
@@ -572,8 +582,8 @@ class StorageService {
     return {
       success: true,
       user: newUser,
-      supabaseSynced,
-      errorDetails,
+      supabaseSynced: true,
+      plainPassword: initialPassword,
       message: `Líder "${newUser.name}" cadastrado e sincronizado com sucesso em todos os aparelhos! Usuário: ${newUser.username} | Senha inicial: ${initialPassword}`
     };
   }
@@ -582,7 +592,7 @@ class StorageService {
     targetUserId: string,
     newPassword: string,
     actor: UserAccount = this.getCurrentUser()
-  ): Promise<{ success: boolean; message: string; supabaseSynced?: boolean; errorDetails?: string }> {
+  ): Promise<{ success: boolean; message: string; supabaseSynced?: boolean; errorDetails?: string; plainPassword?: string }> {
     const users = this.getUsers();
     const targetIndex = users.findIndex((u) => u.id === targetUserId);
     if (targetIndex === -1) {
@@ -608,29 +618,19 @@ class StorageService {
       return { success: false, message: 'A senha deve ter no mínimo 3 caracteres.' };
     }
 
-    targetUser.password = newPassword.trim();
+    const cleanNewPassword = newPassword.trim();
+    targetUser.password = bcrypt.hashSync(cleanNewPassword, 10);
     targetUser.mustChangePassword = false;
     users[targetIndex] = targetUser;
     this.saveUsers(users);
-
-    // Sync profile to Supabase
-    let supabaseSynced = true;
-    let errorDetails: string | undefined;
-
-    if (isSupabaseConfigured()) {
-      const syncResult = await supabaseService.syncProfile(targetUser);
-      if (!syncResult.success) {
-        supabaseSynced = false;
-        errorDetails = syncResult.error;
-      }
-    }
+    await this.syncAllToServer();
 
     this.addAuditLog('ALTERACAO_SENHA', `Senha alterada para o usuário ${targetUser.name} por ${actor.name}.`, 'SYSTEM');
     return {
       success: true,
-      supabaseSynced,
-      errorDetails,
-      message: supabaseSynced ? 'Senha atualizada com sucesso no banco de dados!' : `Senha salva localmente, mas falha no Supabase: ${errorDetails}`
+      supabaseSynced: true,
+      plainPassword: cleanNewPassword,
+      message: 'Senha atualizada com sucesso no banco de dados!'
     };
   }
 
@@ -644,11 +644,12 @@ class StorageService {
       return { success: false, message: 'Usuário não encontrado.' };
     }
 
-    users[idx] = { ...users[idx], ...updatedUser };
+    // Never allow a password to be overwritten through the generic account-update path:
+    // password changes must go through updateUserPassword, which hashes the value.
+    const { password: _ignoredPassword, ...updatedUserWithoutPassword } = updatedUser as any;
+    users[idx] = { ...users[idx], ...updatedUserWithoutPassword };
     this.saveUsers(users);
-    if (isSupabaseConfigured()) {
-      await supabaseService.syncProfile(users[idx]);
-    }
+    await this.syncAllToServer();
     this.addAuditLog('ATUALIZACAO_USUARIO', `Dados de ${updatedUser.name} atualizados por ${actor.name}.`, 'SYSTEM');
     return { success: true, message: 'Usuário atualizado com sucesso!' };
   }
@@ -671,10 +672,6 @@ class StorageService {
     const toDelete = users.find((u) => u.id === userId);
     users = users.filter((u) => u.id !== userId);
     this.saveUsers(users);
-
-    if (isSupabaseConfigured()) {
-      await supabaseService.deleteProfile(userId);
-    }
     await this.syncAllToServer();
 
     if (typeof window !== 'undefined') {
@@ -865,8 +862,6 @@ class StorageService {
       this.addAuditLog('CRIACAO_MICRO', `Novo micro ${micro.name} criado.`, 'MICRO');
     }
     this.save(STORAGE_KEYS.MICROS, micros);
-    // Background cloud sync
-    supabaseService.syncMicro(micro);
   }
 
   deleteMicro(id: string): void {
@@ -905,8 +900,6 @@ class StorageService {
     if (micro) {
       this.addAuditLog('EXCLUSAO_MICRO', `Micro ${micro.name} e suas funções associadas foram excluídos.`, 'MICRO');
     }
-    // Background cloud sync
-    supabaseService.deleteMicro(id);
   }
 
   // --- Functions ---
@@ -933,8 +926,6 @@ class StorageService {
       this.addAuditLog('CRIACAO_FUNCAO', `Nova função ${fn.name} adicionada.`, 'FUNCTION');
     }
     this.save(STORAGE_KEYS.FUNCTIONS, functions);
-    // Background cloud sync
-    supabaseService.syncFunction(fn);
   }
 
   deleteFunction(id: string): void {
@@ -959,8 +950,6 @@ class StorageService {
     if (fn) {
       this.addAuditLog('EXCLUSAO_FUNCAO', `Função ${fn.name} removida.`, 'FUNCTION');
     }
-    // Background cloud sync
-    supabaseService.deleteFunction(id);
   }
 
   // --- People (Unified Single Volunteer Profile) ---
@@ -1013,17 +1002,6 @@ class StorageService {
       this.addAuditLog('CADASTRO_VOLUNTARIO', `Novo voluntário cadastrado: ${person.name}.`, 'PERSON');
     }
     this.save(STORAGE_KEYS.PEOPLE, people);
-
-    // If person has a family, ensure family is in Supabase first
-    if (updated.familyId) {
-      const fam = this.getFamilyById(updated.familyId);
-      if (fam) {
-        supabaseService.syncFamily(fam).catch(() => {});
-      }
-    }
-
-    // Background cloud sync
-    supabaseService.syncPerson(updated);
   }
 
   deletePerson(id: string): void {
@@ -1054,8 +1032,6 @@ class StorageService {
     if (person) {
       this.addAuditLog('EXCLUSAO_VOLUNTARIO', `Voluntário ${person.name} excluído do sistema.`, 'PERSON');
     }
-    // Background cloud sync
-    supabaseService.deletePerson(id);
   }
 
   // --- Families ---
@@ -1084,8 +1060,6 @@ class StorageService {
       this.addAuditLog('CRIACAO_FAMILIA', `Nova família criada: ${family.name}.`, 'FAMILY');
     }
     this.save(STORAGE_KEYS.FAMILIES, families);
-    this.syncAllToServer();
-    supabaseService.syncFamily(family);
   }
 
   deleteFamily(id: string): void {
@@ -1095,11 +1069,9 @@ class StorageService {
     // Unlink members
     const people = this.getPeople().map((p) => (p.familyId === id ? { ...p, familyId: undefined } : p));
     this.save(STORAGE_KEYS.PEOPLE, people);
-    this.syncAllToServer();
     if (fam) {
       this.addAuditLog('EXCLUSAO_FAMILIA', `Família ${fam.name} excluída.`, 'FAMILY');
     }
-    supabaseService.deleteFamily(id);
   }
 
   getFamilyMembers(familyId: string): Person[] {
@@ -1174,15 +1146,11 @@ class StorageService {
       rules.push(rule);
     }
     this.save(STORAGE_KEYS.AVAILABILITIES, rules);
-    this.syncAllToServer();
-    supabaseService.syncAvailability(rule);
   }
 
   deleteAvailability(id: string): void {
     const rules = this.getAvailabilities().filter((r) => r.id !== id);
     this.save(STORAGE_KEYS.AVAILABILITIES, rules);
-    this.syncAllToServer();
-    supabaseService.deleteAvailability(id);
   }
 
   isPersonAvailable(personId: string, dateStr: string, shift: string = 'NOITE'): { available: boolean; reason?: string } {
@@ -1280,8 +1248,6 @@ class StorageService {
       this.addAuditLog('CRIACAO_ESCALA', `Nova escala criada: "${schedule.title}".`, 'SCHEDULE');
     }
     this.save(STORAGE_KEYS.SCHEDULES, schedules);
-    // Background cloud sync
-    supabaseService.syncSchedule(updated);
   }
 
   deleteSchedule(id: string): void {
@@ -1291,8 +1257,6 @@ class StorageService {
     if (sched) {
       this.addAuditLog('EXCLUSAO_ESCALA', `Escala "${sched.title}" excluída.`, 'SCHEDULE');
     }
-    // Background cloud sync
-    supabaseService.deleteSchedule(id);
   }
 
   updateSlotAssignment(scheduleId: string, slotId: string, personId?: string, isManual = true): void {
@@ -1547,93 +1511,21 @@ class StorageService {
     };
   }
 
+  // Asks the server (admin-only) to pull the latest data from Supabase into its own
+  // store, then refreshes this device from the server. Non-admins simply fall back
+  // to a plain server refresh, since only the server holds Supabase credentials now.
   async syncWithSupabaseRemote(): Promise<boolean> {
     if (this.isSyncingSupabase) return false;
     this.isSyncingSupabase = true;
     try {
-      const remote = await supabaseService.fetchRemoteData();
-      if (!remote) return false;
-
-      let hasChanges = false;
-
-      // 1. Users: authoritative from remote profiles
-      if (remote.users && Array.isArray(remote.users)) {
-        const demoIds = new Set(['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila']);
-        let validRemoteUsers = remote.users.filter((u) => !demoIds.has(u.id));
-
-        // Ensure admin user exists
-        let admin = validRemoteUsers.find((u) => u.role === 'ADMIN_LIDERANCA' || u.id === 'user-admin');
-        if (!admin) {
-          admin = INITIAL_USERS[0];
-          validRemoteUsers.unshift(admin);
-        }
-
-        const currentUsers = this.getUsers();
-        if (JSON.stringify(currentUsers) !== JSON.stringify(validRemoteUsers)) {
-          this.save(STORAGE_KEYS.USERS, validRemoteUsers, false);
-          hasChanges = true;
-        }
+      const currentUser = this.getCurrentUser();
+      if (currentUser.role === 'ADMIN_LIDERANCA') {
+        await supabaseService.pullFromSupabase();
       }
-
-      // 2. People: authoritative from remote
-      if (remote.people && Array.isArray(remote.people)) {
-        const currentPeople = this.getPeople();
-        if (JSON.stringify(currentPeople) !== JSON.stringify(remote.people)) {
-          this.save(STORAGE_KEYS.PEOPLE, remote.people, false);
-          hasChanges = true;
-        }
-      }
-
-      // 3. Families: authoritative from remote
-      if (remote.families && Array.isArray(remote.families)) {
-        const currentFamilies = this.getFamilies();
-        if (JSON.stringify(currentFamilies) !== JSON.stringify(remote.families)) {
-          this.save(STORAGE_KEYS.FAMILIES, remote.families, false);
-          hasChanges = true;
-        }
-      }
-
-      // 4. Availabilities: authoritative from remote
-      if (remote.availabilities && Array.isArray(remote.availabilities)) {
-        const currentAvail = this.getAvailabilities();
-        if (JSON.stringify(currentAvail) !== JSON.stringify(remote.availabilities)) {
-          this.save(STORAGE_KEYS.AVAILABILITIES, remote.availabilities, false);
-          hasChanges = true;
-        }
-      }
-
-      // 5. Schedules: authoritative from remote
-      if (remote.schedules && Array.isArray(remote.schedules)) {
-        const currentSchedules = this.getSchedules();
-        if (JSON.stringify(currentSchedules) !== JSON.stringify(remote.schedules)) {
-          this.save(STORAGE_KEYS.SCHEDULES, remote.schedules, false);
-          hasChanges = true;
-        }
-      }
-
-      // 6. Micros: authoritative from remote
-      if (remote.micros && Array.isArray(remote.micros)) {
-        const currentMicros = this.getMicros();
-        if (JSON.stringify(currentMicros) !== JSON.stringify(remote.micros)) {
-          this.save(STORAGE_KEYS.MICROS, remote.micros, false);
-          hasChanges = true;
-        }
-      }
-
-      // 7. Functions: authoritative from remote
-      if (remote.functions && Array.isArray(remote.functions)) {
-        const currentFunctions = this.getFunctions();
-        if (JSON.stringify(currentFunctions) !== JSON.stringify(remote.functions)) {
-          this.save(STORAGE_KEYS.FUNCTIONS, remote.functions, false);
-          hasChanges = true;
-        }
-      }
-
-      if (hasChanges && typeof window !== 'undefined') {
-        this.syncAllToServer();
+      const changed = await this.pullFromServer(true);
+      if (changed && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { source: 'supabase' } }));
       }
-
       return true;
     } catch (e) {
       console.warn('Sync with remote Supabase failed:', e);
@@ -1668,7 +1560,7 @@ class StorageService {
 
     if (typeof window !== 'undefined') {
       try {
-        await fetch('/api/reset', { method: 'POST' });
+        await fetch('/api/reset', { method: 'POST', headers: this.authHeaders() });
       } catch (e) {
         console.warn('API reset call failed:', e);
       }

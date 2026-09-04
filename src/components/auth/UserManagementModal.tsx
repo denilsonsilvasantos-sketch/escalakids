@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, UserRole, Micro } from '../../types';
 import { storageService } from '../../services/storageService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -46,6 +47,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingCloud, setIsCheckingCloud] = useState(false);
+  // Passwords are hashed at rest and never sent back by the server, so the plaintext
+  // is only ever known right after it is set (creation or reset) — kept here just
+  // long enough for the admin to copy/share it, then discarded when the modal closes.
+  const [revealedPassword, setRevealedPassword] = useState<{ userId: string; password: string } | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
 
   // Form State for New User
   const [formData, setFormData] = useState({
@@ -84,6 +90,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     window.addEventListener('mevam_data_synced', handleSync);
     return () => window.removeEventListener('mevam_data_synced', handleSync);
   }, []);
+
+  // Forget any transiently-revealed plaintext password once the modal is closed.
+  useEffect(() => {
+    if (!isOpen) setRevealedPassword(null);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -162,6 +173,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
       if (result.success) {
         setFeedback({ type: 'success', message: result.message });
+        const createdUser = (result as any).user as UserAccount | undefined;
+        const createdPlainPassword = (result as any).plainPassword as string | undefined;
+        if (createdUser && createdPlainPassword) {
+          setRevealedPassword({ userId: createdUser.id, password: createdPlainPassword });
+        }
         setIsCreatingUser(false);
         setFormData({
           name: '',
@@ -201,10 +217,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       );
 
       if (result.success) {
-        setFeedback({
-          type: result.supabaseSynced === false ? 'error' : 'success',
-          message: result.message
-        });
+        setFeedback({ type: 'success', message: result.message });
+        if (result.plainPassword) {
+          setRevealedPassword({ userId: selectedUserForPassword.id, password: result.plainPassword });
+        }
         setSelectedUserForPassword(null);
         setNewPassword('');
         refreshUsers();
@@ -217,27 +233,41 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
   };
 
-  const handleDeleteUser = async (user: UserAccount) => {
-    if (confirm(`Tem certeza que deseja excluir a conta de "${user.name}"?`)) {
-      setIsSubmitting(true);
-      try {
-        const res = await storageService.deleteUserAccount(user.id, currentUser);
-        if (res.success) {
-          setFeedback({ type: 'success', message: res.message });
-          refreshUsers();
-          onUserUpdated?.();
-        } else {
-          setFeedback({ type: 'error', message: res.message });
-        }
-      } finally {
-        setIsSubmitting(false);
+  const handleDeleteUser = (user: UserAccount) => {
+    setUserToDelete(user);
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    const user = userToDelete;
+    setUserToDelete(null);
+    setIsSubmitting(true);
+    try {
+      const res = await storageService.deleteUserAccount(user.id, currentUser);
+      if (res.success) {
+        setFeedback({ type: 'success', message: res.message });
+        refreshUsers();
+        onUserUpdated?.();
+      } else {
+        setFeedback({ type: 'error', message: res.message });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCopyCredentials = (u: UserAccount) => {
-    const userPass = u.password || (u.role === 'ADMIN_LIDERANCA' ? 'ADMIN' : '123');
-    const text = `🙌 Olá ${u.name}!\n\nSeus dados de acesso ao sistema do *MEVAM Kids* foram gerados:\n\n🌐 Link: ${window.location.origin}\n👤 Usuário: *${u.username || u.name}*\n🔑 Senha: *${userPass}*\n🛡️ Perfil: *${u.role}*\n\nVocê pode alterar sua senha a qualquer momento após entrar.`;
+    // Passwords are hashed at rest — the plaintext only exists transiently, right
+    // after this account was created or had its password reset in this session.
+    if (revealedPassword?.userId !== u.id) {
+      setFeedback({
+        type: 'error',
+        message: `A senha de ${u.name} não pode mais ser exibida. Use "Alterar Senha" para definir uma nova e compartilhar.`
+      });
+      return;
+    }
+
+    const text = `🙌 Olá ${u.name}!\n\nSeus dados de acesso ao sistema do *MEVAM Kids* foram gerados:\n\n🌐 Link: ${window.location.origin}\n👤 Usuário: *${u.username || u.name}*\n🔑 Senha: *${revealedPassword.password}*\n🛡️ Perfil: *${u.role}*\n\nVocê pode alterar sua senha a qualquer momento após entrar.`;
 
     navigator.clipboard.writeText(text);
     setCopiedId(u.id);
@@ -656,7 +686,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             {displayedUsers.map((u) => {
               const roleBadge = getRoleLabel(u.role);
               const isMasterAdmin = u.id === 'user-admin';
-              const userPassword = u.password || (isMasterAdmin ? 'ADMIN' : '123');
+              const hasRevealedPassword = revealedPassword?.userId === u.id;
 
               // Linked micro names
               const primaryMicro = micros.find((m) => m.id === u.primaryMicroId);
@@ -693,9 +723,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         <span className="font-mono">
                           Usuário: <strong className="text-slate-200">{u.username || 'admin'}</strong>
                         </span>
-                        <span className="font-mono">
-                          Senha: <strong className="text-amber-300">{userPassword}</strong>
-                        </span>
+                        {hasRevealedPassword ? (
+                          <span className="font-mono">
+                            Senha: <strong className="text-amber-300">{revealedPassword!.password}</strong>
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 italic">Senha protegida</span>
+                        )}
                         {u.createdByName && (
                           <span className="text-[11px] text-slate-400">
                             Criado por: {u.createdByName}
@@ -785,6 +819,17 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!userToDelete}
+        title="Excluir Usuário"
+        message={
+          <>Tem certeza que deseja excluir a conta de <strong className="text-slate-900 font-semibold">{userToDelete?.name}</strong>? Ele(a) perderá o acesso ao sistema imediatamente.</>
+        }
+        isConfirming={isSubmitting}
+        onCancel={() => setUserToDelete(null)}
+        onConfirm={handleConfirmDeleteUser}
+      />
     </div>
   );
 };

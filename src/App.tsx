@@ -21,7 +21,8 @@ import { storageService } from './services/storageService';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount>(storageService.getCurrentUser());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(storageService.isAuthenticated());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingSession, setIsCheckingSession] = useState<boolean>(true);
   const [currentView, setCurrentView] = useState<string>('dashboard');
 
   // Modals state
@@ -74,6 +75,30 @@ export default function App() {
     return () => window.removeEventListener('mevam_data_synced', handleDataSynced);
   }, [currentUser]);
 
+  // Restore a previous session on load (validated against the server) and react to
+  // the server telling us mid-session that our token is no longer valid.
+  useEffect(() => {
+    let cancelled = false;
+    storageService.checkSession().then((user) => {
+      if (cancelled) return;
+      if (user) {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        storageService.startSync();
+      }
+      setIsCheckingSession(false);
+    });
+
+    const handleExpired = () => {
+      setIsAuthenticated(false);
+    };
+    window.addEventListener('mevam_session_expired', handleExpired);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('mevam_session_expired', handleExpired);
+    };
+  }, []);
+
   const handleUserChange = (user: UserAccount) => {
     setCurrentUser(user);
     setCurrentView('dashboard');
@@ -83,11 +108,12 @@ export default function App() {
     setCurrentUser(user);
     setIsAuthenticated(true);
     setCurrentView('dashboard');
+    storageService.startSync();
   };
 
-  const handleLogout = () => {
-    storageService.logout();
+  const handleLogout = async () => {
     setIsAuthenticated(false);
+    await storageService.logout();
   };
 
   const handleOpenNewVolunteer = () => {
@@ -104,6 +130,16 @@ export default function App() {
     await storageService.resetAllData();
     window.location.reload();
   };
+
+  // While validating a stored session token against the server, avoid flashing the
+  // login screen for users who are actually already authenticated.
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // If not authenticated, show modern Login Screen
   if (!isAuthenticated) {
