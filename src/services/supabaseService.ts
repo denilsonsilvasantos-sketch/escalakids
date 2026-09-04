@@ -167,7 +167,9 @@ class SupabaseService {
           created_by: u.createdBy || null,
           created_by_name: u.createdByName || null,
           must_change_password: u.mustChangePassword ?? false,
-          last_login_at: u.lastLoginAt || null
+          last_login_at: u.lastLoginAt || null,
+          created_at: u.createdAt || new Date().toISOString(),
+          updated_at: u.updatedAt || new Date().toISOString()
         }));
         const { error } = await client.from('profiles').upsert(userPayload, { onConflict: 'id' });
         if (error) throw new Error(`Erro em profiles: ${error.message}`);
@@ -185,25 +187,34 @@ class SupabaseService {
           color: m.color,
           icon_name: m.iconName || 'Layers',
           default_shifts: m.defaultShifts || ['Manhã', 'Noite'],
-          algorithm_weights: m.algorithmWeights || {}
+          algorithm_weights: m.algorithmWeights || {},
+          created_at: m.createdAt || new Date().toISOString(),
+          updated_at: m.updatedAt || new Date().toISOString()
         }));
         const { error } = await client.from('micros').upsert(microPayload, { onConflict: 'id' });
         if (error) throw new Error(`Erro em micros: ${error.message}`);
       }
 
-      // 3. Functions
+      // 3. Functions (ensure foreign key to existing micros)
       if (data.functions.length > 0) {
-        const functionPayload = data.functions.map((f) => ({
-          id: f.id,
-          micro_id: f.microId,
-          name: f.name,
-          description: f.description || null,
-          category: f.category || null,
-          criteria: f.criteria || {},
-          default_required_count: f.defaultRequiredCount || 1
-        }));
-        const { error } = await client.from('micro_functions').upsert(functionPayload, { onConflict: 'id' });
-        if (error) throw new Error(`Erro em micro_functions: ${error.message}`);
+        const microIdSet = new Set(data.micros.map((m) => m.id));
+        const validFunctions = data.functions.filter((f) => microIdSet.has(f.microId));
+
+        if (validFunctions.length > 0) {
+          const functionPayload = validFunctions.map((f) => ({
+            id: f.id,
+            micro_id: f.microId,
+            name: f.name,
+            description: f.description || null,
+            category: f.category || null,
+            criteria: f.criteria || {},
+            default_required_count: f.defaultRequiredCount || 1,
+            created_at: f.createdAt || new Date().toISOString(),
+            updated_at: f.updatedAt || new Date().toISOString()
+          }));
+          const { error } = await client.from('micro_functions').upsert(functionPayload, { onConflict: 'id' });
+          if (error) throw new Error(`Erro em micro_functions: ${error.message}`);
+        }
       }
 
       // 4. Families
@@ -213,14 +224,16 @@ class SupabaseService {
           name: f.name,
           priority: f.priority,
           notes: f.notes || null,
-          created_at: f.createdAt
+          created_at: f.createdAt || new Date().toISOString(),
+          updated_at: f.updatedAt || new Date().toISOString()
         }));
         const { error } = await client.from('families').upsert(familyPayload, { onConflict: 'id' });
         if (error) throw new Error(`Erro em families: ${error.message}`);
       }
 
-      // 5. People
+      // 5. People (ensure foreign key to existing families, or fallback to null)
       if (data.people.length > 0) {
+        const familyIdSet = new Set(data.families.map((f) => f.id));
         const peoplePayload = data.people.map((p) => ({
           id: p.id,
           name: p.name,
@@ -231,29 +244,45 @@ class SupabaseService {
           email: p.email || null,
           avatar_url: p.avatarUrl || null,
           notes: p.notes || null,
-          family_id: p.familyId || null,
+          family_id: (p.familyId && familyIdSet.has(p.familyId)) ? p.familyId : null,
           active: p.active,
           micro_ids: p.microIds || [],
-          function_preferences: p.functionPreferences || []
+          function_preferences: p.functionPreferences || [],
+          created_at: p.createdAt || new Date().toISOString(),
+          updated_at: p.updatedAt || new Date().toISOString()
         }));
-        const { error } = await client.from('people').upsert(peoplePayload, { onConflict: 'id' });
+
+        let { error } = await client.from('people').upsert(peoplePayload, { onConflict: 'id' });
+        if (error && error.code === '23503') {
+          // If foreign key constraint failed on any item, retry with all family_ids set to null
+          const safePayload = peoplePayload.map((p) => ({ ...p, family_id: null }));
+          const retry = await client.from('people').upsert(safePayload, { onConflict: 'id' });
+          error = retry.error;
+        }
         if (error) throw new Error(`Erro em people: ${error.message}`);
       }
 
-      // 6. Availabilities
+      // 6. Availabilities (ensure foreign key to existing people)
       if (data.availabilities.length > 0) {
-        const availPayload = data.availabilities.map((a) => ({
-          id: a.id,
-          person_id: a.personId,
-          type: normalizeAvailabilityType(a.type),
-          day_of_week: a.dayOfWeek ?? null,
-          shift: a.shift || null,
-          specific_date: a.specificDate || null,
-          is_available: a.isAvailable,
-          reason: a.reason || null
-        }));
-        const { error } = await client.from('availability_rules').upsert(availPayload, { onConflict: 'id' });
-        if (error) throw new Error(`Erro em availability_rules: ${error.message}`);
+        const personIdSet = new Set(data.people.map((p) => p.id));
+        const validAvailabilities = data.availabilities.filter((a) => personIdSet.has(a.personId));
+
+        if (validAvailabilities.length > 0) {
+          const availPayload = validAvailabilities.map((a) => ({
+            id: a.id,
+            person_id: a.personId,
+            type: normalizeAvailabilityType(a.type),
+            day_of_week: a.dayOfWeek ?? null,
+            shift: a.shift || null,
+            specific_date: a.specificDate || null,
+            is_available: a.isAvailable,
+            reason: a.reason || null,
+            created_at: a.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }));
+          const { error } = await client.from('availability_rules').upsert(availPayload, { onConflict: 'id' });
+          if (error) throw new Error(`Erro em availability_rules: ${error.message}`);
+        }
       }
 
       // 7. Schedules
@@ -270,11 +299,48 @@ class SupabaseService {
           status: s.status,
           quality_metrics: s.qualityMetrics || {},
           slots: s.slots || [],
-          created_at: s.createdAt,
-          updated_at: s.updatedAt
+          created_at: s.createdAt || new Date().toISOString(),
+          updated_at: s.updatedAt || new Date().toISOString()
         }));
         const { error } = await client.from('schedules').upsert(schedPayload, { onConflict: 'id' });
         if (error) throw new Error(`Erro em schedules: ${error.message}`);
+      }
+
+      // 8. Rotation History (if present)
+      if (data.rotationHistory && data.rotationHistory.length > 0) {
+        try {
+          const rotPayload = data.rotationHistory.map((r) => ({
+            id: r.id,
+            person_id: r.personId,
+            micro_id: r.microId,
+            function_id: r.functionId,
+            date: r.date,
+            event_id: r.eventId,
+            co_volunteers: r.coVolunteers || [],
+            created_at: new Date().toISOString()
+          }));
+          await client.from('rotation_history').upsert(rotPayload, { onConflict: 'id' });
+        } catch {
+          // Non-critical, ignore
+        }
+      }
+
+      // 9. Audit Logs (last 100)
+      if (data.auditLogs && data.auditLogs.length > 0) {
+        try {
+          const logPayload = data.auditLogs.slice(-100).map((l) => ({
+            id: l.id,
+            action: l.action,
+            details: l.details,
+            target_type: l.targetType,
+            user_name: l.userName || null,
+            user_role: l.userRole || null,
+            timestamp: l.timestamp || new Date().toISOString()
+          }));
+          await client.from('audit_logs').upsert(logPayload, { onConflict: 'id' });
+        } catch {
+          // Non-critical, ignore
+        }
       }
 
       this.syncState.isConnected = true;
@@ -353,7 +419,9 @@ class SupabaseService {
           createdBy: u.created_by || undefined,
           createdByName: u.created_by_name || undefined,
           mustChangePassword: u.must_change_password ?? false,
-          lastLoginAt: u.last_login_at || undefined
+          lastLoginAt: u.last_login_at || undefined,
+          createdAt: u.created_at || new Date().toISOString(),
+          updatedAt: u.updated_at || new Date().toISOString()
         }));
       }
 
@@ -368,7 +436,9 @@ class SupabaseService {
           color: m.color,
           iconName: m.icon_name || 'Layers',
           defaultShifts: m.default_shifts || ['Manhã', 'Noite'],
-          algorithmWeights: m.algorithm_weights || {}
+          algorithmWeights: m.algorithm_weights || {},
+          createdAt: m.created_at || new Date().toISOString(),
+          updatedAt: m.updated_at || new Date().toISOString()
         }));
       }
 
@@ -380,7 +450,9 @@ class SupabaseService {
           description: f.description || undefined,
           category: f.category || undefined,
           criteria: f.criteria || {},
-          defaultRequiredCount: f.default_required_count || 1
+          defaultRequiredCount: f.default_required_count || 1,
+          createdAt: f.created_at || new Date().toISOString(),
+          updatedAt: f.updated_at || new Date().toISOString()
         }));
       }
 
@@ -390,7 +462,8 @@ class SupabaseService {
           name: f.name,
           priority: f.priority,
           notes: f.notes || undefined,
-          createdAt: f.created_at || new Date().toISOString()
+          createdAt: f.created_at || new Date().toISOString(),
+          updatedAt: f.updated_at || new Date().toISOString()
         }));
       }
 
@@ -424,7 +497,8 @@ class SupabaseService {
           specificDate: a.specific_date || undefined,
           isAvailable: a.is_available,
           reason: a.reason || undefined,
-          createdAt: a.created_at || new Date().toISOString()
+          createdAt: a.created_at || new Date().toISOString(),
+          updatedAt: a.updated_at || new Date().toISOString()
         }));
       }
 
@@ -469,25 +543,29 @@ class SupabaseService {
     const client = getSupabaseClient();
     if (!client) return { success: false, error: 'Supabase não configurado' };
     try {
-      const { error } = await client.from('people').upsert(
-        {
-          id: person.id,
-          name: person.name,
-          nickname: person.nickname || null,
-          birth_date: person.birthDate,
-          phone: person.phone,
-          whatsapp: person.whatsapp,
-          email: person.email || null,
-          avatar_url: person.avatarUrl || null,
-          notes: person.notes || null,
-          family_id: person.familyId || null,
-          active: person.active,
-          micro_ids: person.microIds || [],
-          function_preferences: person.functionPreferences || [],
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'id' }
-      );
+      const payload: any = {
+        id: person.id,
+        name: person.name,
+        nickname: person.nickname || null,
+        birth_date: person.birthDate,
+        phone: person.phone,
+        whatsapp: person.whatsapp,
+        email: person.email || null,
+        avatar_url: person.avatarUrl || null,
+        notes: person.notes || null,
+        family_id: person.familyId || null,
+        active: person.active,
+        micro_ids: person.microIds || [],
+        function_preferences: person.functionPreferences || [],
+        updated_at: person.updatedAt || new Date().toISOString()
+      };
+      let { error } = await client.from('people').upsert(payload, { onConflict: 'id' });
+      if (error && error.code === '23503' && payload.family_id) {
+        // Fallback: If family_id foreign key constraint fails, retry without family_id
+        payload.family_id = null;
+        const retry = await client.from('people').upsert(payload, { onConflict: 'id' });
+        error = retry.error;
+      }
       if (error) {
         console.error('Supabase syncPerson error:', error);
         return { success: false, error: error.message };
@@ -496,6 +574,46 @@ class SupabaseService {
     } catch (e: any) {
       console.warn('Supabase syncPerson failed:', e);
       return { success: false, error: e?.message || 'Falha de conexão' };
+    }
+  }
+
+  async syncFunction(fn: MicroFunction): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não configurado' };
+    try {
+      const payload = {
+        id: fn.id,
+        micro_id: fn.microId,
+        name: fn.name,
+        description: fn.description || null,
+        category: fn.category || null,
+        criteria: fn.criteria || {},
+        default_required_count: fn.defaultRequiredCount || 1,
+        created_at: fn.createdAt || new Date().toISOString(),
+        updated_at: fn.updatedAt || new Date().toISOString()
+      };
+      const { error } = await client.from('micro_functions').upsert(payload, { onConflict: 'id' });
+      if (error) {
+        console.error('Supabase syncFunction error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      console.warn('Supabase syncFunction failed:', e);
+      return { success: false, error: e?.message || 'Falha de conexão' };
+    }
+  }
+
+  async deleteFunction(fnId: string): Promise<{ success: boolean; error?: string }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Supabase não configurado' };
+    try {
+      const { error } = await client.from('micro_functions').delete().eq('id', fnId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      console.warn('Supabase deleteFunction failed:', e);
+      return { success: false, error: e?.message || 'Falha ao deletar função' };
     }
   }
 

@@ -112,30 +112,6 @@
       }
     },
     {
-      "id": "micro-acolhimento",
-      "name": "Acolhimento & Recepção",
-      "description": "Primeiro contato com pais e crianças, check-in, crachás e recepção.",
-      "leaderName": "Mariana Souza",
-      "leaderId": "user-macro-joao",
-      "status": "ATIVO",
-      "color": "#10B981",
-      "iconName": "HeartHandshake",
-      "defaultShifts": [
-        "Manhã",
-        "Noite"
-      ],
-      "algorithmWeights": {
-        "family": 60,
-        "recency": 80,
-        "rotation": 80,
-        "experience": 50,
-        "availability": 100,
-        "correctFunction": 100,
-        "frequencyBalance": 90,
-        "volunteerPreference": 80
-      }
-    },
-    {
       "id": "micro-refeitorio",
       "name": "Refeitório & Lanche",
       "description": "Preparo e distribuição do lanche e hidratação das crianças.",
@@ -144,30 +120,6 @@
       "status": "ATIVO",
       "color": "#F59E0B",
       "iconName": "Utensils",
-      "defaultShifts": [
-        "Manhã",
-        "Noite"
-      ],
-      "algorithmWeights": {
-        "family": 60,
-        "recency": 80,
-        "rotation": 80,
-        "experience": 50,
-        "availability": 100,
-        "correctFunction": 100,
-        "frequencyBalance": 90,
-        "volunteerPreference": 80
-      }
-    },
-    {
-      "id": "micro-seguranca",
-      "name": "Segurança & Apoio",
-      "description": "Monitoramento dos corredores, controle de acesso e segurança das crianças.",
-      "leaderName": "Marcos Rocha",
-      "leaderId": "user-macro-joao",
-      "status": "ATIVO",
-      "color": "#8B5CF6",
-      "iconName": "ShieldCheck",
       "defaultShifts": [
         "Manhã",
         "Noite"
@@ -202,6 +154,73 @@
         "availability": 100,
         "correctFunction": 100,
         "frequencyBalance": 85,
+        "volunteerPreference": 80
+      }
+    },
+    {
+      "id": "micro-seguranca",
+      "name": "Segurança",
+      "description": "Monitoramento dos corredores, controle de acesso e segurança das crianças.",
+      "status": "ATIVO",
+      "color": "#8B5CF6",
+      "iconName": "Layers",
+      "defaultShifts": [
+        "Manhã",
+        "Noite"
+      ],
+      "algorithmWeights": {
+        "family": 60,
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 90,
+        "volunteerPreference": 80
+      }
+    },
+    {
+      "id": "micro-1788531379630",
+      "name": "Pipoca",
+      "status": "ATIVO",
+      "color": "#ffffff",
+      "iconName": "Layers",
+      "defaultShifts": [
+        "Manhã",
+        "Noite"
+      ],
+      "algorithmWeights": {
+        "family": 55,
+        "recency": 75,
+        "rotation": 90,
+        "experience": 65,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 80,
+        "volunteerPreference": 85
+      }
+    },
+    {
+      "id": "micro-acolhimento",
+      "name": "Acolhimento & Recepção",
+      "description": "Primeiro contato com pais e crianças, check-in, crachás e recepção.",
+      "leaderName": "Mariana Souza",
+      "leaderId": "user-macro-joao",
+      "status": "ATIVO",
+      "color": "#10B981",
+      "iconName": "HeartHandshake",
+      "defaultShifts": [
+        "Manhã",
+        "Noite"
+      ],
+      "algorithmWeights": {
+        "family": 60,
+        "recency": 80,
+        "rotation": 80,
+        "experience": 50,
+        "availability": 100,
+        "correctFunction": 100,
+        "frequencyBalance": 90,
         "volunteerPreference": 80
       }
     }
@@ -788,8 +807,8 @@
   "rotationHistory": [],
   "auditLogs": [
     {
-      "id": "log-1788468702527-bcwk",
-      "timestamp": "2026-09-03T20:51:42.527Z",
+      "id": "log-1788531993078-zt8o",
+      "timestamp": "2026-09-04T14:26:33.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -797,8 +816,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468699052-avvq",
-      "timestamp": "2026-09-03T20:51:39.052Z",
+      "id": "log-1788531989560-xdaz",
+      "timestamp": "2026-09-04T14:26:29.560Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -806,8 +825,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468695866-dii7",
-      "timestamp": "2026-09-03T20:51:35.866Z",
+      "id": "log-1788531986071-xoac",
+      "timestamp": "2026-09-04T14:26:26.071Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -815,8 +834,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468692027-cxba",
-      "timestamp": "2026-09-03T20:51:32.027Z",
+      "id": "log-1788531982545-g3qy",
+      "timestamp": "2026-09-04T14:26:22.545Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -824,8 +843,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468688522-wj7n",
-      "timestamp": "2026-09-03T20:51:28.522Z",
+      "id": "log-1788531979054-wlne",
+      "timestamp": "2026-09-04T14:26:19.054Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -833,8 +852,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468685036-y57m",
-      "timestamp": "2026-09-03T20:51:25.036Z",
+      "id": "log-1788531975546-k4cm",
+      "timestamp": "2026-09-04T14:26:15.547Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -842,8 +861,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468682355-pmue",
-      "timestamp": "2026-09-03T20:51:22.355Z",
+      "id": "log-1788531972068-j7a7",
+      "timestamp": "2026-09-04T14:26:12.068Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -851,8 +870,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468681782-fl7d",
-      "timestamp": "2026-09-03T20:51:21.782Z",
+      "id": "log-1788531968543-wgk7",
+      "timestamp": "2026-09-04T14:26:08.543Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -860,8 +879,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468674532-pk9v",
-      "timestamp": "2026-09-03T20:51:14.532Z",
+      "id": "log-1788531965064-is9r",
+      "timestamp": "2026-09-04T14:26:05.064Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -869,8 +888,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468671017-6j9o",
-      "timestamp": "2026-09-03T20:51:11.017Z",
+      "id": "log-1788531961574-vzpm",
+      "timestamp": "2026-09-04T14:26:01.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -878,8 +897,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468667919-5t8v",
-      "timestamp": "2026-09-03T20:51:07.919Z",
+      "id": "log-1788531958058-izpo",
+      "timestamp": "2026-09-04T14:25:58.058Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -887,8 +906,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468664043-p74h",
-      "timestamp": "2026-09-03T20:51:04.043Z",
+      "id": "log-1788531954548-y6h2",
+      "timestamp": "2026-09-04T14:25:54.548Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -896,8 +915,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468660537-ww3f",
-      "timestamp": "2026-09-03T20:51:00.537Z",
+      "id": "log-1788531951459-rkjh",
+      "timestamp": "2026-09-04T14:25:51.459Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -905,8 +924,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468657031-abkm",
-      "timestamp": "2026-09-03T20:50:57.031Z",
+      "id": "log-1788531947574-jslk",
+      "timestamp": "2026-09-04T14:25:47.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -914,8 +933,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468653532-71na",
-      "timestamp": "2026-09-03T20:50:53.532Z",
+      "id": "log-1788531944078-u90h",
+      "timestamp": "2026-09-04T14:25:44.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -923,8 +942,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468650039-9qcf",
-      "timestamp": "2026-09-03T20:50:50.039Z",
+      "id": "log-1788531940572-16fx",
+      "timestamp": "2026-09-04T14:25:40.572Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -932,8 +951,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468646566-gtmy",
-      "timestamp": "2026-09-03T20:50:46.566Z",
+      "id": "log-1788531937208-ver2",
+      "timestamp": "2026-09-04T14:25:37.208Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -941,8 +960,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468643032-vysl",
-      "timestamp": "2026-09-03T20:50:43.032Z",
+      "id": "log-1788531933544-oyg1",
+      "timestamp": "2026-09-04T14:25:33.544Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -950,8 +969,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468639530-essh",
-      "timestamp": "2026-09-03T20:50:39.530Z",
+      "id": "log-1788531930088-rpav",
+      "timestamp": "2026-09-04T14:25:30.088Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -959,8 +978,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468636048-vqxy",
-      "timestamp": "2026-09-03T20:50:36.048Z",
+      "id": "log-1788531927019-8z7r",
+      "timestamp": "2026-09-04T14:25:27.019Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -968,8 +987,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468632529-ob3b",
-      "timestamp": "2026-09-03T20:50:32.529Z",
+      "id": "log-1788531923078-fn4h",
+      "timestamp": "2026-09-04T14:25:23.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -977,8 +996,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468629024-byyf",
-      "timestamp": "2026-09-03T20:50:29.024Z",
+      "id": "log-1788531919547-x4yc",
+      "timestamp": "2026-09-04T14:25:19.547Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -986,8 +1005,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468625529-kub4",
-      "timestamp": "2026-09-03T20:50:25.529Z",
+      "id": "log-1788531916150-ce19",
+      "timestamp": "2026-09-04T14:25:16.150Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -995,8 +1014,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468622040-pj9o",
-      "timestamp": "2026-09-03T20:50:22.040Z",
+      "id": "log-1788531912554-9km0",
+      "timestamp": "2026-09-04T14:25:12.554Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1004,8 +1023,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468618543-w5l1",
-      "timestamp": "2026-09-03T20:50:18.543Z",
+      "id": "log-1788531909045-f0eo",
+      "timestamp": "2026-09-04T14:25:09.045Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1013,8 +1032,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468615451-1rxo",
-      "timestamp": "2026-09-03T20:50:15.451Z",
+      "id": "log-1788531905958-g92g",
+      "timestamp": "2026-09-04T14:25:05.958Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1022,8 +1041,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468611545-lrxh",
-      "timestamp": "2026-09-03T20:50:11.545Z",
+      "id": "log-1788531902126-xi3p",
+      "timestamp": "2026-09-04T14:25:02.126Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1031,8 +1050,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468608530-0ljk",
-      "timestamp": "2026-09-03T20:50:08.530Z",
+      "id": "log-1788531898559-31ko",
+      "timestamp": "2026-09-04T14:24:58.559Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1040,8 +1059,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468604523-tf66",
-      "timestamp": "2026-09-03T20:50:04.523Z",
+      "id": "log-1788531895073-grch",
+      "timestamp": "2026-09-04T14:24:55.073Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1049,8 +1068,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468601063-t2en",
-      "timestamp": "2026-09-03T20:50:01.063Z",
+      "id": "log-1788531891612-h02e",
+      "timestamp": "2026-09-04T14:24:51.612Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1058,8 +1077,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468597536-vhvp",
-      "timestamp": "2026-09-03T20:49:57.536Z",
+      "id": "log-1788531888044-1rbz",
+      "timestamp": "2026-09-04T14:24:48.044Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1067,8 +1086,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468594026-2ovv",
-      "timestamp": "2026-09-03T20:49:54.026Z",
+      "id": "log-1788531884567-5d7m",
+      "timestamp": "2026-09-04T14:24:44.567Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1076,8 +1095,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468590554-4czs",
-      "timestamp": "2026-09-03T20:49:50.554Z",
+      "id": "log-1788531881085-pjcl",
+      "timestamp": "2026-09-04T14:24:41.085Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1085,8 +1104,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468587045-r4a2",
-      "timestamp": "2026-09-03T20:49:47.045Z",
+      "id": "log-1788531877547-jbnn",
+      "timestamp": "2026-09-04T14:24:37.547Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1094,8 +1113,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468583544-v0z5",
-      "timestamp": "2026-09-03T20:49:43.544Z",
+      "id": "log-1788531874069-586p",
+      "timestamp": "2026-09-04T14:24:34.069Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1103,8 +1122,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468580011-vtc0",
-      "timestamp": "2026-09-03T20:49:40.011Z",
+      "id": "log-1788531870577-bc8n",
+      "timestamp": "2026-09-04T14:24:30.577Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1112,8 +1131,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468576524-oy2l",
-      "timestamp": "2026-09-03T20:49:36.524Z",
+      "id": "log-1788531867084-tlml",
+      "timestamp": "2026-09-04T14:24:27.084Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1121,8 +1140,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468573020-0akw",
-      "timestamp": "2026-09-03T20:49:33.021Z",
+      "id": "log-1788531863558-gtiq",
+      "timestamp": "2026-09-04T14:24:23.558Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1130,8 +1149,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468569568-bse5",
-      "timestamp": "2026-09-03T20:49:29.568Z",
+      "id": "log-1788531860046-esm3",
+      "timestamp": "2026-09-04T14:24:20.046Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1139,8 +1158,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468566034-k5pj",
-      "timestamp": "2026-09-03T20:49:26.034Z",
+      "id": "log-1788531856562-drbm",
+      "timestamp": "2026-09-04T14:24:16.562Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1148,8 +1167,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468562551-acuy",
-      "timestamp": "2026-09-03T20:49:22.551Z",
+      "id": "log-1788531853058-7chc",
+      "timestamp": "2026-09-04T14:24:13.058Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1157,8 +1176,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468559048-xllj",
-      "timestamp": "2026-09-03T20:49:19.048Z",
+      "id": "log-1788531849558-fjex",
+      "timestamp": "2026-09-04T14:24:09.558Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1166,8 +1185,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468555548-guyi",
-      "timestamp": "2026-09-03T20:49:15.548Z",
+      "id": "log-1788531846045-az03",
+      "timestamp": "2026-09-04T14:24:06.045Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1175,8 +1194,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468552025-g7ah",
-      "timestamp": "2026-09-03T20:49:12.025Z",
+      "id": "log-1788531842566-wvsz",
+      "timestamp": "2026-09-04T14:24:02.566Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1184,8 +1203,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468548852-b8x9",
-      "timestamp": "2026-09-03T20:49:08.852Z",
+      "id": "log-1788531839081-tkms",
+      "timestamp": "2026-09-04T14:23:59.081Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1193,8 +1212,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468545054-9b2m",
-      "timestamp": "2026-09-03T20:49:05.054Z",
+      "id": "log-1788531835557-xgei",
+      "timestamp": "2026-09-04T14:23:55.557Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1202,8 +1221,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468541545-mkqm",
-      "timestamp": "2026-09-03T20:49:01.545Z",
+      "id": "log-1788531832056-c5n4",
+      "timestamp": "2026-09-04T14:23:52.056Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1211,8 +1230,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468538044-wrle",
-      "timestamp": "2026-09-03T20:48:58.044Z",
+      "id": "log-1788531828564-jsuz",
+      "timestamp": "2026-09-04T14:23:48.564Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1220,8 +1239,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468534542-9r26",
-      "timestamp": "2026-09-03T20:48:54.542Z",
+      "id": "log-1788531825051-pdqr",
+      "timestamp": "2026-09-04T14:23:45.051Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1229,8 +1248,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468531038-vttj",
-      "timestamp": "2026-09-03T20:48:51.038Z",
+      "id": "log-1788531821573-7b0d",
+      "timestamp": "2026-09-04T14:23:41.573Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1238,8 +1257,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468527539-rb33",
-      "timestamp": "2026-09-03T20:48:47.539Z",
+      "id": "log-1788531818072-z9qf",
+      "timestamp": "2026-09-04T14:23:38.072Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1247,8 +1266,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468524402-5prr",
-      "timestamp": "2026-09-03T20:48:44.402Z",
+      "id": "log-1788531814557-mi4b",
+      "timestamp": "2026-09-04T14:23:34.557Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1256,8 +1275,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468520565-bz1x",
-      "timestamp": "2026-09-03T20:48:40.565Z",
+      "id": "log-1788531811400-vzb9",
+      "timestamp": "2026-09-04T14:23:31.400Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1265,8 +1284,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468517045-fceg",
-      "timestamp": "2026-09-03T20:48:37.045Z",
+      "id": "log-1788531807556-vmzb",
+      "timestamp": "2026-09-04T14:23:27.556Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1274,8 +1293,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468513540-8yzu",
-      "timestamp": "2026-09-03T20:48:33.540Z",
+      "id": "log-1788531804062-7iq7",
+      "timestamp": "2026-09-04T14:23:24.062Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1283,8 +1302,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468510435-m2v2",
-      "timestamp": "2026-09-03T20:48:30.435Z",
+      "id": "log-1788531800566-17um",
+      "timestamp": "2026-09-04T14:23:20.566Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1292,8 +1311,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468506555-9xx9",
-      "timestamp": "2026-09-03T20:48:26.555Z",
+      "id": "log-1788531797228-o3c4",
+      "timestamp": "2026-09-04T14:23:17.228Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1301,8 +1320,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468503027-kqmb",
-      "timestamp": "2026-09-03T20:48:23.027Z",
+      "id": "log-1788531793576-8c55",
+      "timestamp": "2026-09-04T14:23:13.576Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1310,8 +1329,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468499538-fnii",
-      "timestamp": "2026-09-03T20:48:19.538Z",
+      "id": "log-1788531790866-kj5q",
+      "timestamp": "2026-09-04T14:23:10.866Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1319,8 +1338,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468496028-czq7",
-      "timestamp": "2026-09-03T20:48:16.028Z",
+      "id": "log-1788531790203-xsry",
+      "timestamp": "2026-09-04T14:23:10.203Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1328,8 +1347,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468492537-mmhj",
-      "timestamp": "2026-09-03T20:48:12.537Z",
+      "id": "log-1788531789939-7rta",
+      "timestamp": "2026-09-04T14:23:09.939Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1337,8 +1356,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468489025-070p",
-      "timestamp": "2026-09-03T20:48:09.025Z",
+      "id": "log-1788531749932-bu1p",
+      "timestamp": "2026-09-04T14:22:29.932Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1346,8 +1365,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468485662-bhez",
-      "timestamp": "2026-09-03T20:48:05.662Z",
+      "id": "log-1788531684500-zx3v",
+      "timestamp": "2026-09-04T14:21:24.500Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1355,8 +1374,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468482039-08wz",
-      "timestamp": "2026-09-03T20:48:02.039Z",
+      "id": "log-1788531624433-n0qe",
+      "timestamp": "2026-09-04T14:20:24.433Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1364,8 +1383,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468478529-7k97",
-      "timestamp": "2026-09-03T20:47:58.529Z",
+      "id": "log-1788531564388-meck",
+      "timestamp": "2026-09-04T14:19:24.388Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1373,8 +1392,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468475407-npen",
-      "timestamp": "2026-09-03T20:47:55.407Z",
+      "id": "log-1788531504867-82vj",
+      "timestamp": "2026-09-04T14:18:24.867Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1382,8 +1401,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468471539-n4d7",
-      "timestamp": "2026-09-03T20:47:51.539Z",
+      "id": "log-1788531444456-1yss",
+      "timestamp": "2026-09-04T14:17:24.456Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1391,8 +1410,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468468037-3sts",
-      "timestamp": "2026-09-03T20:47:48.037Z",
+      "id": "log-1788531384797-pvuw",
+      "timestamp": "2026-09-04T14:16:24.797Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1400,8 +1419,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468464527-j33a",
-      "timestamp": "2026-09-03T20:47:44.527Z",
+      "id": "log-1788531324411-km0d",
+      "timestamp": "2026-09-04T14:15:24.411Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1409,8 +1428,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468461039-bw5h",
-      "timestamp": "2026-09-03T20:47:41.039Z",
+      "id": "log-1788531266602-wxfn",
+      "timestamp": "2026-09-04T14:14:26.602Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1418,8 +1437,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468457542-4zk8",
-      "timestamp": "2026-09-03T20:47:37.542Z",
+      "id": "log-1788531204742-6ggy",
+      "timestamp": "2026-09-04T14:13:24.742Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1427,8 +1446,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468454503-k36w",
-      "timestamp": "2026-09-03T20:47:34.503Z",
+      "id": "log-1788531146464-gy3e",
+      "timestamp": "2026-09-04T14:12:26.464Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1436,8 +1455,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468450545-3as0",
-      "timestamp": "2026-09-03T20:47:30.545Z",
+      "id": "log-1788531084506-te1i",
+      "timestamp": "2026-09-04T14:11:24.506Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1445,8 +1464,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468447020-khzh",
-      "timestamp": "2026-09-03T20:47:27.020Z",
+      "id": "log-1788531024450-rjw4",
+      "timestamp": "2026-09-04T14:10:24.450Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1454,8 +1473,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468443526-vmht",
-      "timestamp": "2026-09-03T20:47:23.526Z",
+      "id": "log-1788530964467-r8bw",
+      "timestamp": "2026-09-04T14:09:24.467Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1463,8 +1482,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468440030-hl2x",
-      "timestamp": "2026-09-03T20:47:20.030Z",
+      "id": "log-1788530904755-riil",
+      "timestamp": "2026-09-04T14:08:24.755Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1472,8 +1491,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468436532-ww1i",
-      "timestamp": "2026-09-03T20:47:16.532Z",
+      "id": "log-1788530844497-zgiz",
+      "timestamp": "2026-09-04T14:07:24.497Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1481,8 +1500,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468433036-gef8",
-      "timestamp": "2026-09-03T20:47:13.036Z",
+      "id": "log-1788530785232-h38f",
+      "timestamp": "2026-09-04T14:06:25.232Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1490,8 +1509,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468429523-3gnn",
-      "timestamp": "2026-09-03T20:47:09.523Z",
+      "id": "log-1788530724426-tvu4",
+      "timestamp": "2026-09-04T14:05:24.426Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1499,8 +1518,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468426033-e9y0",
-      "timestamp": "2026-09-03T20:47:06.033Z",
+      "id": "log-1788530664882-1guk",
+      "timestamp": "2026-09-04T14:04:24.882Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1508,8 +1527,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468422890-6pnk",
-      "timestamp": "2026-09-03T20:47:02.890Z",
+      "id": "log-1788530606417-lqe3",
+      "timestamp": "2026-09-04T14:03:26.417Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1517,8 +1536,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468419364-4rrt",
-      "timestamp": "2026-09-03T20:46:59.364Z",
+      "id": "log-1788530544563-zbvf",
+      "timestamp": "2026-09-04T14:02:24.563Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1526,8 +1545,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468415944-cfi5",
-      "timestamp": "2026-09-03T20:46:55.944Z",
+      "id": "log-1788530484432-8n80",
+      "timestamp": "2026-09-04T14:01:24.432Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1535,8 +1554,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468412065-g3ts",
-      "timestamp": "2026-09-03T20:46:52.065Z",
+      "id": "log-1788530424976-1yv9",
+      "timestamp": "2026-09-04T14:00:24.976Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1544,8 +1563,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468410434-vma5",
-      "timestamp": "2026-09-03T20:46:50.434Z",
+      "id": "log-1788530369056-1s3f",
+      "timestamp": "2026-09-04T13:59:29.056Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1553,8 +1572,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468410201-cvnw",
-      "timestamp": "2026-09-03T20:46:50.201Z",
+      "id": "log-1788530305087-e1dp",
+      "timestamp": "2026-09-04T13:58:25.088Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1562,8 +1581,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468384442-s1r4",
-      "timestamp": "2026-09-03T20:46:24.442Z",
+      "id": "log-1788530245954-9fd1",
+      "timestamp": "2026-09-04T13:57:25.954Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1571,8 +1590,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468324700-mvwu",
-      "timestamp": "2026-09-03T20:45:24.700Z",
+      "id": "log-1788530185072-ony5",
+      "timestamp": "2026-09-04T13:56:25.072Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1580,8 +1599,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468264779-vbpv",
-      "timestamp": "2026-09-03T20:44:24.779Z",
+      "id": "log-1788530124404-byye",
+      "timestamp": "2026-09-04T13:55:24.404Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1589,8 +1608,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468204851-oz5n",
-      "timestamp": "2026-09-03T20:43:24.851Z",
+      "id": "log-1788530064375-ctyj",
+      "timestamp": "2026-09-04T13:54:24.375Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1598,8 +1617,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468144486-v2te",
-      "timestamp": "2026-09-03T20:42:24.486Z",
+      "id": "log-1788530004564-c7r4",
+      "timestamp": "2026-09-04T13:53:24.564Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1607,8 +1626,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468084928-eg12",
-      "timestamp": "2026-09-03T20:41:24.928Z",
+      "id": "log-1788529944706-3cyv",
+      "timestamp": "2026-09-04T13:52:24.706Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1616,8 +1635,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788468024495-1kac",
-      "timestamp": "2026-09-03T20:40:24.496Z",
+      "id": "log-1788529884380-ld9o",
+      "timestamp": "2026-09-04T13:51:24.380Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1625,8 +1644,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467964468-dfvf",
-      "timestamp": "2026-09-03T20:39:24.468Z",
+      "id": "log-1788529824369-mgyv",
+      "timestamp": "2026-09-04T13:50:24.369Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1634,8 +1653,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467904761-zixk",
-      "timestamp": "2026-09-03T20:38:24.761Z",
+      "id": "log-1788529764396-0lug",
+      "timestamp": "2026-09-04T13:49:24.396Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1643,8 +1662,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467844493-x0mn",
-      "timestamp": "2026-09-03T20:37:24.493Z",
+      "id": "log-1788529704801-xjg9",
+      "timestamp": "2026-09-04T13:48:24.801Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1652,8 +1671,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467784567-2goi",
-      "timestamp": "2026-09-03T20:36:24.567Z",
+      "id": "log-1788529644870-tyu5",
+      "timestamp": "2026-09-04T13:47:24.870Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1661,8 +1680,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467724976-iis5",
-      "timestamp": "2026-09-03T20:35:24.976Z",
+      "id": "log-1788529584411-56v4",
+      "timestamp": "2026-09-04T13:46:24.411Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1670,8 +1689,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467664766-yn3c",
-      "timestamp": "2026-09-03T20:34:24.766Z",
+      "id": "log-1788529568333-pku3",
+      "timestamp": "2026-09-04T13:46:08.333Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1679,8 +1698,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467604615-dny2",
-      "timestamp": "2026-09-03T20:33:24.615Z",
+      "id": "log-1788529564321-33wm",
+      "timestamp": "2026-09-04T13:46:04.321Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1688,8 +1707,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467545005-l3u1",
-      "timestamp": "2026-09-03T20:32:25.005Z",
+      "id": "log-1788529561314-ocnl",
+      "timestamp": "2026-09-04T13:46:01.314Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1697,8 +1716,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467484770-gua0",
-      "timestamp": "2026-09-03T20:31:24.770Z",
+      "id": "log-1788529557327-ms5m",
+      "timestamp": "2026-09-04T13:45:57.327Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1706,8 +1725,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467424479-y72n",
-      "timestamp": "2026-09-03T20:30:24.479Z",
+      "id": "log-1788529554741-6fiz",
+      "timestamp": "2026-09-04T13:45:54.741Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1715,8 +1734,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467364511-60n7",
-      "timestamp": "2026-09-03T20:29:24.511Z",
+      "id": "log-1788529550332-n9mw",
+      "timestamp": "2026-09-04T13:45:50.332Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1724,8 +1743,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467304465-r6b0",
-      "timestamp": "2026-09-03T20:28:24.465Z",
+      "id": "log-1788529547363-nx8z",
+      "timestamp": "2026-09-04T13:45:47.363Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1733,8 +1752,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467244534-2rxh",
-      "timestamp": "2026-09-03T20:27:24.534Z",
+      "id": "log-1788529543324-lo4t",
+      "timestamp": "2026-09-04T13:45:43.324Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1742,8 +1761,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467184763-hal9",
-      "timestamp": "2026-09-03T20:26:24.763Z",
+      "id": "log-1788529540322-9fz7",
+      "timestamp": "2026-09-04T13:45:40.322Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1751,8 +1770,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467124582-vfbq",
-      "timestamp": "2026-09-03T20:25:24.582Z",
+      "id": "log-1788529536322-66z7",
+      "timestamp": "2026-09-04T13:45:36.322Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1760,8 +1779,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467064750-otda",
-      "timestamp": "2026-09-03T20:24:24.750Z",
+      "id": "log-1788529533322-eagf",
+      "timestamp": "2026-09-04T13:45:33.322Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1769,8 +1788,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788467004770-o1cp",
-      "timestamp": "2026-09-03T20:23:24.770Z",
+      "id": "log-1788529529333-g1gp",
+      "timestamp": "2026-09-04T13:45:29.333Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1778,8 +1797,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466944507-qgte",
-      "timestamp": "2026-09-03T20:22:24.507Z",
+      "id": "log-1788529526337-gd4z",
+      "timestamp": "2026-09-04T13:45:26.337Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1787,8 +1806,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466885086-2f6z",
-      "timestamp": "2026-09-03T20:21:25.086Z",
+      "id": "log-1788529522317-rdgc",
+      "timestamp": "2026-09-04T13:45:22.317Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1796,8 +1815,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466824757-ad60",
-      "timestamp": "2026-09-03T20:20:24.757Z",
+      "id": "log-1788529519316-6c7k",
+      "timestamp": "2026-09-04T13:45:19.316Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1805,8 +1824,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466764836-7vgk",
-      "timestamp": "2026-09-03T20:19:24.836Z",
+      "id": "log-1788529515333-whl8",
+      "timestamp": "2026-09-04T13:45:15.333Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1814,8 +1833,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466704672-hhxb",
-      "timestamp": "2026-09-03T20:18:24.672Z",
+      "id": "log-1788529512310-ks5a",
+      "timestamp": "2026-09-04T13:45:12.310Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1823,8 +1842,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466644780-kkug",
-      "timestamp": "2026-09-03T20:17:24.780Z",
+      "id": "log-1788529508067-ntdb",
+      "timestamp": "2026-09-04T13:45:08.067Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1832,8 +1851,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466584930-csnl",
-      "timestamp": "2026-09-03T20:16:24.930Z",
+      "id": "log-1788529504568-0zhv",
+      "timestamp": "2026-09-04T13:45:04.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1841,8 +1860,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466525102-8uv0",
-      "timestamp": "2026-09-03T20:15:25.102Z",
+      "id": "log-1788529501094-w4l9",
+      "timestamp": "2026-09-04T13:45:01.094Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1850,8 +1869,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466464774-axzk",
-      "timestamp": "2026-09-03T20:14:24.774Z",
+      "id": "log-1788529497568-v7uf",
+      "timestamp": "2026-09-04T13:44:57.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1859,8 +1878,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466404714-2gb5",
-      "timestamp": "2026-09-03T20:13:24.714Z",
+      "id": "log-1788529494082-sm8y",
+      "timestamp": "2026-09-04T13:44:54.082Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1868,8 +1887,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466344791-6qqu",
-      "timestamp": "2026-09-03T20:12:24.791Z",
+      "id": "log-1788529490566-fnwi",
+      "timestamp": "2026-09-04T13:44:50.566Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1877,8 +1896,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466284665-zlt0",
-      "timestamp": "2026-09-03T20:11:24.665Z",
+      "id": "log-1788529487060-ptdl",
+      "timestamp": "2026-09-04T13:44:47.060Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1886,8 +1905,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466224642-gn9q",
-      "timestamp": "2026-09-03T20:10:24.642Z",
+      "id": "log-1788529483593-xxzs",
+      "timestamp": "2026-09-04T13:44:43.593Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1895,8 +1914,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466164804-zyfw",
-      "timestamp": "2026-09-03T20:09:24.804Z",
+      "id": "log-1788529480066-2s5w",
+      "timestamp": "2026-09-04T13:44:40.066Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1904,8 +1923,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466104508-2e6m",
-      "timestamp": "2026-09-03T20:08:24.508Z",
+      "id": "log-1788529476561-b5r3",
+      "timestamp": "2026-09-04T13:44:36.561Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1913,8 +1932,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788466044494-98uv",
-      "timestamp": "2026-09-03T20:07:24.494Z",
+      "id": "log-1788529473072-951o",
+      "timestamp": "2026-09-04T13:44:33.072Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1922,8 +1941,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465984848-gr44",
-      "timestamp": "2026-09-03T20:06:24.848Z",
+      "id": "log-1788529469576-lygd",
+      "timestamp": "2026-09-04T13:44:29.576Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1931,8 +1950,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465924483-9267",
-      "timestamp": "2026-09-03T20:05:24.483Z",
+      "id": "log-1788529466099-9f27",
+      "timestamp": "2026-09-04T13:44:26.099Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1940,8 +1959,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465864752-5w80",
-      "timestamp": "2026-09-03T20:04:24.752Z",
+      "id": "log-1788529462556-gf3g",
+      "timestamp": "2026-09-04T13:44:22.556Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1949,8 +1968,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465804485-5lij",
-      "timestamp": "2026-09-03T20:03:24.485Z",
+      "id": "log-1788529459082-qhi2",
+      "timestamp": "2026-09-04T13:44:19.082Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1958,8 +1977,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465744768-fp2j",
-      "timestamp": "2026-09-03T20:02:24.768Z",
+      "id": "log-1788529455563-6j1m",
+      "timestamp": "2026-09-04T13:44:15.563Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1967,8 +1986,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465684764-ishr",
-      "timestamp": "2026-09-03T20:01:24.764Z",
+      "id": "log-1788529452085-cy7f",
+      "timestamp": "2026-09-04T13:44:12.085Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1976,8 +1995,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465624824-6dro",
-      "timestamp": "2026-09-03T20:00:24.824Z",
+      "id": "log-1788529448583-tyum",
+      "timestamp": "2026-09-04T13:44:08.583Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1985,8 +2004,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465564774-gsdj",
-      "timestamp": "2026-09-03T19:59:24.774Z",
+      "id": "log-1788529445073-mw7l",
+      "timestamp": "2026-09-04T13:44:05.073Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -1994,8 +2013,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465504485-kekm",
-      "timestamp": "2026-09-03T19:58:24.485Z",
+      "id": "log-1788529441591-ioaz",
+      "timestamp": "2026-09-04T13:44:01.591Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2003,8 +2022,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465444769-zhdi",
-      "timestamp": "2026-09-03T19:57:24.769Z",
+      "id": "log-1788529438075-91ci",
+      "timestamp": "2026-09-04T13:43:58.075Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2012,8 +2031,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465384829-tp4y",
-      "timestamp": "2026-09-03T19:56:24.829Z",
+      "id": "log-1788529434609-3k4s",
+      "timestamp": "2026-09-04T13:43:54.609Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2021,8 +2040,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465324710-g75p",
-      "timestamp": "2026-09-03T19:55:24.710Z",
+      "id": "log-1788529431074-2dz2",
+      "timestamp": "2026-09-04T13:43:51.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2030,8 +2049,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465264589-t4w0",
-      "timestamp": "2026-09-03T19:54:24.589Z",
+      "id": "log-1788529427601-3vkg",
+      "timestamp": "2026-09-04T13:43:47.601Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2039,8 +2058,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465204793-zsa2",
-      "timestamp": "2026-09-03T19:53:24.793Z",
+      "id": "log-1788529424081-gj7a",
+      "timestamp": "2026-09-04T13:43:44.081Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2048,8 +2067,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465144575-f8uu",
-      "timestamp": "2026-09-03T19:52:24.575Z",
+      "id": "log-1788529420587-klom",
+      "timestamp": "2026-09-04T13:43:40.587Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2057,8 +2076,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465084509-haz8",
-      "timestamp": "2026-09-03T19:51:24.509Z",
+      "id": "log-1788529417078-28tw",
+      "timestamp": "2026-09-04T13:43:37.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2066,8 +2085,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788465024536-jgr9",
-      "timestamp": "2026-09-03T19:50:24.536Z",
+      "id": "log-1788529413587-ejfn",
+      "timestamp": "2026-09-04T13:43:33.587Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2075,8 +2094,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464964948-4k38",
-      "timestamp": "2026-09-03T19:49:24.948Z",
+      "id": "log-1788529410067-o9zq",
+      "timestamp": "2026-09-04T13:43:30.067Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2084,8 +2103,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464904526-6rtp",
-      "timestamp": "2026-09-03T19:48:24.526Z",
+      "id": "log-1788529406579-61od",
+      "timestamp": "2026-09-04T13:43:26.579Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2093,8 +2112,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464844765-nwya",
-      "timestamp": "2026-09-03T19:47:24.765Z",
+      "id": "log-1788529403092-y6ds",
+      "timestamp": "2026-09-04T13:43:23.092Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2102,8 +2121,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464784491-po2j",
-      "timestamp": "2026-09-03T19:46:24.491Z",
+      "id": "log-1788529399561-0f8s",
+      "timestamp": "2026-09-04T13:43:19.561Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2111,8 +2130,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464724507-jlqi",
-      "timestamp": "2026-09-03T19:45:24.507Z",
+      "id": "log-1788529396074-gay7",
+      "timestamp": "2026-09-04T13:43:16.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2120,8 +2139,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464664642-hm0g",
-      "timestamp": "2026-09-03T19:44:24.642Z",
+      "id": "log-1788529392576-uokv",
+      "timestamp": "2026-09-04T13:43:12.576Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2129,8 +2148,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464604739-1ial",
-      "timestamp": "2026-09-03T19:43:24.739Z",
+      "id": "log-1788529389064-v4vq",
+      "timestamp": "2026-09-04T13:43:09.064Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2138,8 +2157,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464544802-ytt1",
-      "timestamp": "2026-09-03T19:42:24.802Z",
+      "id": "log-1788529385571-4fk5",
+      "timestamp": "2026-09-04T13:43:05.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2147,8 +2166,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464484484-kfpl",
-      "timestamp": "2026-09-03T19:41:24.484Z",
+      "id": "log-1788529382065-h0t2",
+      "timestamp": "2026-09-04T13:43:02.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2156,8 +2175,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464424675-7qa3",
-      "timestamp": "2026-09-03T19:40:24.675Z",
+      "id": "log-1788529378574-prz9",
+      "timestamp": "2026-09-04T13:42:58.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2165,8 +2184,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464364876-dgjo",
-      "timestamp": "2026-09-03T19:39:24.876Z",
+      "id": "log-1788529375065-b3du",
+      "timestamp": "2026-09-04T13:42:55.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2174,8 +2193,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464304812-urir",
-      "timestamp": "2026-09-03T19:38:24.812Z",
+      "id": "log-1788529371575-8wew",
+      "timestamp": "2026-09-04T13:42:51.575Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2183,8 +2202,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464244846-sc1u",
-      "timestamp": "2026-09-03T19:37:24.846Z",
+      "id": "log-1788529368058-i6du",
+      "timestamp": "2026-09-04T13:42:48.058Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2192,8 +2211,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464184515-xff7",
-      "timestamp": "2026-09-03T19:36:24.515Z",
+      "id": "log-1788529364571-o2kx",
+      "timestamp": "2026-09-04T13:42:44.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2201,8 +2220,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464124842-217r",
-      "timestamp": "2026-09-03T19:35:24.842Z",
+      "id": "log-1788529361098-6h6k",
+      "timestamp": "2026-09-04T13:42:41.098Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2210,8 +2229,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464064747-figp",
-      "timestamp": "2026-09-03T19:34:24.747Z",
+      "id": "log-1788529357570-kojd",
+      "timestamp": "2026-09-04T13:42:37.570Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2219,8 +2238,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788464004555-7851",
-      "timestamp": "2026-09-03T19:33:24.555Z",
+      "id": "log-1788529354080-q4jh",
+      "timestamp": "2026-09-04T13:42:34.080Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2228,8 +2247,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463944757-6qja",
-      "timestamp": "2026-09-03T19:32:24.757Z",
+      "id": "log-1788529350564-k54c",
+      "timestamp": "2026-09-04T13:42:30.564Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2237,8 +2256,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463884708-mvc0",
-      "timestamp": "2026-09-03T19:31:24.708Z",
+      "id": "log-1788529347066-eco9",
+      "timestamp": "2026-09-04T13:42:27.066Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2246,8 +2265,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463824806-9lle",
-      "timestamp": "2026-09-03T19:30:24.806Z",
+      "id": "log-1788529343575-0miy",
+      "timestamp": "2026-09-04T13:42:23.575Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2255,8 +2274,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463764493-zpy0",
-      "timestamp": "2026-09-03T19:29:24.493Z",
+      "id": "log-1788529340074-87e3",
+      "timestamp": "2026-09-04T13:42:20.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2264,8 +2283,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463704742-tgc4",
-      "timestamp": "2026-09-03T19:28:24.742Z",
+      "id": "log-1788529336580-9roh",
+      "timestamp": "2026-09-04T13:42:16.580Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2273,8 +2292,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463644792-6a16",
-      "timestamp": "2026-09-03T19:27:24.792Z",
+      "id": "log-1788529333076-r6yh",
+      "timestamp": "2026-09-04T13:42:13.076Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2282,8 +2301,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463584479-ocp8",
-      "timestamp": "2026-09-03T19:26:24.479Z",
+      "id": "log-1788529329578-yywp",
+      "timestamp": "2026-09-04T13:42:09.578Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2291,8 +2310,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463524782-71j9",
-      "timestamp": "2026-09-03T19:25:24.782Z",
+      "id": "log-1788529326066-mj3g",
+      "timestamp": "2026-09-04T13:42:06.066Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2300,8 +2319,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463464523-s5lq",
-      "timestamp": "2026-09-03T19:24:24.523Z",
+      "id": "log-1788529322726-ml44",
+      "timestamp": "2026-09-04T13:42:02.726Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2309,8 +2328,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463404490-09of",
-      "timestamp": "2026-09-03T19:23:24.490Z",
+      "id": "log-1788529319097-lm0m",
+      "timestamp": "2026-09-04T13:41:59.097Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2318,8 +2337,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463344948-qwnx",
-      "timestamp": "2026-09-03T19:22:24.948Z",
+      "id": "log-1788529315584-yvd5",
+      "timestamp": "2026-09-04T13:41:55.584Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2327,8 +2346,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463284736-7wci",
-      "timestamp": "2026-09-03T19:21:24.736Z",
+      "id": "log-1788529312076-rs50",
+      "timestamp": "2026-09-04T13:41:52.076Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2336,8 +2355,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463224721-slxv",
-      "timestamp": "2026-09-03T19:20:24.721Z",
+      "id": "log-1788529308570-k6nf",
+      "timestamp": "2026-09-04T13:41:48.570Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2345,8 +2364,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463164812-92b4",
-      "timestamp": "2026-09-03T19:19:24.812Z",
+      "id": "log-1788529305073-sveu",
+      "timestamp": "2026-09-04T13:41:45.073Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2354,8 +2373,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463104832-4dbx",
-      "timestamp": "2026-09-03T19:18:24.832Z",
+      "id": "log-1788529301575-dbn8",
+      "timestamp": "2026-09-04T13:41:41.575Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2363,8 +2382,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788463044558-kagz",
-      "timestamp": "2026-09-03T19:17:24.558Z",
+      "id": "log-1788529298078-3ck1",
+      "timestamp": "2026-09-04T13:41:38.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2372,8 +2391,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462984493-t6ul",
-      "timestamp": "2026-09-03T19:16:24.493Z",
+      "id": "log-1788529294568-7ulr",
+      "timestamp": "2026-09-04T13:41:34.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2381,8 +2400,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462924477-9xml",
-      "timestamp": "2026-09-03T19:15:24.477Z",
+      "id": "log-1788529291077-vg8d",
+      "timestamp": "2026-09-04T13:41:31.077Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2390,8 +2409,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462865393-sz5b",
-      "timestamp": "2026-09-03T19:14:25.393Z",
+      "id": "log-1788529287581-92zg",
+      "timestamp": "2026-09-04T13:41:27.581Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2399,8 +2418,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462804873-4ptm",
-      "timestamp": "2026-09-03T19:13:24.873Z",
+      "id": "log-1788529284101-36x5",
+      "timestamp": "2026-09-04T13:41:24.101Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2408,8 +2427,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462744505-jeht",
-      "timestamp": "2026-09-03T19:12:24.505Z",
+      "id": "log-1788529280573-5ldx",
+      "timestamp": "2026-09-04T13:41:20.573Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2417,8 +2436,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462684620-x2i1",
-      "timestamp": "2026-09-03T19:11:24.620Z",
+      "id": "log-1788529277118-w3kb",
+      "timestamp": "2026-09-04T13:41:17.118Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2426,8 +2445,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462628314-l87p",
-      "timestamp": "2026-09-03T19:10:28.314Z",
+      "id": "log-1788529273590-6iid",
+      "timestamp": "2026-09-04T13:41:13.590Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2435,8 +2454,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462564736-91bp",
-      "timestamp": "2026-09-03T19:09:24.736Z",
+      "id": "log-1788529270065-z3r7",
+      "timestamp": "2026-09-04T13:41:10.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2444,8 +2463,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462504973-zepc",
-      "timestamp": "2026-09-03T19:08:24.973Z",
+      "id": "log-1788529266571-tjt3",
+      "timestamp": "2026-09-04T13:41:06.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2453,8 +2472,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462445100-os2m",
-      "timestamp": "2026-09-03T19:07:25.100Z",
+      "id": "log-1788529263071-ph2t",
+      "timestamp": "2026-09-04T13:41:03.071Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2462,8 +2481,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462384750-8z44",
-      "timestamp": "2026-09-03T19:06:24.750Z",
+      "id": "log-1788529259593-wpjs",
+      "timestamp": "2026-09-04T13:40:59.593Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2471,8 +2490,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462324666-twyv",
-      "timestamp": "2026-09-03T19:05:24.666Z",
+      "id": "log-1788529256084-vhyb",
+      "timestamp": "2026-09-04T13:40:56.084Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2480,8 +2499,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462264818-ltw7",
-      "timestamp": "2026-09-03T19:04:24.818Z",
+      "id": "log-1788529252567-e7kk",
+      "timestamp": "2026-09-04T13:40:52.567Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2489,8 +2508,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462204919-jm34",
-      "timestamp": "2026-09-03T19:03:24.919Z",
+      "id": "log-1788529249071-7wt1",
+      "timestamp": "2026-09-04T13:40:49.071Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2498,8 +2517,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462145001-honk",
-      "timestamp": "2026-09-03T19:02:25.001Z",
+      "id": "log-1788529245596-wfx5",
+      "timestamp": "2026-09-04T13:40:45.596Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2507,8 +2526,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462087529-1plm",
-      "timestamp": "2026-09-03T19:01:27.529Z",
+      "id": "log-1788529242065-1m63",
+      "timestamp": "2026-09-04T13:40:42.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2516,8 +2535,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788462024712-6dvs",
-      "timestamp": "2026-09-03T19:00:24.712Z",
+      "id": "log-1788529238607-ispx",
+      "timestamp": "2026-09-04T13:40:38.607Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2525,8 +2544,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461964779-iybh",
-      "timestamp": "2026-09-03T18:59:24.779Z",
+      "id": "log-1788529235086-uqb1",
+      "timestamp": "2026-09-04T13:40:35.086Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2534,8 +2553,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461904885-6lsf",
-      "timestamp": "2026-09-03T18:58:24.885Z",
+      "id": "log-1788529231598-deuz",
+      "timestamp": "2026-09-04T13:40:31.598Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2543,8 +2562,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461844789-91a7",
-      "timestamp": "2026-09-03T18:57:24.789Z",
+      "id": "log-1788529228082-6p9k",
+      "timestamp": "2026-09-04T13:40:28.082Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2552,8 +2571,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461784785-7mj0",
-      "timestamp": "2026-09-03T18:56:24.785Z",
+      "id": "log-1788529224578-fy0x",
+      "timestamp": "2026-09-04T13:40:24.578Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2561,8 +2580,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461725040-n7ic",
-      "timestamp": "2026-09-03T18:55:25.040Z",
+      "id": "log-1788529221082-tmuf",
+      "timestamp": "2026-09-04T13:40:21.082Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2570,8 +2589,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461664536-n91a",
-      "timestamp": "2026-09-03T18:54:24.536Z",
+      "id": "log-1788529217571-5usy",
+      "timestamp": "2026-09-04T13:40:17.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2579,8 +2598,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461604803-2j73",
-      "timestamp": "2026-09-03T18:53:24.803Z",
+      "id": "log-1788529214078-o6ow",
+      "timestamp": "2026-09-04T13:40:14.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2588,8 +2607,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461545213-tdtw",
-      "timestamp": "2026-09-03T18:52:25.213Z",
+      "id": "log-1788529210568-lmid",
+      "timestamp": "2026-09-04T13:40:10.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2597,8 +2616,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461484725-ri2u",
-      "timestamp": "2026-09-03T18:51:24.725Z",
+      "id": "log-1788529207103-uppp",
+      "timestamp": "2026-09-04T13:40:07.103Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2606,8 +2625,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461424799-pcuh",
-      "timestamp": "2026-09-03T18:50:24.799Z",
+      "id": "log-1788529203562-phk5",
+      "timestamp": "2026-09-04T13:40:03.562Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2615,8 +2634,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461364824-2ddi",
-      "timestamp": "2026-09-03T18:49:24.824Z",
+      "id": "log-1788529200060-zdw0",
+      "timestamp": "2026-09-04T13:40:00.060Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2624,8 +2643,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461304817-322k",
-      "timestamp": "2026-09-03T18:48:24.817Z",
+      "id": "log-1788529196569-b3ux",
+      "timestamp": "2026-09-04T13:39:56.569Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2633,8 +2652,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461244808-t63q",
-      "timestamp": "2026-09-03T18:47:24.808Z",
+      "id": "log-1788529193065-2k4y",
+      "timestamp": "2026-09-04T13:39:53.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2642,8 +2661,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461184463-6rag",
-      "timestamp": "2026-09-03T18:46:24.463Z",
+      "id": "log-1788529189562-21cd",
+      "timestamp": "2026-09-04T13:39:49.562Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2651,8 +2670,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461125177-qkp8",
-      "timestamp": "2026-09-03T18:45:25.177Z",
+      "id": "log-1788529186070-n7e4",
+      "timestamp": "2026-09-04T13:39:46.070Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2660,8 +2679,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461064810-l7ou",
-      "timestamp": "2026-09-03T18:44:24.810Z",
+      "id": "log-1788529182572-j6mp",
+      "timestamp": "2026-09-04T13:39:42.572Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2669,8 +2688,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788461004459-89nv",
-      "timestamp": "2026-09-03T18:43:24.459Z",
+      "id": "log-1788529179090-bxsk",
+      "timestamp": "2026-09-04T13:39:39.090Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2678,8 +2697,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460944469-wtr1",
-      "timestamp": "2026-09-03T18:42:24.469Z",
+      "id": "log-1788529175567-20dn",
+      "timestamp": "2026-09-04T13:39:35.567Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2687,8 +2706,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460884889-dhra",
-      "timestamp": "2026-09-03T18:41:24.889Z",
+      "id": "log-1788529172083-x3bc",
+      "timestamp": "2026-09-04T13:39:32.083Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2696,8 +2715,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460824737-ii11",
-      "timestamp": "2026-09-03T18:40:24.737Z",
+      "id": "log-1788529168580-78s6",
+      "timestamp": "2026-09-04T13:39:28.580Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2705,8 +2724,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460764501-9kkn",
-      "timestamp": "2026-09-03T18:39:24.501Z",
+      "id": "log-1788529165090-4pgj",
+      "timestamp": "2026-09-04T13:39:25.090Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2714,8 +2733,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460704943-7t2q",
-      "timestamp": "2026-09-03T18:38:24.943Z",
+      "id": "log-1788529161564-gp7n",
+      "timestamp": "2026-09-04T13:39:21.564Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2723,8 +2742,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460646465-ea16",
-      "timestamp": "2026-09-03T18:37:26.465Z",
+      "id": "log-1788529158058-bxwl",
+      "timestamp": "2026-09-04T13:39:18.058Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2732,8 +2751,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460584534-dspf",
-      "timestamp": "2026-09-03T18:36:24.534Z",
+      "id": "log-1788529154567-2uwh",
+      "timestamp": "2026-09-04T13:39:14.567Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2741,8 +2760,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460524538-5g9d",
-      "timestamp": "2026-09-03T18:35:24.538Z",
+      "id": "log-1788529151081-fvaq",
+      "timestamp": "2026-09-04T13:39:11.081Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2750,8 +2769,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460465320-fsfq",
-      "timestamp": "2026-09-03T18:34:25.320Z",
+      "id": "log-1788529147580-cvf5",
+      "timestamp": "2026-09-04T13:39:07.580Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2759,8 +2778,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460404516-8au4",
-      "timestamp": "2026-09-03T18:33:24.516Z",
+      "id": "log-1788529144059-dr2c",
+      "timestamp": "2026-09-04T13:39:04.059Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2768,8 +2787,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460345106-rmiw",
-      "timestamp": "2026-09-03T18:32:25.106Z",
+      "id": "log-1788529140571-8p7d",
+      "timestamp": "2026-09-04T13:39:00.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2777,8 +2796,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460287098-u5lr",
-      "timestamp": "2026-09-03T18:31:27.098Z",
+      "id": "log-1788529137085-qqd0",
+      "timestamp": "2026-09-04T13:38:57.085Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2786,8 +2805,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460226117-cfsx",
-      "timestamp": "2026-09-03T18:30:26.117Z",
+      "id": "log-1788529133574-67uu",
+      "timestamp": "2026-09-04T13:38:53.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2795,8 +2814,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460164499-dn7k",
-      "timestamp": "2026-09-03T18:29:24.499Z",
+      "id": "log-1788529130064-3w3j",
+      "timestamp": "2026-09-04T13:38:50.064Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2804,8 +2823,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460104818-xw42",
-      "timestamp": "2026-09-03T18:28:24.818Z",
+      "id": "log-1788529126588-s5rn",
+      "timestamp": "2026-09-04T13:38:46.588Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2813,8 +2832,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788460045664-pgx2",
-      "timestamp": "2026-09-03T18:27:25.664Z",
+      "id": "log-1788529123064-ysxa",
+      "timestamp": "2026-09-04T13:38:43.064Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2822,8 +2841,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459984449-1x08",
-      "timestamp": "2026-09-03T18:26:24.449Z",
+      "id": "log-1788529119576-1eda",
+      "timestamp": "2026-09-04T13:38:39.576Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2831,8 +2850,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459924453-dmdr",
-      "timestamp": "2026-09-03T18:25:24.453Z",
+      "id": "log-1788529116058-yid0",
+      "timestamp": "2026-09-04T13:38:36.058Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2840,8 +2859,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459864890-coag",
-      "timestamp": "2026-09-03T18:24:24.890Z",
+      "id": "log-1788529112580-8eee",
+      "timestamp": "2026-09-04T13:38:32.580Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2849,8 +2868,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459804537-xrnt",
-      "timestamp": "2026-09-03T18:23:24.537Z",
+      "id": "log-1788529109059-o5sx",
+      "timestamp": "2026-09-04T13:38:29.059Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2858,8 +2877,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459744557-8yle",
-      "timestamp": "2026-09-03T18:22:24.557Z",
+      "id": "log-1788529105568-hi18",
+      "timestamp": "2026-09-04T13:38:25.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2867,8 +2886,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459684862-s9uh",
-      "timestamp": "2026-09-03T18:21:24.862Z",
+      "id": "log-1788529102056-0gmf",
+      "timestamp": "2026-09-04T13:38:22.056Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2876,8 +2895,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459624405-ucgw",
-      "timestamp": "2026-09-03T18:20:24.405Z",
+      "id": "log-1788529098565-2olo",
+      "timestamp": "2026-09-04T13:38:18.565Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2885,8 +2904,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459564381-ithz",
-      "timestamp": "2026-09-03T18:19:24.381Z",
+      "id": "log-1788529095081-1nwq",
+      "timestamp": "2026-09-04T13:38:15.081Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2894,8 +2913,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459504765-2qt1",
-      "timestamp": "2026-09-03T18:18:24.765Z",
+      "id": "log-1788529091575-umhv",
+      "timestamp": "2026-09-04T13:38:11.575Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2903,8 +2922,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459444481-yxe6",
-      "timestamp": "2026-09-03T18:17:24.481Z",
+      "id": "log-1788529088069-n81o",
+      "timestamp": "2026-09-04T13:38:08.069Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2912,8 +2931,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459384771-y50r",
-      "timestamp": "2026-09-03T18:16:24.771Z",
+      "id": "log-1788529084574-4for",
+      "timestamp": "2026-09-04T13:38:04.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2921,8 +2940,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459324781-xdjw",
-      "timestamp": "2026-09-03T18:15:24.781Z",
+      "id": "log-1788529081070-d183",
+      "timestamp": "2026-09-04T13:38:01.070Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2930,8 +2949,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459264388-qi0t",
-      "timestamp": "2026-09-03T18:14:24.388Z",
+      "id": "log-1788529077561-myq9",
+      "timestamp": "2026-09-04T13:37:57.561Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2939,8 +2958,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459205279-mbwe",
-      "timestamp": "2026-09-03T18:13:25.279Z",
+      "id": "log-1788529074069-ev3b",
+      "timestamp": "2026-09-04T13:37:54.069Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2948,8 +2967,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459144384-jihf",
-      "timestamp": "2026-09-03T18:12:24.385Z",
+      "id": "log-1788529070567-qo22",
+      "timestamp": "2026-09-04T13:37:50.567Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2957,8 +2976,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459084827-0uei",
-      "timestamp": "2026-09-03T18:11:24.827Z",
+      "id": "log-1788529067073-ln9k",
+      "timestamp": "2026-09-04T13:37:47.073Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2966,8 +2985,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788459024864-17kv",
-      "timestamp": "2026-09-03T18:10:24.864Z",
+      "id": "log-1788529063565-nl2r",
+      "timestamp": "2026-09-04T13:37:43.565Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2975,8 +2994,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458964774-kwms",
-      "timestamp": "2026-09-03T18:09:24.774Z",
+      "id": "log-1788529060077-11fm",
+      "timestamp": "2026-09-04T13:37:40.077Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2984,8 +3003,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458904561-ths9",
-      "timestamp": "2026-09-03T18:08:24.561Z",
+      "id": "log-1788529056576-vkx2",
+      "timestamp": "2026-09-04T13:37:36.576Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -2993,8 +3012,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458844767-jx0v",
-      "timestamp": "2026-09-03T18:07:24.767Z",
+      "id": "log-1788529053091-07ou",
+      "timestamp": "2026-09-04T13:37:33.091Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3002,8 +3021,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458784760-p258",
-      "timestamp": "2026-09-03T18:06:24.760Z",
+      "id": "log-1788529049565-y99p",
+      "timestamp": "2026-09-04T13:37:29.565Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3011,8 +3030,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458724793-9jtj",
-      "timestamp": "2026-09-03T18:05:24.793Z",
+      "id": "log-1788529046108-jcmp",
+      "timestamp": "2026-09-04T13:37:26.108Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3020,8 +3039,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458664843-ruy5",
-      "timestamp": "2026-09-03T18:04:24.843Z",
+      "id": "log-1788529042590-zzn9",
+      "timestamp": "2026-09-04T13:37:22.590Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3029,8 +3048,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458604649-pccy",
-      "timestamp": "2026-09-03T18:03:24.649Z",
+      "id": "log-1788529039077-pdqa",
+      "timestamp": "2026-09-04T13:37:19.077Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3038,8 +3057,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458544859-dtom",
-      "timestamp": "2026-09-03T18:02:24.859Z",
+      "id": "log-1788529035588-w5dt",
+      "timestamp": "2026-09-04T13:37:15.588Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3047,8 +3066,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458484837-j868",
-      "timestamp": "2026-09-03T18:01:24.837Z",
+      "id": "log-1788529032083-1eun",
+      "timestamp": "2026-09-04T13:37:12.083Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3056,8 +3075,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458424937-ugcf",
-      "timestamp": "2026-09-03T18:00:24.937Z",
+      "id": "log-1788529028568-4p54",
+      "timestamp": "2026-09-04T13:37:08.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3065,8 +3084,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458364548-ucy1",
-      "timestamp": "2026-09-03T17:59:24.548Z",
+      "id": "log-1788529025085-m1wd",
+      "timestamp": "2026-09-04T13:37:05.085Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3074,8 +3093,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458304486-k2lx",
-      "timestamp": "2026-09-03T17:58:24.486Z",
+      "id": "log-1788529021568-ncko",
+      "timestamp": "2026-09-04T13:37:01.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3083,8 +3102,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458244491-sdkq",
-      "timestamp": "2026-09-03T17:57:24.491Z",
+      "id": "log-1788529018085-k71s",
+      "timestamp": "2026-09-04T13:36:58.085Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3092,8 +3111,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458184480-9z3w",
-      "timestamp": "2026-09-03T17:56:24.480Z",
+      "id": "log-1788529014574-32lx",
+      "timestamp": "2026-09-04T13:36:54.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3101,8 +3120,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458124502-k907",
-      "timestamp": "2026-09-03T17:55:24.502Z",
+      "id": "log-1788529011096-nfyd",
+      "timestamp": "2026-09-04T13:36:51.096Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3110,8 +3129,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458064485-i8l4",
-      "timestamp": "2026-09-03T17:54:24.485Z",
+      "id": "log-1788529007572-2tab",
+      "timestamp": "2026-09-04T13:36:47.572Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3119,8 +3138,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788458004545-9yc9",
-      "timestamp": "2026-09-03T17:53:24.545Z",
+      "id": "log-1788529004084-mavz",
+      "timestamp": "2026-09-04T13:36:44.084Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3128,8 +3147,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457944644-31bd",
-      "timestamp": "2026-09-03T17:52:24.644Z",
+      "id": "log-1788529000568-folz",
+      "timestamp": "2026-09-04T13:36:40.568Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3137,8 +3156,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457884727-0g1t",
-      "timestamp": "2026-09-03T17:51:24.727Z",
+      "id": "log-1788528997076-p32t",
+      "timestamp": "2026-09-04T13:36:37.076Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3146,8 +3165,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457824488-7o3u",
-      "timestamp": "2026-09-03T17:50:24.488Z",
+      "id": "log-1788528993571-97xx",
+      "timestamp": "2026-09-04T13:36:33.571Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3155,8 +3174,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457764477-9hgs",
-      "timestamp": "2026-09-03T17:49:24.477Z",
+      "id": "log-1788528990074-gkxw",
+      "timestamp": "2026-09-04T13:36:30.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3164,8 +3183,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457704732-phpl",
-      "timestamp": "2026-09-03T17:48:24.732Z",
+      "id": "log-1788528986583-oe67",
+      "timestamp": "2026-09-04T13:36:26.583Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3173,8 +3192,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457644553-zikn",
-      "timestamp": "2026-09-03T17:47:24.553Z",
+      "id": "log-1788528983065-rk7e",
+      "timestamp": "2026-09-04T13:36:23.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3182,8 +3201,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457584946-cnyx",
-      "timestamp": "2026-09-03T17:46:24.946Z",
+      "id": "log-1788528979649-6qns",
+      "timestamp": "2026-09-04T13:36:19.649Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3191,8 +3210,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457527168-we1s",
-      "timestamp": "2026-09-03T17:45:27.169Z",
+      "id": "log-1788528976074-q675",
+      "timestamp": "2026-09-04T13:36:16.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3200,8 +3219,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457464488-tl5n",
-      "timestamp": "2026-09-03T17:44:24.488Z",
+      "id": "log-1788528972563-4ovy",
+      "timestamp": "2026-09-04T13:36:12.563Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3209,8 +3228,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457404719-wiwc",
-      "timestamp": "2026-09-03T17:43:24.763Z",
+      "id": "log-1788528969069-52s9",
+      "timestamp": "2026-09-04T13:36:09.069Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3218,8 +3237,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457344719-6v5w",
-      "timestamp": "2026-09-03T17:42:24.719Z",
+      "id": "log-1788528965574-blu0",
+      "timestamp": "2026-09-04T13:36:05.574Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3227,8 +3246,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457284465-2scu",
-      "timestamp": "2026-09-03T17:41:24.465Z",
+      "id": "log-1788528962107-nh10",
+      "timestamp": "2026-09-04T13:36:02.107Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3236,8 +3255,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457224546-n9th",
-      "timestamp": "2026-09-03T17:40:24.546Z",
+      "id": "log-1788528958573-3lj4",
+      "timestamp": "2026-09-04T13:35:58.573Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3245,8 +3264,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457165259-z7oh",
-      "timestamp": "2026-09-03T17:39:25.259Z",
+      "id": "log-1788528955076-tkoi",
+      "timestamp": "2026-09-04T13:35:55.076Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3254,8 +3273,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457106024-ler6",
-      "timestamp": "2026-09-03T17:38:26.024Z",
+      "id": "log-1788528951563-kerv",
+      "timestamp": "2026-09-04T13:35:51.563Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3263,8 +3282,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788457044754-3sbi",
-      "timestamp": "2026-09-03T17:37:24.754Z",
+      "id": "log-1788528948078-7oy5",
+      "timestamp": "2026-09-04T13:35:48.078Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3272,8 +3291,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456984492-b4i8",
-      "timestamp": "2026-09-03T17:36:24.492Z",
+      "id": "log-1788528944564-a8oh",
+      "timestamp": "2026-09-04T13:35:44.564Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3281,8 +3300,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456924959-7ywe",
-      "timestamp": "2026-09-03T17:35:24.959Z",
+      "id": "log-1788528941068-op88",
+      "timestamp": "2026-09-04T13:35:41.068Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3290,8 +3309,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456864805-aq17",
-      "timestamp": "2026-09-03T17:34:24.805Z",
+      "id": "log-1788528937570-hy6n",
+      "timestamp": "2026-09-04T13:35:37.570Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3299,8 +3318,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456805128-m3u9",
-      "timestamp": "2026-09-03T17:33:25.128Z",
+      "id": "log-1788528934065-fffs",
+      "timestamp": "2026-09-04T13:35:34.065Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3308,8 +3327,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456745205-07z7",
-      "timestamp": "2026-09-03T17:32:25.205Z",
+      "id": "log-1788528930573-lbg8",
+      "timestamp": "2026-09-04T13:35:30.573Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3317,8 +3336,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456685404-i4nr",
-      "timestamp": "2026-09-03T17:31:25.404Z",
+      "id": "log-1788528927074-36s4",
+      "timestamp": "2026-09-04T13:35:27.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3326,8 +3345,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456625005-mxnr",
-      "timestamp": "2026-09-03T17:30:25.005Z",
+      "id": "log-1788528923586-tdaw",
+      "timestamp": "2026-09-04T13:35:23.586Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3335,8 +3354,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456564483-76a3",
-      "timestamp": "2026-09-03T17:29:24.483Z",
+      "id": "log-1788528920074-fa86",
+      "timestamp": "2026-09-04T13:35:20.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3344,8 +3363,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456504767-fo8t",
-      "timestamp": "2026-09-03T17:28:24.767Z",
+      "id": "log-1788528916565-kzed",
+      "timestamp": "2026-09-04T13:35:16.565Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3353,8 +3372,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456444828-77zj",
-      "timestamp": "2026-09-03T17:27:24.828Z",
+      "id": "log-1788528913081-mn1t",
+      "timestamp": "2026-09-04T13:35:13.081Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3362,8 +3381,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456385243-1bw4",
-      "timestamp": "2026-09-03T17:26:25.249Z",
+      "id": "log-1788528909563-y8d1",
+      "timestamp": "2026-09-04T13:35:09.563Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3371,8 +3390,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456324588-d4yc",
-      "timestamp": "2026-09-03T17:25:24.588Z",
+      "id": "log-1788528906071-70z5",
+      "timestamp": "2026-09-04T13:35:06.071Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3380,8 +3399,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456264861-m3r1",
-      "timestamp": "2026-09-03T17:24:24.861Z",
+      "id": "log-1788528902573-yfhc",
+      "timestamp": "2026-09-04T13:35:02.573Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3389,8 +3408,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456205006-czhn",
-      "timestamp": "2026-09-03T17:23:25.006Z",
+      "id": "log-1788528899070-3gjo",
+      "timestamp": "2026-09-04T13:34:59.070Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3398,8 +3417,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456144722-ipqa",
-      "timestamp": "2026-09-03T17:22:24.722Z",
+      "id": "log-1788528895554-z04f",
+      "timestamp": "2026-09-04T13:34:55.554Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3407,8 +3426,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456085741-a0ak",
-      "timestamp": "2026-09-03T17:21:25.741Z",
+      "id": "log-1788528892066-6s1u",
+      "timestamp": "2026-09-04T13:34:52.066Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3416,8 +3435,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788456024804-kn4i",
-      "timestamp": "2026-09-03T17:20:24.804Z",
+      "id": "log-1788528888578-qzap",
+      "timestamp": "2026-09-04T13:34:48.578Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3425,8 +3444,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455964867-lv2v",
-      "timestamp": "2026-09-03T17:19:24.867Z",
+      "id": "log-1788528885074-5jyq",
+      "timestamp": "2026-09-04T13:34:45.074Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3434,8 +3453,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455904495-r32c",
-      "timestamp": "2026-09-03T17:18:24.495Z",
+      "id": "log-1788528881577-nufq",
+      "timestamp": "2026-09-04T13:34:41.577Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3443,8 +3462,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455844724-lfv4",
-      "timestamp": "2026-09-03T17:17:24.724Z",
+      "id": "log-1788528878079-i893",
+      "timestamp": "2026-09-04T13:34:38.079Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3452,8 +3471,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455784800-1a2y",
-      "timestamp": "2026-09-03T17:16:24.800Z",
+      "id": "log-1788528874593-73kr",
+      "timestamp": "2026-09-04T13:34:34.593Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3461,8 +3480,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455724602-zsa7",
-      "timestamp": "2026-09-03T17:15:24.602Z",
+      "id": "log-1788528871076-294x",
+      "timestamp": "2026-09-04T13:34:31.076Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3470,8 +3489,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455664703-0vma",
-      "timestamp": "2026-09-03T17:14:24.703Z",
+      "id": "log-1788528867596-7b4r",
+      "timestamp": "2026-09-04T13:34:27.596Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3479,8 +3498,8 @@
       "targetType": "SYSTEM"
     },
     {
-      "id": "log-1788455604501-h3re",
-      "timestamp": "2026-09-03T17:13:24.501Z",
+      "id": "log-1788528864070-y9pv",
+      "timestamp": "2026-09-04T13:34:24.070Z",
       "userName": "Administrador",
       "userRole": "ADMIN_LIDERANCA",
       "action": "SINCRONIZACAO_SUPABASE",
@@ -3492,6 +3511,6 @@
     "url": "https://iimgcdddyuspagpsijut.supabase.co",
     "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpbWdjZGRkeXVzcGFncHNpanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNDI5NzUsImV4cCI6MjEwMzgxODk3NX0.CixePx8utvm1P6HiCzYwMdW9TTJZlDyWUTYsyoGgbds"
   },
-  "version": 706,
-  "lastUpdated": "2026-09-03T20:51:43.420Z"
+  "version": 2802,
+  "lastUpdated": "2026-09-04T14:26:33.851Z"
 }

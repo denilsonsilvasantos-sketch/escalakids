@@ -67,6 +67,7 @@ class StorageService {
   private currentServerVersion = 0;
   private isSyncingWithServer = false;
   private pushDebounceTimer: any = null;
+  private pushSupabaseDebounceTimer: any = null;
   private isInitialized = false;
 
   constructor() {
@@ -95,6 +96,7 @@ class StorageService {
       localStorage.setItem(key, JSON.stringify(data));
       if (syncToServer && key !== STORAGE_KEYS.CURRENT_USER_ID) {
         this.pushToServerDebounced();
+        this.pushToSupabaseDebounced();
       }
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
@@ -109,6 +111,28 @@ class StorageService {
     this.pushDebounceTimer = setTimeout(() => {
       this.syncAllToServer();
     }, 350);
+  }
+
+  pushToSupabaseDebounced(): void {
+    if (typeof window === 'undefined') return;
+    if (this.pushSupabaseDebounceTimer) {
+      clearTimeout(this.pushSupabaseDebounceTimer);
+    }
+    this.pushSupabaseDebounceTimer = setTimeout(() => {
+      this.syncAllToSupabase();
+    }, 1000);
+  }
+
+  async syncAllToSupabase(): Promise<boolean> {
+    if (!isSupabaseConfigured()) return false;
+    try {
+      const payload = this.getAllDataForExport();
+      const res = await supabaseService.exportAllToSupabase(payload);
+      return res.success;
+    } catch (err) {
+      console.warn('Auto sync to Supabase failed:', err);
+      return false;
+    }
   }
 
   async syncAllToServer(): Promise<boolean> {
@@ -897,6 +921,8 @@ class StorageService {
       this.addAuditLog('CRIACAO_FUNCAO', `Nova função ${fn.name} adicionada.`, 'FUNCTION');
     }
     this.save(STORAGE_KEYS.FUNCTIONS, functions);
+    // Background cloud sync
+    supabaseService.syncFunction(fn);
   }
 
   deleteFunction(id: string): void {
@@ -921,6 +947,8 @@ class StorageService {
     if (fn) {
       this.addAuditLog('EXCLUSAO_FUNCAO', `Função ${fn.name} removida.`, 'FUNCTION');
     }
+    // Background cloud sync
+    supabaseService.deleteFunction(id);
   }
 
   // --- People (Unified Single Volunteer Profile) ---
@@ -957,20 +985,33 @@ class StorageService {
   savePerson(person: Person): void {
     const people = this.getPeople();
     const idx = people.findIndex((p) => p.id === person.id);
+    const updated: Person = idx >= 0
+      ? { ...person, updatedAt: new Date().toISOString() }
+      : {
+          ...person,
+          createdAt: person.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
     if (idx >= 0) {
-      people[idx] = { ...person, updatedAt: new Date().toISOString() };
+      people[idx] = updated;
       this.addAuditLog('EDICAO_VOLUNTARIO', `Dados de ${person.name} atualizados.`, 'PERSON');
     } else {
-      people.push({
-        ...person,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      people.push(updated);
       this.addAuditLog('CADASTRO_VOLUNTARIO', `Novo voluntário cadastrado: ${person.name}.`, 'PERSON');
     }
     this.save(STORAGE_KEYS.PEOPLE, people);
+
+    // If person has a family, ensure family is in Supabase first
+    if (updated.familyId) {
+      const fam = this.getFamilyById(updated.familyId);
+      if (fam) {
+        supabaseService.syncFamily(fam).catch(() => {});
+      }
+    }
+
     // Background cloud sync
-    supabaseService.syncPerson(person);
+    supabaseService.syncPerson(updated);
   }
 
   deletePerson(id: string): void {
@@ -1500,6 +1541,7 @@ class StorageService {
       if (!remote) return false;
 
       let hasChanges = false;
+      let needPushToSupabase = false;
 
       // 1. Users: merge remote profiles with local
       if (remote.users && remote.users.length > 0) {
@@ -1507,14 +1549,30 @@ class StorageService {
         const demoIds = new Set(['user-macro-joao', 'user-micro-louvor', 'user-micro-prof', 'user-vol-lucas', 'user-vol-camila']);
         const validRemoteUsers = remote.users.filter((u) => !demoIds.has(u.id));
 
-        // Create a map from remote users
         const userMap = new Map<string, UserAccount>();
-        validRemoteUsers.forEach((u) => userMap.set(u.id, u));
+        const localUserMap = new Map<string, UserAccount>();
+        currentUsers.forEach((u) => localUserMap.set(u.id, u));
 
-        // Preserve any local user not yet in remote
-        currentUsers.forEach((u) => {
-          if (!userMap.has(u.id)) {
-            userMap.set(u.id, u);
+        validRemoteUsers.forEach((ru) => {
+          const lu = localUserMap.get(ru.id);
+          if (!lu) {
+            userMap.set(ru.id, ru);
+          } else {
+            const rTime = new Date(ru.updatedAt || ru.createdAt || 0).getTime();
+            const lTime = new Date(lu.updatedAt || lu.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              userMap.set(ru.id, ru);
+            } else {
+              userMap.set(lu.id, lu);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
+        });
+
+        currentUsers.forEach((lu) => {
+          if (!userMap.has(lu.id)) {
+            userMap.set(lu.id, lu);
+            needPushToSupabase = true;
           }
         });
 
@@ -1525,14 +1583,37 @@ class StorageService {
         }
       }
 
-      // 2. People: merge remote volunteers with local
+      // 2. People: merge remote volunteers with local using timestamps
       if (remote.people && remote.people.length > 0) {
         const currentPeople = this.getPeople();
+        const localPeopleMap = new Map<string, Person>();
+        currentPeople.forEach((p) => localPeopleMap.set(p.id, p));
+
         const peopleMap = new Map<string, Person>();
-        remote.people.forEach((p) => peopleMap.set(p.id, p));
-        currentPeople.forEach((p) => {
-          if (!peopleMap.has(p.id)) peopleMap.set(p.id, p);
+
+        remote.people.forEach((rp) => {
+          const lp = localPeopleMap.get(rp.id);
+          if (!lp) {
+            peopleMap.set(rp.id, rp);
+          } else {
+            const rTime = new Date(rp.updatedAt || rp.createdAt || 0).getTime();
+            const lTime = new Date(lp.updatedAt || lp.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              peopleMap.set(rp.id, rp);
+            } else {
+              peopleMap.set(lp.id, lp);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
         });
+
+        currentPeople.forEach((lp) => {
+          if (!peopleMap.has(lp.id)) {
+            peopleMap.set(lp.id, lp);
+            needPushToSupabase = true;
+          }
+        });
+
         const mergedPeople = Array.from(peopleMap.values());
         if (JSON.stringify(currentPeople) !== JSON.stringify(mergedPeople)) {
           this.save(STORAGE_KEYS.PEOPLE, mergedPeople, false);
@@ -1540,14 +1621,37 @@ class StorageService {
         }
       }
 
-      // 3. Families: merge remote families with local
+      // 3. Families: merge remote families with local using timestamps
       if (remote.families && remote.families.length > 0) {
         const currentFamilies = this.getFamilies();
+        const localFamMap = new Map<string, Family>();
+        currentFamilies.forEach((f) => localFamMap.set(f.id, f));
+
         const famMap = new Map<string, Family>();
-        remote.families.forEach((f) => famMap.set(f.id, f));
-        currentFamilies.forEach((f) => {
-          if (!famMap.has(f.id)) famMap.set(f.id, f);
+
+        remote.families.forEach((rf) => {
+          const lf = localFamMap.get(rf.id);
+          if (!lf) {
+            famMap.set(rf.id, rf);
+          } else {
+            const rTime = new Date(rf.updatedAt || rf.createdAt || 0).getTime();
+            const lTime = new Date(lf.updatedAt || lf.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              famMap.set(rf.id, rf);
+            } else {
+              famMap.set(lf.id, lf);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
         });
+
+        currentFamilies.forEach((lf) => {
+          if (!famMap.has(lf.id)) {
+            famMap.set(lf.id, lf);
+            needPushToSupabase = true;
+          }
+        });
+
         const mergedFamilies = Array.from(famMap.values());
         if (JSON.stringify(currentFamilies) !== JSON.stringify(mergedFamilies)) {
           this.save(STORAGE_KEYS.FAMILIES, mergedFamilies, false);
@@ -1555,14 +1659,37 @@ class StorageService {
         }
       }
 
-      // 4. Availabilities: merge remote rules with local
+      // 4. Availabilities: merge remote rules with local using timestamps
       if (remote.availabilities && remote.availabilities.length > 0) {
         const currentAvail = this.getAvailabilities();
+        const localAvailMap = new Map<string, AvailabilityRule>();
+        currentAvail.forEach((a) => localAvailMap.set(a.id, a));
+
         const availMap = new Map<string, AvailabilityRule>();
-        remote.availabilities.forEach((a) => availMap.set(a.id, a));
-        currentAvail.forEach((a) => {
-          if (!availMap.has(a.id)) availMap.set(a.id, a);
+
+        remote.availabilities.forEach((ra) => {
+          const la = localAvailMap.get(ra.id);
+          if (!la) {
+            availMap.set(ra.id, ra);
+          } else {
+            const rTime = new Date(ra.updatedAt || ra.createdAt || 0).getTime();
+            const lTime = new Date(la.updatedAt || la.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              availMap.set(ra.id, ra);
+            } else {
+              availMap.set(la.id, la);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
         });
+
+        currentAvail.forEach((la) => {
+          if (!availMap.has(la.id)) {
+            availMap.set(la.id, la);
+            needPushToSupabase = true;
+          }
+        });
+
         const mergedAvail = Array.from(availMap.values());
         if (JSON.stringify(currentAvail) !== JSON.stringify(mergedAvail)) {
           this.save(STORAGE_KEYS.AVAILABILITIES, mergedAvail, false);
@@ -1570,14 +1697,37 @@ class StorageService {
         }
       }
 
-      // 5. Schedules: merge remote schedules with local
+      // 5. Schedules: merge remote schedules with local using timestamps
       if (remote.schedules && remote.schedules.length > 0) {
         const currentSchedules = this.getSchedules();
+        const localSchedMap = new Map<string, Schedule>();
+        currentSchedules.forEach((s) => localSchedMap.set(s.id, s));
+
         const schedMap = new Map<string, Schedule>();
-        remote.schedules.forEach((s) => schedMap.set(s.id, s));
-        currentSchedules.forEach((s) => {
-          if (!schedMap.has(s.id)) schedMap.set(s.id, s);
+
+        remote.schedules.forEach((rs) => {
+          const ls = localSchedMap.get(rs.id);
+          if (!ls) {
+            schedMap.set(rs.id, rs);
+          } else {
+            const rTime = new Date(rs.updatedAt || rs.createdAt || 0).getTime();
+            const lTime = new Date(ls.updatedAt || ls.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              schedMap.set(rs.id, rs);
+            } else {
+              schedMap.set(ls.id, ls);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
         });
+
+        currentSchedules.forEach((ls) => {
+          if (!schedMap.has(ls.id)) {
+            schedMap.set(ls.id, ls);
+            needPushToSupabase = true;
+          }
+        });
+
         const mergedSchedules = Array.from(schedMap.values());
         if (JSON.stringify(currentSchedules) !== JSON.stringify(mergedSchedules)) {
           this.save(STORAGE_KEYS.SCHEDULES, mergedSchedules, false);
@@ -1585,14 +1735,37 @@ class StorageService {
         }
       }
 
-      // 6. Micros
+      // 6. Micros: merge remote micros with local using timestamps
       if (remote.micros && remote.micros.length > 0) {
         const currentMicros = this.getMicros();
+        const localMicroMap = new Map<string, Micro>();
+        currentMicros.forEach((m) => localMicroMap.set(m.id, m));
+
         const microMap = new Map<string, Micro>();
-        remote.micros.forEach((m) => microMap.set(m.id, m));
-        currentMicros.forEach((m) => {
-          if (!microMap.has(m.id)) microMap.set(m.id, m);
+
+        remote.micros.forEach((rm) => {
+          const lm = localMicroMap.get(rm.id);
+          if (!lm) {
+            microMap.set(rm.id, rm);
+          } else {
+            const rTime = new Date(rm.updatedAt || rm.createdAt || 0).getTime();
+            const lTime = new Date(lm.updatedAt || lm.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              microMap.set(rm.id, rm);
+            } else {
+              microMap.set(lm.id, lm);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
         });
+
+        currentMicros.forEach((lm) => {
+          if (!microMap.has(lm.id)) {
+            microMap.set(lm.id, lm);
+            needPushToSupabase = true;
+          }
+        });
+
         const mergedMicros = Array.from(microMap.values());
         if (JSON.stringify(currentMicros) !== JSON.stringify(mergedMicros)) {
           this.save(STORAGE_KEYS.MICROS, mergedMicros, false);
@@ -1600,8 +1773,51 @@ class StorageService {
         }
       }
 
+      // 7. Functions: merge remote functions with local
+      if (remote.functions && remote.functions.length > 0) {
+        const currentFunctions = this.getFunctions();
+        const localFnMap = new Map<string, MicroFunction>();
+        currentFunctions.forEach((f) => localFnMap.set(f.id, f));
+
+        const fnMap = new Map<string, MicroFunction>();
+
+        remote.functions.forEach((rf) => {
+          const lf = localFnMap.get(rf.id);
+          if (!lf) {
+            fnMap.set(rf.id, rf);
+          } else {
+            const rTime = new Date(rf.updatedAt || rf.createdAt || 0).getTime();
+            const lTime = new Date(lf.updatedAt || lf.createdAt || 0).getTime();
+            if (rTime > lTime) {
+              fnMap.set(rf.id, rf);
+            } else {
+              fnMap.set(lf.id, lf);
+              if (lTime > rTime) needPushToSupabase = true;
+            }
+          }
+        });
+
+        currentFunctions.forEach((lf) => {
+          if (!fnMap.has(lf.id)) {
+            fnMap.set(lf.id, lf);
+            needPushToSupabase = true;
+          }
+        });
+
+        const mergedFunctions = Array.from(fnMap.values());
+        if (JSON.stringify(currentFunctions) !== JSON.stringify(mergedFunctions)) {
+          this.save(STORAGE_KEYS.FUNCTIONS, mergedFunctions, false);
+          hasChanges = true;
+        }
+      }
+
       if (hasChanges && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('mevam_data_synced', { detail: { source: 'supabase' } }));
+      }
+
+      // If local had newer items not yet in remote, push them to Supabase!
+      if (needPushToSupabase) {
+        this.pushToSupabaseDebounced();
       }
 
       this.addAuditLog('SINCRONIZACAO_SUPABASE', 'Dados remotos do Supabase sincronizados com o navegador.', 'SYSTEM');

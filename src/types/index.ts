@@ -33,6 +33,8 @@ export interface UserAccount {
   createdByName?: string;
   mustChangePassword?: boolean;
   lastLoginAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SupabaseSyncState {
@@ -85,6 +87,8 @@ export interface MicroFunction {
   category?: string; // e.g. "Louvor 3 a 6", "Sala 5 anos", "Geral"
   criteria: FunctionCriteriaConfig;
   defaultRequiredCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AlgorithmWeights {
@@ -110,6 +114,7 @@ export interface Micro {
   defaultShifts?: string[];
   algorithmWeights?: AlgorithmWeights;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PersonMicroFunctionPreference {
@@ -132,6 +137,7 @@ export interface AvailabilityRule {
   isAvailable: boolean; // true = Available, false = Unavailable
   reason?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Person {
@@ -158,6 +164,7 @@ export interface Family {
   priority: FamilyPriority;
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ScheduleEvent {
