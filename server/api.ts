@@ -794,6 +794,22 @@ export function isCloudConfigured(): boolean {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 }
 
+// Express 4 does not forward a rejected promise from an async route handler to
+// its error-handling middleware on its own — an unhandled rejection just hangs
+// or bubbles up as an unhandled rejection at the process level. On a normal
+// long-running server that's a logged warning; on a serverless host (Vercel)
+// an unhandled rejection can take the whole function invocation down with it
+// (FUNCTION_INVOCATION_FAILED), turning a single failed Supabase call or a
+// missing field into a total outage instead of a JSON error response. Wrapping
+// every async handler below guarantees errors always reach `next(err)`.
+function asyncHandler(
+  fn: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<any>
+) {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
 export function createApiRouter(): express.Router {
   const router = express.Router();
 
@@ -822,21 +838,25 @@ export function createApiRouter(): express.Router {
     next();
   }
 
-  // Every request waits for the (memoized) initial Supabase pull to finish
-  // before touching the db — critical on serverless, where "initial" really
-  // means "once per cold start", not "once ever".
-  router.use(async (_req, _res, next) => {
-    await ensureInitialSync();
-    next();
-  });
-
-  // API: Health check
+  // API: Health check. Deliberately registered before the Supabase-sync-wait
+  // middleware below, so it stays a true liveness probe that never depends on
+  // Supabase (or anything else) being reachable/configured.
   router.get('/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
+  // Every other request waits for the (memoized) initial Supabase pull to
+  // finish before touching the db — critical on serverless, where "initial"
+  // really means "once per cold start", not "once ever".
+  router.use(
+    asyncHandler(async (_req, _res, next) => {
+      await ensureInitialSync();
+      next();
+    })
+  );
+
   // API: Login (server-side credential check, issues a session token)
-  router.post('/login', async (req, res) => {
+  router.post('/login', asyncHandler(async (req, res) => {
     const { login, password } = req.body || {};
     const cleanId = String(login || '').trim().toLowerCase();
     const cleanPass = String(password || '').trim();
@@ -903,7 +923,7 @@ export function createApiRouter(): express.Router {
 
     const token = createSession(user.id, user.role);
     res.json({ success: true, token, user: sanitizeUser(user) });
-  });
+  }));
 
   // API: Logout. Sessions are stateless signed tokens (see createSession/getSession
   // above), so there is nothing to delete server-side — the client just discards
@@ -913,7 +933,7 @@ export function createApiRouter(): express.Router {
   });
 
   // API: Current session's user
-  router.get('/me', requireAuth, async (req, res) => {
+  router.get('/me', requireAuth, asyncHandler(async (req, res) => {
     const session = (req as any).authSession as Session;
     const db = await getDb();
     const user = (db.users || []).find((u: any) => u.id === session.userId);
@@ -922,25 +942,25 @@ export function createApiRouter(): express.Router {
       return;
     }
     res.json({ success: true, user: sanitizeUser(user) });
-  });
+  }));
 
   // API: Version check for lightweight cross-device polling
-  router.get('/version', requireAuth, async (_req, res) => {
+  router.get('/version', requireAuth, asyncHandler(async (_req, res) => {
     const db = await getDb();
     res.json({ version: db.version, lastUpdated: db.lastUpdated });
-  });
+  }));
 
   // API: Get complete unified database (shared across all devices) - password hashes are never sent to clients
-  router.get('/data', requireAuth, async (_req, res) => {
+  router.get('/data', requireAuth, asyncHandler(async (_req, res) => {
     const db = await getDb();
     res.json({ success: true, data: sanitizeDbForClient(db) });
-  });
+  }));
 
   // API: Sync/Save data from any client device to the central server.
   // Pushes to Supabase are awaited (not just scheduled) before responding:
   // on a serverless host, a deferred timer can simply never fire once the
   // function instance is frozen/recycled right after the response is sent.
-  router.post('/data', requireAuth, async (req, res) => {
+  router.post('/data', requireAuth, asyncHandler(async (req, res) => {
     const incoming = req.body || {};
     const db = await getDb();
     const session = (req as any).authSession as Session;
@@ -963,29 +983,29 @@ export function createApiRouter(): express.Router {
     await syncToSupabaseFromBackend(merged);
 
     res.json({ success: true, version: merged.version, lastUpdated: merged.lastUpdated });
-  });
+  }));
 
   // API: Trigger immediate Supabase sync (push local -> cloud). Admin only.
-  router.post('/supabase/sync', requireAuth, requireAdmin, async (_req, res) => {
+  router.post('/supabase/sync', requireAuth, requireAdmin, asyncHandler(async (_req, res) => {
     const db = await getDb();
     const result = await syncToSupabaseFromBackend(db);
     res.json(result);
-  });
+  }));
 
   // API: Trigger immediate Supabase pull (cloud -> local). Admin only.
-  router.post('/supabase/pull', requireAuth, requireAdmin, async (_req, res) => {
+  router.post('/supabase/pull', requireAuth, requireAdmin, asyncHandler(async (_req, res) => {
     await syncFromSupabaseToBackend();
     const db = await getDb();
     res.json({ success: true, data: sanitizeDbForClient(db) });
-  });
+  }));
 
   // API: Get active Supabase configuration status (no keys are ever exposed to the client)
-  router.get('/config/supabase', requireAuth, async (_req, res) => {
+  router.get('/config/supabase', requireAuth, asyncHandler(async (_req, res) => {
     res.json({ isConfigured: isCloudConfigured() });
-  });
+  }));
 
   // API: Reset server database to initial clean state. Admin only. Preserves the current admin's credentials.
-  router.post('/reset', requireAuth, requireAdmin, async (_req, res) => {
+  router.post('/reset', requireAuth, requireAdmin, asyncHandler(async (_req, res) => {
     const currentDb = await getDb();
     const currentAdmin = (currentDb.users || []).find((u: any) => u.id === 'user-admin') || (await bootstrapAdminUser());
 
@@ -1040,6 +1060,16 @@ export function createApiRouter(): express.Router {
     }
 
     res.json({ success: true, message: 'Banco de dados resetado com sucesso! Suas credenciais de administrador foram mantidas.' });
+  }));
+
+  // Last-resort error handler: anything asyncHandler forwards via next(err), or
+  // any synchronous throw, lands here instead of crashing the whole function
+  // invocation. Vercel's own crash page hides the real error from the client;
+  // this at least returns it as JSON, which curl/DevTools can show directly.
+  router.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('Unhandled API error:', err);
+    if (res.headersSent) return;
+    res.status(500).json({ success: false, message: err?.message || 'Erro interno do servidor.' });
   });
 
   return router;
