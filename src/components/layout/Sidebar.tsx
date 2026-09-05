@@ -178,13 +178,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm">
-                  MK
-                </div>
-                <div>
-                  <div className="font-extrabold text-white text-sm">MEVAM KIDS</div>
-                  <div className="text-[10px] text-slate-400 font-medium">Menu Principal</div>
-                </div>
+                <img
+                  src="/mevam-kids-logo.png"
+                  alt="MEVAM Kids"
+                  className="h-7 w-auto"
+                />
+                <div className="text-[10px] text-slate-400 font-medium">Menu Principal</div>
               </div>
               <button
                 onClick={onCloseMobile}

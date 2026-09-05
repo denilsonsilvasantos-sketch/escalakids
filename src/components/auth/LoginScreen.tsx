@@ -50,12 +50,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         {/* Brand Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-xl shadow-blue-500/20 mb-4 border border-blue-400/30">
-            <span className="font-extrabold text-2xl tracking-tighter">MK</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
-            MEVAM KIDS
-          </h1>
+          <img
+            src="/mevam-kids-logo.png"
+            alt="MEVAM Kids"
+            className="mx-auto h-16 sm:h-20 w-auto mb-4"
+          />
           <p className="mt-1 text-sm text-slate-400 font-medium">
             Gestão Unificada de Escalas & Voluntários
           </p>

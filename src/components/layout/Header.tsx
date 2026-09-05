@@ -101,19 +101,16 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md font-extrabold text-base sm:text-lg tracking-tight shrink-0">
-                MK
-              </div>
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-white font-display">
-                    MEVAM KIDS
-                  </span>
-                  <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.5 bg-blue-950 text-blue-300 border border-blue-800/80 rounded-md uppercase tracking-wider">
-                    Escalas Pro
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+              <img
+                src="/mevam-kids-logo.png"
+                alt="MEVAM Kids"
+                className="h-8 sm:h-9 w-auto shrink-0"
+              />
+              <div className="hidden sm:block">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-950 text-blue-300 border border-blue-800/80 rounded-md uppercase tracking-wider">
+                  Escalas Pro
+                </span>
+                <p className="text-[11px] text-slate-400 font-medium">
                   Gestão Unificada de Voluntários & Escalas
                 </p>
               </div>
