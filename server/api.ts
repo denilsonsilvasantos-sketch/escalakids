@@ -322,6 +322,7 @@ function authorizeUsersPayload(incomingUsers: any[] | undefined, currentUsers: a
   const currentById = new Map(currentUsers.map((u) => [u.id, u]));
   const incomingById = new Map(incomingUsers.map((u) => [u.id, u]));
   const authorized: any[] = [];
+  const sessionUser = currentUsers.find((u) => u.id === session.userId);
 
   for (const existing of currentUsers) {
     const incoming = incomingById.get(existing.id);
@@ -330,7 +331,13 @@ function authorizeUsersPayload(incomingUsers: any[] | undefined, currentUsers: a
       authorized.push(existing);
       continue;
     }
-    const canEdit = incoming.id === session.userId || existing.createdBy === session.userId;
+    const isMacroSupervisor =
+      session.role === 'LIDER_MACRO' &&
+      existing.role === 'LIDER_MICRO' &&
+      existing.primaryMicroId &&
+      sessionUser?.allowedMicroIds?.includes(existing.primaryMicroId);
+
+    const canEdit = incoming.id === session.userId || existing.createdBy === session.userId || Boolean(isMacroSupervisor);
     if (!canEdit) {
       authorized.push(existing);
       continue;
@@ -344,7 +351,7 @@ function authorizeUsersPayload(incomingUsers: any[] | undefined, currentUsers: a
     // New account creation: only a LIDER_MACRO creating a LIDER_MICRO is allowed,
     // mirroring createDelegatedUser()'s rule in storageService.ts.
     if (session.role === 'LIDER_MACRO' && incoming.role === 'LIDER_MICRO') {
-      authorized.push(incoming);
+      authorized.push({ ...incoming, createdBy: session.userId });
     }
     // Anything else (a non-macro-leader trying to create any account, or a
     // macro leader trying to create anything other than a micro leader) is
@@ -362,7 +369,10 @@ function mergeUsers(incomingUsers: any[] | undefined, currentUsers: any[]): any[
   const currentById = new Map(currentUsers.map((u) => [u.id, u]));
   return incomingUsers.map((incoming) => {
     const existing = currentById.get(incoming.id);
-    const password = incoming.password || existing?.password;
+    let password = existing?.password;
+    if (incoming.password) {
+      password = isBcryptHash(incoming.password) ? incoming.password : bcrypt.hashSync(incoming.password, 10);
+    }
     return { ...existing, ...incoming, password };
   });
 }
@@ -607,6 +617,47 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
       await client.from('schedules').upsert(schedPayload, { onConflict: 'id' });
     }
 
+    // 8. Rotation History
+    if (db.rotationHistory && db.rotationHistory.length > 0 && db.people && db.people.length > 0) {
+      try {
+        const personIdSet = new Set(db.people.map((p: any) => p.id));
+        const validRotations = db.rotationHistory.filter((r: any) => personIdSet.has(r.personId));
+        if (validRotations.length > 0) {
+          const rotationPayload = validRotations.map((r: any) => ({
+            id: r.id,
+            date: r.date,
+            event_id: r.eventId,
+            micro_id: r.microId,
+            function_id: r.functionId,
+            person_id: r.personId,
+            co_volunteers: r.coVolunteers || [],
+            created_at: new Date().toISOString()
+          }));
+          await client.from('rotation_history').upsert(rotationPayload, { onConflict: 'id' });
+        }
+      } catch (rotErr) {
+        console.warn('Rotation history sync skipped/error:', rotErr);
+      }
+    }
+
+    // 9. Audit Logs
+    if (db.auditLogs && db.auditLogs.length > 0) {
+      try {
+        const auditPayload = db.auditLogs.slice(-100).map((a: any) => ({
+          id: a.id,
+          timestamp: a.timestamp || new Date().toISOString(),
+          user_name: a.userName,
+          user_role: a.userRole,
+          action: a.action,
+          details: a.details || null,
+          target_type: a.targetType || 'SYSTEM'
+        }));
+        await client.from('audit_logs').upsert(auditPayload, { onConflict: 'id' });
+      } catch (auditErr) {
+        console.warn('Audit logs sync skipped/error:', auditErr);
+      }
+    }
+
     return { success: true };
   } catch (err: any) {
     console.warn('Backend Supabase sync error:', err?.message || err);
@@ -624,14 +675,16 @@ async function syncFromSupabaseToBackend(): Promise<void> {
   if (!client) return;
 
   try {
-    const [microsRes, fnsRes, profilesRes, familiesRes, peopleRes, availRes, schedRes] = await Promise.all([
+    const [microsRes, fnsRes, profilesRes, familiesRes, peopleRes, availRes, schedRes, rotRes, auditRes] = await Promise.all([
       client.from('micros').select('*'),
       client.from('micro_functions').select('*'),
       client.from('profiles').select('*'),
       client.from('families').select('*'),
       client.from('people').select('*'),
       client.from('availability_rules').select('*'),
-      client.from('schedules').select('*')
+      client.from('schedules').select('*'),
+      client.from('rotation_history').select('*'),
+      client.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(200)
     ]);
 
     const db = await getDb();
@@ -760,6 +813,32 @@ async function syncFromSupabaseToBackend(): Promise<void> {
         slots: s.slots || [],
         createdAt: s.created_at,
         updatedAt: s.updated_at
+      }));
+      changed = true;
+    }
+
+    if (rotRes.data && rotRes.data.length > 0) {
+      db.rotationHistory = rotRes.data.map((r: any) => ({
+        id: r.id,
+        date: r.date,
+        eventId: r.event_id,
+        microId: r.micro_id,
+        functionId: r.function_id,
+        personId: r.person_id,
+        coVolunteers: r.co_volunteers || []
+      }));
+      changed = true;
+    }
+
+    if (auditRes.data && auditRes.data.length > 0) {
+      db.auditLogs = auditRes.data.map((a: any) => ({
+        id: a.id,
+        timestamp: a.timestamp,
+        userName: a.user_name,
+        userRole: a.user_role,
+        action: a.action,
+        details: a.details || '',
+        targetType: a.target_type || 'SYSTEM'
       }));
       changed = true;
     }
