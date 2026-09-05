@@ -19,7 +19,8 @@ import {
   MessageSquare,
   RefreshCw,
   Loader2,
-  ShieldAlert
+  ShieldAlert,
+  Search
 } from 'lucide-react';
 import { UserAccount, UserRole, Micro } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -52,6 +53,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   // long enough for the admin to copy/share it, then discarded when the modal closes.
   const [revealedPassword, setRevealedPassword] = useState<{ userId: string; password: string } | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
+
+  const [activeRoleFilter, setActiveRoleFilter] = useState<'ALL' | 'MACRO' | 'MICRO' | 'ADMIN'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form State for New User
   const [formData, setFormData] = useState({
@@ -120,8 +124,35 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     : micros.filter((m) => currentUser.allowedMicroIds?.includes(m.id))
   ).filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx);
 
-  // Filter users displayed based on hierarchy
-  const displayedUsers = storageService.getManageableUsers(currentUser);
+  // All users this actor has authority to manage
+  const allManageableUsers = storageService.getManageableUsers(currentUser);
+  const macroUsers = allManageableUsers.filter((u) => u.role === 'LIDER_MACRO');
+  const microUsers = allManageableUsers.filter((u) => u.role === 'LIDER_MICRO');
+  const adminUsers = allManageableUsers.filter((u) => u.role === 'ADMIN_LIDERANCA');
+
+  // Filter users displayed based on tab and search
+  const displayedUsers = allManageableUsers.filter((u) => {
+    if (activeRoleFilter === 'MACRO' && u.role !== 'LIDER_MACRO') return false;
+    if (activeRoleFilter === 'MICRO' && u.role !== 'LIDER_MICRO') return false;
+    if (activeRoleFilter === 'ADMIN' && u.role !== 'ADMIN_LIDERANCA') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const primaryMicro = micros.find((m) => m.id === u.primaryMicroId);
+      const matchesMicro = primaryMicro?.name.toLowerCase().includes(q);
+      const matchesSupervised = micros.some(
+        (m) => u.allowedMicroIds?.includes(m.id) && m.name.toLowerCase().includes(q)
+      );
+      return (
+        u.name.toLowerCase().includes(q) ||
+        (u.username && u.username.toLowerCase().includes(q)) ||
+        (u.whatsapp && u.whatsapp.toLowerCase().includes(q)) ||
+        Boolean(matchesMicro) ||
+        Boolean(matchesSupervised)
+      );
+    }
+    return true;
+  });
 
   const handleNameChange = (name: string) => {
     const firstName = name
@@ -302,15 +333,15 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-                <span>Gestão de Usuários & Acessos</span>
+                <span>Painel da Liderança: Gestão de Líderes Macro & Micro</span>
                 <span className="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                  {isAdmin ? 'Controle Total (Admin)' : 'Controle Delegado (Macro)'}
+                  {isAdmin ? 'Acesso Total (Admin)' : 'Gestão Delegada (Macro)'}
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
                 {isAdmin
-                  ? 'ADMIN cria Líderes Macros com primeiro nome e senha. Líderes alteram senhas.'
-                  : 'Crie e gerencie os Líderes das Micros sob sua supervisão.'}
+                  ? 'Controle central de Líderes Macro e Líderes de Micro. Crie acessos, defina senhas e vincule salas/frentes.'
+                  : 'Gerencie os Líderes de Micro vinculados às frentes sob sua supervisão.'}
               </p>
             </div>
           </div>
@@ -359,6 +390,39 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 ${isCheckingCloud ? 'animate-spin' : ''}`} />
               <span>Sincronizar Agora</span>
             </button>
+          </div>
+
+          {/* Leadership Metrics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-blue-950/30 border border-blue-900/50 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-900/50 border border-blue-700/60 text-blue-300 flex items-center justify-center font-bold text-base shrink-0">
+                {macroUsers.length}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-blue-200 truncate">Líderes Macro</div>
+                <div className="text-[11px] text-blue-400/80 truncate">Supervisionam frentes</div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-900/50 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-900/50 border border-emerald-700/60 text-emerald-300 flex items-center justify-center font-bold text-base shrink-0">
+                {microUsers.length}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-emerald-200 truncate">Líderes de Micro</div>
+                <div className="text-[11px] text-emerald-400/80 truncate">Salas & Áreas ativas</div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-purple-950/30 border border-purple-900/50 flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-900/50 border border-purple-700/60 text-purple-300 flex items-center justify-center font-bold text-base shrink-0">
+                {micros.filter((m) => microUsers.some((u) => u.primaryMicroId === m.id) || macroUsers.some((u) => u.allowedMicroIds?.includes(m.id))).length}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-purple-200 truncate">Frentes com Liderança</div>
+                <div className="text-[11px] text-purple-400/80 truncate">Total: {micros.length} cadastradas</div>
+              </div>
+            </div>
           </div>
 
           {/* Top Actions Bar */}
@@ -681,9 +745,112 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </form>
           )}
 
+          {/* Tabs & Search Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            {/* Role Filter Tabs */}
+            <div className="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveRoleFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  activeRoleFilter === 'ALL'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Todos ({allManageableUsers.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveRoleFilter('MACRO')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeRoleFilter === 'MACRO'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-blue-400 hover:text-blue-300'
+                }`}
+              >
+                <span>Líderes Macro</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-950 border border-blue-800 text-blue-200">
+                  {macroUsers.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveRoleFilter('MICRO')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeRoleFilter === 'MICRO'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-emerald-400 hover:text-emerald-300'
+                }`}
+              >
+                <span>Líderes de Micro</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-200">
+                  {microUsers.length}
+                </span>
+              </button>
+
+              {isAdmin && adminUsers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveRoleFilter('ADMIN')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+                    activeRoleFilter === 'ADMIN'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-amber-400 hover:text-amber-300'
+                  }`}
+                >
+                  <span>Admins</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-950 border border-amber-800 text-amber-200">
+                    {adminUsers.length}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar líder, sala ou fone..."
+                className="w-full pl-8 pr-8 py-1.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* User List Cards */}
           <div className="space-y-3">
-            {displayedUsers.map((u) => {
+            {displayedUsers.length === 0 ? (
+              <div className="p-8 text-center bg-slate-950/40 border border-slate-800/80 rounded-2xl">
+                <Users className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                <p className="text-sm font-bold text-slate-300">Nenhum líder encontrado</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {searchQuery ? `Nenhum resultado correspondente a "${searchQuery}".` : 'Não há líderes cadastrados nesta categoria.'}
+                </p>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-3 text-xs text-blue-400 hover:underline"
+                  >
+                    Limpar busca
+                  </button>
+                )}
+              </div>
+            ) : (
+              displayedUsers.map((u) => {
               const roleBadge = getRoleLabel(u.role);
               const isMasterAdmin = u.id === 'user-admin';
               const hasRevealedPassword = revealedPassword?.userId === u.id;
@@ -804,7 +971,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
           </div>
         </div>
 

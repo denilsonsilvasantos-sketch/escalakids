@@ -12,7 +12,11 @@ import {
   PlusCircle,
   ArrowRight,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  Shield,
+  Layers,
+  Phone,
+  KeyRound
 } from 'lucide-react';
 import { UserAccount, Schedule, Person, Micro, BirthdayNotification } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -23,19 +27,27 @@ interface DashboardOverviewProps {
   onNavigate: (view: string) => void;
   onOpenNewVolunteer: () => void;
   onOpenVolunteerDetail: (person: Person) => void;
+  onOpenUserManagement?: () => void;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   currentUser,
   onNavigate,
   onOpenNewVolunteer,
-  onOpenVolunteerDetail
+  onOpenVolunteerDetail,
+  onOpenUserManagement
 }) => {
   const people = storageService.getPeople().filter((p) => p.active);
   const micros = storageService.getMicros();
   const families = storageService.getFamilies();
   const schedules = storageService.getSchedules();
   const birthdays = storageService.calculateBirthdays();
+  const users = storageService.getUsers();
+
+  const macroLeaders = users.filter((u) => u.role === 'LIDER_MACRO');
+  const microLeaders = users.filter((u) => u.role === 'LIDER_MICRO');
+  const isLeadership = currentUser.role === 'ADMIN_LIDERANCA' || currentUser.role === 'LIDER_MACRO';
+
   const upcomingBirthdays = birthdays.filter(
     (b) => b.category === 'HOJE' || b.category === 'AMANHA' || b.category === 'PROXIMOS_7'
   );
@@ -294,6 +306,178 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Leadership Section: Líderes Macro & Líderes de Micro */}
+      {isLeadership && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 font-display">
+                  Quadro da Liderança (Líderes Macro & Micro)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Líderes cadastrados com acesso ao sistema para supervisão de frentes e salas
+                </p>
+              </div>
+            </div>
+
+            {onOpenUserManagement && (
+              <button
+                onClick={onOpenUserManagement}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all flex items-center space-x-2 self-start sm:self-auto shadow-xs"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <span>Gerenciar Acessos & Senhas</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Líderes Macro */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Líderes Macro (Frentes / Supervisão)
+                  </h4>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  {macroLeaders.length} ativos
+                </span>
+              </div>
+
+              {macroLeaders.length === 0 ? (
+                <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
+                  Nenhum Líder Macro cadastrado no momento.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {macroLeaders.map((u) => {
+                    const supervisedMicros = micros.filter((m) => u.allowedMicroIds?.includes(m.id));
+                    return (
+                      <div
+                        key={u.id}
+                        className="p-3.5 bg-slate-50 hover:bg-blue-50/40 border border-slate-200 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-start space-x-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                            {u.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <h5 className="text-xs font-bold text-slate-900 truncate">{u.name}</h5>
+                              <span className="text-[10px] font-mono text-slate-500">@{u.username || 'lider'}</span>
+                            </div>
+                            {u.whatsapp && (
+                              <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                                <Phone className="w-3 h-3 text-emerald-600" />
+                                <span>{u.whatsapp}</span>
+                              </div>
+                            )}
+                            {supervisedMicros.length > 0 && (
+                              <div className="mt-1.5 flex flex-wrap gap-1">
+                                {supervisedMicros.map((m) => (
+                                  <span
+                                    key={m.id}
+                                    className="text-[10px] font-semibold px-1.5 py-0.5 bg-blue-100/70 text-blue-800 rounded border border-blue-200/60"
+                                  >
+                                    {m.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {onOpenUserManagement && (
+                          <button
+                            onClick={onOpenUserManagement}
+                            className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 self-end sm:self-center shrink-0"
+                          >
+                            Ver Acesso →
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Líderes de Micro */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Líderes de Micro (Salas / Áreas)
+                  </h4>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {microLeaders.length} ativos
+                </span>
+              </div>
+
+              {microLeaders.length === 0 ? (
+                <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
+                  Nenhum Líder de Micro cadastrado no momento.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {microLeaders.map((u) => {
+                    const primaryMicro = micros.find((m) => m.id === u.primaryMicroId);
+                    return (
+                      <div
+                        key={u.id}
+                        className="p-3.5 bg-slate-50 hover:bg-emerald-50/40 border border-slate-200 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-start space-x-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0">
+                            {u.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <h5 className="text-xs font-bold text-slate-900 truncate">{u.name}</h5>
+                              <span className="text-[10px] font-mono text-slate-500">@{u.username || 'lider'}</span>
+                            </div>
+                            {u.whatsapp && (
+                              <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                                <Phone className="w-3 h-3 text-emerald-600" />
+                                <span>{u.whatsapp}</span>
+                              </div>
+                            )}
+                            {primaryMicro && (
+                              <div className="mt-1.5">
+                                <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded border border-emerald-200">
+                                  Sala: {primaryMicro.name}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {onOpenUserManagement && (
+                          <button
+                            onClick={onOpenUserManagement}
+                            className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 self-end sm:self-center shrink-0"
+                          >
+                            Ver Acesso →
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

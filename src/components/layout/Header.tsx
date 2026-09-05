@@ -3,12 +3,15 @@ import {
   Search,
   Cake,
   Shield,
-  UserCheck,
   RefreshCw,
   ChevronDown,
   Users,
   KeyRound,
-  LogOut
+  LogOut,
+  Layers,
+  Phone,
+  Mail,
+  UserCheck
 } from 'lucide-react';
 import { UserAccount, SupabaseSyncState } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -17,7 +20,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface HeaderProps {
   currentUser: UserAccount;
-  onUserChange: (user: UserAccount) => void;
+  onUserChange?: (user: UserAccount) => void;
   onOpenGlobalSearch: () => void;
   onNavigate: (view: string) => void;
   onResetData: () => void;
@@ -29,7 +32,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   currentUser,
-  onUserChange,
   onOpenGlobalSearch,
   onNavigate,
   onResetData,
@@ -38,7 +40,6 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onToggleMobileMenu
 }) => {
-  const [users, setUsers] = useState<UserAccount[]>([]);
   const [birthdayCount, setBirthdayCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [syncState, setSyncState] = useState<SupabaseSyncState>(supabaseService.getSyncState());
@@ -46,9 +47,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isAdmin = currentUser.role === 'ADMIN_LIDERANCA';
   const isMacroLeader = currentUser.role === 'LIDER_MACRO';
+  const isMicroLeader = currentUser.role === 'LIDER_MICRO';
 
   useEffect(() => {
-    setUsers(storageService.getUsers());
     const bdays = storageService.calculateBirthdays();
     const upcoming = bdays.filter((b) => b.category === 'HOJE' || b.category === 'AMANHA' || b.category === 'PROXIMOS_7');
     setBirthdayCount(upcoming.length);
@@ -59,11 +60,9 @@ export const Header: React.FC<HeaderProps> = ({
     return unsub;
   }, [currentUser]);
 
-  const handleRoleSelect = (u: UserAccount) => {
-    const updated = storageService.setCurrentUser(u.id);
-    onUserChange(updated);
-    setIsDropdownOpen(false);
-  };
+  const micros = storageService.getMicros();
+  const supervisedMicros = micros.filter((m) => currentUser.allowedMicroIds?.includes(m.id));
+  const primaryMicro = micros.find((m) => m.id === currentUser.primaryMicroId);
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -72,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'LIDER_MACRO':
         return { label: 'Líder Macro (Frentes)', bg: 'bg-blue-950/80 text-blue-300 border-blue-800' };
       case 'LIDER_MICRO':
-        return { label: 'Líder de Micro', bg: 'bg-emerald-950/80 text-emerald-300 border-emerald-800' };
+        return { label: 'Líder de Micro (Sala/Área)', bg: 'bg-emerald-950/80 text-emerald-300 border-emerald-800' };
       case 'COORDENADOR':
         return { label: 'Coordenador Geral', bg: 'bg-purple-950/80 text-purple-300 border-purple-800' };
       case 'VOLUNTARIO':
@@ -212,31 +211,98 @@ export const Header: React.FC<HeaderProps> = ({
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
-              {/* Role Dropdown */}
+              {/* Current User Profile Dropdown (No 1-click switcher - requires log out & log in) */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-3 py-2 border-b border-slate-800">
-                    <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200 uppercase tracking-wider">
-                      <Shield className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Usuário Ativo: {currentUser.name}</span>
+                <div className="absolute right-0 mt-2 w-84 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-800/80">
+                  {/* Current User Profile Card */}
+                  <div className="p-4 bg-slate-950/70 rounded-t-xl">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-11 h-11 rounded-xl bg-blue-600 text-white font-bold text-sm flex items-center justify-center overflow-hidden ring-2 ring-blue-500/40 shrink-0">
+                        {currentUser.avatar ? (
+                          <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                        ) : (
+                          currentUser.name.charAt(0)
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-slate-100 leading-tight truncate">
+                          {currentUser.name}
+                        </h4>
+                        <div className="mt-1">
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border ${badge.bg}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        <div className="mt-2 space-y-0.5 text-[11px] text-slate-400 font-mono">
+                          <p className="truncate">
+                            <span className="text-slate-500">Usuário:</span> @{currentUser.username || 'admin'}
+                          </p>
+                          {currentUser.whatsapp && (
+                            <p className="truncate text-slate-300 font-sans flex items-center space-x-1">
+                              <Phone className="w-3 h-3 text-emerald-400 shrink-0 inline" />
+                              <span>{currentUser.whatsapp}</span>
+                            </p>
+                          )}
+                          {currentUser.email && (
+                            <p className="truncate text-slate-400 font-sans flex items-center space-x-1">
+                              <Mail className="w-3 h-3 text-blue-400 shrink-0 inline" />
+                              <span>{currentUser.email}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Use "Alterar Minha Senha" abaixo para trocar sua senha de acesso.
-                    </p>
+
+                    {/* Assigned Micro / Frentes Info */}
+                    {isMacroLeader && supervisedMicros.length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+                        <div className="flex items-center space-x-1 text-[11px] font-semibold text-blue-400 mb-1.5">
+                          <Layers className="w-3 h-3" />
+                          <span>Frentes sob sua Liderança ({supervisedMicros.length}):</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {supervisedMicros.map((m) => (
+                            <span
+                              key={m.id}
+                              className="text-[10px] px-1.5 py-0.5 bg-blue-950/80 border border-blue-800/80 text-blue-200 rounded"
+                            >
+                              {m.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {isMicroLeader && primaryMicro && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+                        <span className="text-[11px] font-semibold text-emerald-400 flex items-center space-x-1 mb-1">
+                          <Layers className="w-3 h-3" />
+                          <span>Micro Liderada:</span>
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 bg-emerald-950/80 border border-emerald-800/80 text-emerald-200 rounded font-medium">
+                          {primaryMicro.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions for current user */}
-                  <div className="p-2 border-b border-slate-800 space-y-1">
+                  <div className="p-2 space-y-1">
                     {(isAdmin || isMacroLeader) && (
                       <button
                         onClick={() => {
                           setIsDropdownOpen(false);
                           onOpenUserManagement();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-blue-300 flex items-center space-x-2 transition-colors"
+                        className="w-full text-left px-3 py-2 rounded-xl bg-blue-950/40 hover:bg-blue-900/50 border border-blue-800/50 text-xs font-semibold text-blue-300 flex items-center justify-between transition-colors group"
                       >
-                        <Users className="w-4 h-4 text-blue-400" />
-                        <span>Gestão de Acessos & Líderes</span>
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                          <span>Painel da Liderança (Líderes Macro & Micro)</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-800/60 rounded text-blue-200 font-bold">
+                          Gerenciar
+                        </span>
                       </button>
                     )}
 
@@ -245,59 +311,32 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsDropdownOpen(false);
                         onOpenUserManagement();
                       }}
-                      className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-slate-800 text-xs font-medium text-slate-300 flex items-center space-x-2 transition-colors"
+                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-xs font-medium text-slate-300 flex items-center space-x-2 transition-colors"
                     >
                       <KeyRound className="w-4 h-4 text-amber-400" />
                       <span>Alterar Minha Senha</span>
                     </button>
                   </div>
 
-                  {/* Profile simulation switcher - ADMIN ONLY */}
-                  {isAdmin && (
-                    <>
-                      <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Trocar Perfil / Simulação (Admin):
-                      </div>
+                  {/* Clarification Box: How to switch user */}
+                  <div className="p-3 bg-slate-950/40 text-[11px] text-slate-400 leading-relaxed">
+                    <p className="flex items-start space-x-1.5">
+                      <Shield className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+                      <span>
+                        Por segurança, para alternar para outro líder ou usuário, finalize sua sessão e faça login com a conta correspondente.
+                      </span>
+                    </p>
+                  </div>
 
-                      <div className="py-1 max-h-48 overflow-y-auto">
-                        {users.map((u) => {
-                          const uBadge = getRoleBadge(u.role);
-                          const isSelected = u.id === currentUser.id;
-                          return (
-                            <button
-                              key={u.id}
-                              onClick={() => handleRoleSelect(u)}
-                              className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
-                                isSelected ? 'bg-blue-950/70 border-l-4 border-blue-500' : ''
-                              }`}
-                            >
-                              <div className="flex items-center space-x-2.5 min-w-0">
-                                <div className="w-7 h-7 rounded-full bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
-                                  {u.name.charAt(0)}
-                                </div>
-                                <div className="truncate">
-                                  <p className="text-xs font-semibold text-slate-200 truncate">{u.name}</p>
-                                  <span className={`inline-block text-[9px] font-bold px-1.5 py-0.2 border rounded ${uBadge.bg}`}>
-                                    {uBadge.label}
-                                  </span>
-                                </div>
-                              </div>
-                              {isSelected && <UserCheck className="w-4 h-4 text-blue-400 shrink-0 ml-2" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="px-3 pt-2 pb-1 border-t border-slate-800 flex items-center justify-between">
+                  {/* Footer with Reset & Logout */}
+                  <div className="p-2.5 flex items-center justify-between">
                     {isAdmin ? (
                       <button
                         onClick={() => {
                           setIsDropdownOpen(false);
                           setIsResetConfirmOpen(true);
                         }}
-                        className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center space-x-1"
+                        className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold px-2 py-1.5 rounded-lg hover:bg-rose-950/40 transition-colors flex items-center space-x-1"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Restaurar Dados</span>
@@ -309,10 +348,10 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsDropdownOpen(false);
                         onLogout();
                       }}
-                      className="text-[11px] text-slate-400 hover:text-white font-semibold flex items-center space-x-1"
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/80 hover:text-rose-300 border border-slate-700 hover:border-rose-800 text-xs font-bold text-slate-200 transition-all flex items-center space-x-1.5 shadow-xs"
                     >
-                      <LogOut className="w-3 h-3" />
-                      <span>Sair</span>
+                      <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Sair da Conta</span>
                     </button>
                   </div>
                 </div>

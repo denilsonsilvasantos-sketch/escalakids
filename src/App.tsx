@@ -195,6 +195,7 @@ export default function App() {
               onNavigate={setCurrentView}
               onOpenNewVolunteer={handleOpenNewVolunteer}
               onOpenVolunteerDetail={setSelectedPersonForDetail}
+              onOpenUserManagement={() => setIsUserManagementOpen(true)}
             />
           )}
 
