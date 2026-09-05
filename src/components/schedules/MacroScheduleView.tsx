@@ -30,7 +30,7 @@ import { exportService } from '../../services/exportService';
 import { formatDateBR, parseDateBRToISO } from '../../utils/dateUtils';
 import { CLASSROOM_PRESETS } from '../../data/classroomPresets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
+import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
 
 interface MacroScheduleViewProps {
   currentUser: UserAccount;
@@ -482,26 +482,32 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {allMicros.map((m) => {
                 const isChecked = selectedMicroIdsForNew.includes(m.id);
+                const shiftInfo = getMicroShiftInfo(m);
                 return (
                   <label
                     key={m.id}
-                    className={`p-2 rounded-lg border cursor-pointer flex items-center space-x-2 text-xs font-semibold ${
+                    className={`p-2 rounded-lg border cursor-pointer flex items-center justify-between space-x-1.5 text-xs font-semibold ${
                       isChecked ? 'bg-blue-50 border-blue-500 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedMicroIdsForNew([...selectedMicroIdsForNew, m.id]);
-                        } else {
-                          setSelectedMicroIdsForNew(selectedMicroIdsForNew.filter((id) => id !== m.id));
-                        }
-                      }}
-                      className="w-3.5 h-3.5 rounded text-blue-600"
-                    />
-                    <span className="truncate">{m.name}</span>
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedMicroIdsForNew([...selectedMicroIdsForNew, m.id]);
+                          } else {
+                            setSelectedMicroIdsForNew(selectedMicroIdsForNew.filter((id) => id !== m.id));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 rounded text-blue-600 shrink-0"
+                      />
+                      <span className="truncate">{m.name}</span>
+                    </div>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${shiftInfo.badgeClass}`}>
+                      {shiftInfo.badgeText}
+                    </span>
                   </label>
                 );
               })}
@@ -760,7 +766,17 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                         className="py-2.5 px-4 tracking-wider uppercase font-display"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold">[ {micro.name.toUpperCase()} ]</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-bold">[ {micro.name.toUpperCase()} ]</span>
+                            {(() => {
+                              const microShift = getMicroShiftInfo(micro);
+                              return (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-xs">
+                                  {microShift.badgeText}
+                                </span>
+                              );
+                            })()}
+                          </div>
 
                           {canManage && (
                             <div className="flex items-center space-x-1.5 font-normal">
@@ -783,6 +799,14 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                                 type="button"
                                 onClick={() => {
                                   setTargetMicroForFunction(micro);
+                                  setNewFunctionName('');
+                                  setNewFunctionCategory('');
+                                  setNewFunctionCount(1);
+                                  const microShifts = micro.defaultShifts && micro.defaultShifts.length > 0
+                                    ? micro.defaultShifts
+                                    : (micro.name.toLowerCase().includes('louvor') ? ['NOITE'] : ['MANHA', 'NOITE']);
+                                  setNewFunctionAllowedShifts(microShifts);
+                                  setNewFunctionSpecialEvents(micro.specialEventNames || '');
                                   setIsAddFunctionModalOpen(true);
                                 }}
                                 className="px-2 py-1 bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold rounded-md flex items-center space-x-1 transition-colors"

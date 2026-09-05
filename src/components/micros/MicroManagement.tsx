@@ -22,7 +22,7 @@ import {
 import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey } from '../../types';
 import { storageService } from '../../services/storageService';
 import { CLASSROOM_PRESETS, generateFunctionsForPreset } from '../../data/classroomPresets';
-import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
+import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
 
 interface MicroManagementProps {
   currentUser: UserAccount;
@@ -39,6 +39,9 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   const [microName, setMicroName] = useState('');
   const [microColor, setMicroColor] = useState('#2563eb');
   const [microDesc, setMicroDesc] = useState('');
+  const [microAllowedShifts, setMicroAllowedShifts] = useState<string[]>(['MANHA', 'NOITE']);
+  const [microSpecialEvents, setMicroSpecialEvents] = useState<string>('');
+  const [microApplyToFunctions, setMicroApplyToFunctions] = useState<boolean>(false);
 
   // Delete Micro Confirmation Modal state
   const [isDeleteMicroModalOpen, setIsDeleteMicroModalOpen] = useState(false);
@@ -113,6 +116,9 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     setMicroName('');
     setMicroColor('#2563eb');
     setMicroDesc('');
+    setMicroAllowedShifts(['MANHA', 'NOITE']);
+    setMicroSpecialEvents('');
+    setMicroApplyToFunctions(false);
     setIsMicroModalOpen(true);
   };
 
@@ -121,27 +127,75 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     setMicroName(m.name);
     setMicroColor(m.color);
     setMicroDesc(m.description || '');
+    const currentShifts = m.defaultShifts && m.defaultShifts.length > 0
+      ? m.defaultShifts
+      : (m.name.toLowerCase().includes('louvor') ? ['NOITE'] : ['MANHA', 'NOITE']);
+    setMicroAllowedShifts(currentShifts);
+    setMicroSpecialEvents(m.specialEventNames || '');
+    setMicroApplyToFunctions(false);
     setIsMicroModalOpen(true);
+  };
+
+  const handleQuickChangeMicroPeriod = (m: Micro, shifts: string[], specialEventNames?: string) => {
+    const updated = storageService.updateMicroPeriod(m.id, shifts, specialEventNames, true);
+    if (updated) {
+      const updatedMicros = storageService.getMicros();
+      setMicros(updatedMicros);
+      setSelectedMicro(updated);
+      setFunctions(storageService.getFunctions());
+      const shiftInfo = getMicroShiftInfo(updated);
+      setToastMessage(`Período da frente "${updated.name}" alterado para ${shiftInfo.badgeText} e sincronizado com as funções!`);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  const handleReplicatePeriodToFunctions = (m: Micro) => {
+    const currentShifts = m.defaultShifts && m.defaultShifts.length > 0
+      ? m.defaultShifts
+      : (m.name.toLowerCase().includes('louvor') ? ['NOITE'] : ['MANHA', 'NOITE']);
+
+    storageService.saveMicro({
+      ...m,
+      defaultShifts: currentShifts,
+      specialEventNames: m.specialEventNames
+    }, true);
+
+    setFunctions(storageService.getFunctions());
+    const count = storageService.getFunctions().filter((f) => f.microId === m.id).length;
+    setToastMessage(`Período sincronizado com sucesso em todas as ${count} funções da frente "${m.name}"!`);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handleSaveMicro = () => {
     if (!microName.trim()) return;
 
+    const shifts = microAllowedShifts.length > 0 ? microAllowedShifts : ['MANHA', 'NOITE'];
     const microToSave: Micro = {
       id: editingMicro?.id || `micro-${Date.now()}`,
       name: microName.trim(),
       color: microColor,
       description: microDesc.trim() || undefined,
+      defaultShifts: shifts,
+      specialEventNames: shifts.includes('ESPECIAL') ? microSpecialEvents.trim() : undefined,
       status: 'ATIVO',
       createdAt: editingMicro?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       algorithmWeights: editingMicro?.algorithmWeights || weights
     };
 
-    storageService.saveMicro(microToSave);
+    storageService.saveMicro(microToSave, microApplyToFunctions);
     const updated = storageService.getMicros();
     setMicros(updated);
     setSelectedMicro(microToSave);
+    if (microApplyToFunctions) {
+      setFunctions(storageService.getFunctions());
+      const countFns = storageService.getFunctions().filter((f) => f.microId === microToSave.id).length;
+      setToastMessage(`Frente "${microToSave.name}" salva e período aplicado às ${countFns} funções!`);
+    } else {
+      setToastMessage(`Frente "${microToSave.name}" salva com sucesso!`);
+    }
     setIsMicroModalOpen(false);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handlePromptDeleteMicro = (m: Micro) => {
@@ -210,9 +264,11 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     setHasAgePref(selectedMicro?.name.toLowerCase().includes('prof') || selectedMicro?.name.toLowerCase().includes('aux'));
     setHasShiftPref(true);
 
-    const isLouvor = selectedMicro?.name.toLowerCase().includes('louvor');
-    setFnAllowedShifts(isLouvor ? ['NOITE'] : ['MANHA', 'NOITE']);
-    setFnSpecialEvents('');
+    const microShifts = selectedMicro?.defaultShifts && selectedMicro.defaultShifts.length > 0
+      ? selectedMicro.defaultShifts
+      : (selectedMicro?.name.toLowerCase().includes('louvor') ? ['NOITE'] : ['MANHA', 'NOITE']);
+    setFnAllowedShifts(microShifts);
+    setFnSpecialEvents(selectedMicro?.specialEventNames || '');
     setIsFnModalOpen(true);
   };
 
@@ -313,31 +369,52 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
             const isSelected = selectedMicro?.id === m.id;
             const countVolunteers = storageService.getPeople().filter((p) => p.microIds.includes(m.id)).length;
             const countFns = functions.filter((f) => f.microId === m.id).length;
+            const microShiftInfo = getMicroShiftInfo(m);
 
             return (
               <div
                 key={m.id}
                 onClick={() => handleSelectMicro(m)}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between group ${
                   isSelected
                     ? 'border-blue-600 bg-blue-50/50 shadow-xs'
                     : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 min-w-0">
                   <span
                     className="w-3.5 h-3.5 rounded-full ring-2 ring-white shadow-xs shrink-0"
                     style={{ backgroundColor: m.color }}
                   />
-                  <div>
-                    <div className="font-bold text-xs text-slate-900">{m.name}</div>
-                    <div className="text-[11px] text-slate-600">
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-1.5 flex-wrap">
+                      <span className="font-bold text-xs text-slate-900 truncate">{m.name}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${microShiftInfo.badgeClass}`}>
+                        {microShiftInfo.badgeText}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 mt-0.5">
                       {countVolunteers} voluntários • {countFns} funções
                     </div>
                   </div>
                 </div>
 
-                <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-slate-300'}`} />
+                <div className="flex items-center space-x-1 shrink-0 ml-2">
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditMicro(m);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 opacity-80 group-hover:opacity-100 transition-all"
+                      title="Editar Frente e Período"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-blue-600' : 'text-slate-300'}`} />
+                </div>
               </div>
             );
           })}
@@ -357,9 +434,19 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                     {selectedMicro.name.charAt(0)}
                   </div>
                   <div>
-                    <h2 className="text-lg font-extrabold text-slate-900 font-display">
-                      {selectedMicro.name}
-                    </h2>
+                    <div className="flex items-center space-x-2 flex-wrap">
+                      <h2 className="text-lg font-extrabold text-slate-900 font-display">
+                        {selectedMicro.name}
+                      </h2>
+                      {(() => {
+                        const info = getMicroShiftInfo(selectedMicro);
+                        return (
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${info.badgeClass}`}>
+                            {info.badgeText}
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <p className="text-xs text-slate-700 mt-0.5">
                       {selectedMicro.description || 'Frente ministerial oficial MEVAM Kids'}
                     </p>
@@ -370,10 +457,10 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                   {canEdit && (
                     <button
                       onClick={() => handleOpenEditMicro(selectedMicro)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5"
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 shadow-2xs"
                     >
                       <Edit className="w-3.5 h-3.5" />
-                      <span>Editar Micro</span>
+                      <span>Editar Frente & Período</span>
                     </button>
                   )}
                   {currentUser.role === 'ADMIN_LIDERANCA' && micros.length > 1 && (
@@ -382,11 +469,111 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                       className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 border border-rose-200"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Excluir Micro</span>
+                      <span>Excluir</span>
                     </button>
                   )}
                 </div>
               </div>
+
+              {/* Período de Atuação da Frente Banner */}
+              {(() => {
+                const shiftInfo = getMicroShiftInfo(selectedMicro);
+                const countFns = microFunctions.length;
+                return (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                            Período de Atuação desta Frente:
+                          </span>
+                          <span className={`font-bold px-2 py-0.5 rounded-full border text-xs ${shiftInfo.badgeClass}`}>
+                            {shiftInfo.badgeText}
+                          </span>
+                        </div>
+                        <p className="text-slate-600 text-[11px] mt-0.5">
+                          {shiftInfo.description}
+                        </p>
+                      </div>
+
+                      {canEdit && (
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditMicro(selectedMicro)}
+                            className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold rounded-lg text-xs flex items-center space-x-1"
+                          >
+                            <Sun className="w-3 h-3 text-amber-600" />
+                            <span>Alterar Período</span>
+                          </button>
+                          {countFns > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleReplicatePeriodToFunctions(selectedMicro)}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold rounded-lg text-xs flex items-center space-x-1"
+                              title="Replicar este período para todas as funções deste micro"
+                            >
+                              <Sliders className="w-3 h-3 text-indigo-600" />
+                              <span>Sincronizar Funções ({countFns})</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Shift Toggles directly in the card */}
+                    {canEdit && (
+                      <div className="pt-2 border-t border-slate-200/80 flex items-center flex-wrap gap-1.5 text-[11px]">
+                        <span className="text-slate-500 font-medium mr-1">Troca rápida:</span>
+                        <button
+                          type="button"
+                          onClick={() => handleQuickChangeMicroPeriod(selectedMicro, ['NOITE'])}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                            selectedMicro.defaultShifts?.length === 1 && selectedMicro.defaultShifts.includes('NOITE')
+                              ? 'bg-indigo-600 text-white shadow-2xs'
+                              : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
+                          }`}
+                        >
+                          🌙 Só Noite (Louvor...)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleQuickChangeMicroPeriod(selectedMicro, ['MANHA'])}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                            selectedMicro.defaultShifts?.length === 1 && selectedMicro.defaultShifts.includes('MANHA')
+                              ? 'bg-amber-600 text-white shadow-2xs'
+                              : 'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50'
+                          }`}
+                        >
+                          ☀️ Só Manhã
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleQuickChangeMicroPeriod(selectedMicro, ['MANHA', 'NOITE'])}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                            selectedMicro.defaultShifts?.length === 2 && selectedMicro.defaultShifts.includes('MANHA') && selectedMicro.defaultShifts.includes('NOITE')
+                              ? 'bg-blue-600 text-white shadow-2xs'
+                              : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50'
+                          }`}
+                        >
+                          ☀️🌙 Manhã & Noite
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleQuickChangeMicroPeriod(selectedMicro, ['ESPECIAL'], selectedMicro.specialEventNames || 'Culto de Casais, Culto de Mulheres')}
+                          className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                            selectedMicro.defaultShifts?.length === 1 && selectedMicro.defaultShifts.includes('ESPECIAL')
+                              ? 'bg-purple-600 text-white shadow-2xs'
+                              : 'bg-white text-purple-700 border border-purple-200 hover:bg-purple-50'
+                          }`}
+                        >
+                          ⭐ Só Especiais
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {isTeacherOrAux && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
@@ -408,16 +595,22 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-700 block text-[11px]">Voluntários Habilitados:</span>
+                  <span className="text-slate-700 block text-[11px]">Voluntários:</span>
                   <span className="text-base font-extrabold text-slate-900">{peopleInMicro.length}</span>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <span className="text-slate-700 block text-[11px]">Funções Cadastradas:</span>
+                  <span className="text-slate-700 block text-[11px]">Funções:</span>
                   <span className="text-base font-extrabold text-slate-900">{microFunctions.length}</span>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <span className="text-slate-700 block text-[11px]">Período da Frente:</span>
+                  <span className="text-xs font-bold text-slate-900 mt-0.5 block truncate">
+                    {getMicroShiftInfo(selectedMicro).badgeText}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <span className="text-slate-700 block text-[11px]">Status Operacional:</span>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md inline-block mt-0.5">
                     Ativo & Disponível
@@ -635,33 +828,45 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       {/* Modal: New / Edit Micro */}
       {isMicroModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
-            <h3 className="text-base font-bold text-slate-900 font-display">
-              {editingMicro ? 'Editar Micro / Frente' : 'Criar Nova Frente / Micro'}
-            </h3>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 font-display">
+                {editingMicro ? 'Editar Frente (Micro) & Período' : 'Criar Nova Frente / Micro'}
+              </h3>
+              <span className="text-xs text-slate-500">MEVAM Kids</span>
+            </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">NOME DO MICRO *</label>
+                <label className="block font-bold text-slate-700 mb-1">NOME DO MICRO / FRENTE *</label>
                 <input
                   type="text"
                   value={microName}
                   onChange={(e) => setMicroName(e.target.value)}
-                  placeholder="Ex: Recepção, Dança, Estacionamento..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  placeholder="Ex: Recepção, Louvor, 7 e 8 Anos, 3 a 6 Anos..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">COR DE IDENTIFICAÇÃO</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    value={microColor}
-                    onChange={(e) => setMicroColor(e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-slate-300 cursor-pointer"
-                  />
-                  <span className="text-xs font-mono font-bold text-slate-700">{microColor}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">COR DE IDENTIFICAÇÃO</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={microColor}
+                      onChange={(e) => setMicroColor(e.target.value)}
+                      className="w-9 h-9 rounded-lg border border-slate-300 cursor-pointer"
+                    />
+                    <span className="text-xs font-mono font-bold text-slate-700">{microColor}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">STATUS</label>
+                  <div className="px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-xs">
+                    Ativo & Operacional
+                  </div>
                 </div>
               </div>
 
@@ -672,12 +877,202 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                   onChange={(e) => setMicroDesc(e.target.value)}
                   rows={2}
                   placeholder="Finalidade e atuação desta frente..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 />
+              </div>
+
+              {/* PERÍODO / TURNOS DE ATUAÇÃO DA FRENTE */}
+              <div className="space-y-3 pt-2 border-t border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
+                    Período / Turnos de Atuação da Frente *
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Em quais cultos esta frente atua
+                  </span>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setMicroAllowedShifts(['NOITE'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      microAllowedShifts.length === 1 && microAllowedShifts.includes('NOITE')
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                    }`}
+                  >
+                    🌙 Só Noite (Louvor...)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMicroAllowedShifts(['MANHA'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      microAllowedShifts.length === 1 && microAllowedShifts.includes('MANHA')
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'
+                    }`}
+                  >
+                    ☀️ Só Manhã
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMicroAllowedShifts(['MANHA', 'NOITE'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      microAllowedShifts.length === 2 && microAllowedShifts.includes('MANHA') && microAllowedShifts.includes('NOITE')
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+                    }`}
+                  >
+                    ☀️🌙 Manhã & Noite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMicroAllowedShifts(['ESPECIAL']);
+                      if (!microSpecialEvents) setMicroSpecialEvents('Culto de Casais, Culto de Mulheres');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      microAllowedShifts.length === 1 && microAllowedShifts.includes('ESPECIAL')
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                        : 'bg-white text-purple-700 border-purple-200 hover:bg-purple-50'
+                    }`}
+                  >
+                    ⭐ Só Cultos Especiais
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMicroAllowedShifts(['MANHA', 'NOITE', 'ESPECIAL'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      microAllowedShifts.length === 3
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    ✨ Todos os Cultos
+                  </button>
+                </div>
+
+                {/* Individual Checkboxes */}
+                <div className="space-y-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={microAllowedShifts.includes('MANHA')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...microAllowedShifts, 'MANHA']
+                          : microAllowedShifts.filter((s) => s !== 'MANHA');
+                        setMicroAllowedShifts(next.length > 0 ? next : ['MANHA']);
+                      }}
+                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                        <span>☀️ Culto da Manhã</span>
+                        <span className="text-[11px] font-normal text-slate-500">(Domingo 09h / 10h)</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500">
+                        Atua nos cultos matutinos regulares de domingo
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={microAllowedShifts.includes('NOITE')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...microAllowedShifts, 'NOITE']
+                          : microAllowedShifts.filter((s) => s !== 'NOITE');
+                        setMicroAllowedShifts(next.length > 0 ? next : ['NOITE']);
+                      }}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                        <span>🌙 Culto da Noite</span>
+                        <span className="text-[11px] font-normal text-slate-500">(Domingo 18h / 19h)</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500">
+                        Atua no culto principal da noite de domingo (ex: Louvor, Recepção, salas da noite)
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={microAllowedShifts.includes('ESPECIAL')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...microAllowedShifts, 'ESPECIAL']
+                          : microAllowedShifts.filter((s) => s !== 'ESPECIAL');
+                        setMicroAllowedShifts(next.length > 0 ? next : ['NOITE']);
+                      }}
+                      className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                        <span>⭐ Cultos Especiais</span>
+                        <span className="text-[11px] font-normal text-slate-500">(Eventos extraordinários)</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500">
+                        Atua em cultos temáticos (ex: Culto de Casais, Culto de Mulheres, Conferências)
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Conditional Special Events Description */}
+                {microAllowedShifts.includes('ESPECIAL') && (
+                  <div className="bg-purple-50/60 p-3 rounded-xl border border-purple-200 space-y-1">
+                    <label className="block font-bold text-purple-900 text-xs">
+                      Quais Cultos Especiais esta Frente Atende?
+                    </label>
+                    <input
+                      type="text"
+                      value={microSpecialEvents}
+                      onChange={(e) => setMicroSpecialEvents(e.target.value)}
+                      placeholder="Ex: Culto de Casais, Culto de Mulheres, Santa Ceia, Vigília..."
+                      className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                    />
+                    <span className="text-[10px] text-purple-700 block">
+                      Especificar os tipos de eventos facilita o filtro automático ao criar escalas temáticas.
+                    </span>
+                  </div>
+                )}
+
+                {/* Option to apply to all functions of this micro */}
+                {editingMicro && functions.filter((f) => f.microId === editingMicro.id).length > 0 && (
+                  <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-200 space-y-1">
+                    <label className="flex items-start space-x-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={microApplyToFunctions}
+                        onChange={(e) => setMicroApplyToFunctions(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 mt-0.5 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-bold text-blue-950 text-xs flex items-center space-x-1">
+                          <span>🔄 Aplicar este período a todas as funções deste micro</span>
+                          <span className="bg-blue-200 text-blue-900 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                            {functions.filter((f) => f.microId === editingMicro.id).length} funções
+                          </span>
+                        </span>
+                        <p className="text-[11px] text-blue-800 mt-0.5">
+                          Atualiza instantaneamente os turnos permitidos de todas as funções cadastradas nesta frente para coincidirem com este período.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-2 pt-2">
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
               <button
                 onClick={() => setIsMicroModalOpen(false)}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900"
@@ -686,9 +1081,9 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
               </button>
               <button
                 onClick={handleSaveMicro}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
               >
-                Salvar Micro
+                Salvar Frente & Período
               </button>
             </div>
           </div>

@@ -851,7 +851,7 @@ class StorageService {
     return this.getMicros().find((m) => m.id === id);
   }
 
-  saveMicro(micro: Micro): void {
+  saveMicro(micro: Micro, applyToFunctions: boolean = false): void {
     const micros = this.getMicros();
     const idx = micros.findIndex((m) => m.id === micro.id);
     if (idx >= 0) {
@@ -862,6 +862,56 @@ class StorageService {
       this.addAuditLog('CRIACAO_MICRO', `Novo micro ${micro.name} criado.`, 'MICRO');
     }
     this.save(STORAGE_KEYS.MICROS, micros);
+
+    if (applyToFunctions && micro.defaultShifts && micro.defaultShifts.length > 0) {
+      const allFunctions = this.getFunctions();
+      let changed = false;
+      const updatedFunctions = allFunctions.map((fn) => {
+        if (fn.microId === micro.id) {
+          changed = true;
+          return {
+            ...fn,
+            criteria: {
+              ...fn.criteria,
+              allowedShifts: micro.defaultShifts,
+              specialEventNames: micro.specialEventNames,
+              hasShiftPreference: true
+            },
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return fn;
+      });
+
+      if (changed) {
+        this.save(STORAGE_KEYS.FUNCTIONS, updatedFunctions);
+        this.addAuditLog(
+          'EDICAO_MICRO',
+          `Período do micro ${micro.name} replicado para todas as suas funções.`,
+          'MICRO'
+        );
+      }
+    }
+  }
+
+  updateMicroPeriod(
+    microId: string,
+    shifts: string[],
+    specialEventNames?: string,
+    applyToFunctions: boolean = false
+  ): Micro | undefined {
+    const micro = this.getMicroById(microId);
+    if (!micro) return undefined;
+
+    const updatedMicro: Micro = {
+      ...micro,
+      defaultShifts: shifts,
+      specialEventNames: shifts.includes('ESPECIAL') ? specialEventNames?.trim() : undefined,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.saveMicro(updatedMicro, applyToFunctions);
+    return updatedMicro;
   }
 
   deleteMicro(id: string): void {

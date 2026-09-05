@@ -8,7 +8,7 @@ import {
   Family
 } from '../types';
 import { storageService } from './storageService';
-import { isFunctionActiveForShift } from '../utils/functionShiftUtils';
+import { isFunctionActiveForShift, isMicroActiveForShift } from '../utils/functionShiftUtils';
 
 export interface CandidateScore {
   person: Person;
@@ -473,6 +473,11 @@ export class SchedulerAlgorithm {
     const functions = storageService.getFunctions();
 
     for (const microId of microIds) {
+      const micro = storageService.getMicroById(microId);
+      if (micro && scheduleShift && !isMicroActiveForShift(micro, scheduleShift)) {
+        continue;
+      }
+
       const microFunctions = functions.filter((f) => f.microId === microId);
 
       for (const fn of microFunctions) {

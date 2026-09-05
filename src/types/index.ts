@@ -113,6 +113,7 @@ export interface Micro {
   color: string;
   iconName?: string;
   defaultShifts?: string[];
+  specialEventNames?: string;
   algorithmWeights?: AlgorithmWeights;
   createdAt?: string;
   updatedAt?: string;
