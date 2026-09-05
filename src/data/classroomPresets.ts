@@ -45,6 +45,18 @@ export function generateFunctionsForPreset(
 ): { professorFunctions: MicroFunction[]; auxiliarFunctions: MicroFunction[] } {
   const preset = CLASSROOM_PRESETS.find((p) => p.key === presetKey) || CLASSROOM_PRESETS[0];
 
+  const allowedShifts: string[] =
+    presetKey === 'DOMINGO_MANHA'
+      ? ['MANHA']
+      : presetKey === 'DOMINGO_NOITE'
+      ? ['NOITE']
+      : ['ESPECIAL'];
+
+  const specialEventNames =
+    presetKey.startsWith('CULTO_ESPECIAL')
+      ? 'Culto Especial (Casais, Mulheres, etc.)'
+      : undefined;
+
   const professorFunctions: MicroFunction[] = preset.ageGroups.map((age, idx) => ({
     id: `fn-prof-${presetKey.toLowerCase()}-${idx + 1}`,
     microId: microProfessorId,
@@ -55,6 +67,8 @@ export function generateFunctionsForPreset(
       hasAgeGroupPreference: true,
       allowedAgeGroups: [age],
       hasShiftPreference: true,
+      allowedShifts,
+      specialEventNames,
       allowedExperienceLevels: ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO']
     }
   }));
@@ -69,6 +83,8 @@ export function generateFunctionsForPreset(
       hasAgeGroupPreference: true,
       allowedAgeGroups: [age],
       hasShiftPreference: true,
+      allowedShifts,
+      specialEventNames,
       allowedExperienceLevels: ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO']
     }
   }));

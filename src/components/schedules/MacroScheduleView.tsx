@@ -30,6 +30,7 @@ import { exportService } from '../../services/exportService';
 import { formatDateBR, parseDateBRToISO } from '../../utils/dateUtils';
 import { CLASSROOM_PRESETS } from '../../data/classroomPresets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
 
 interface MacroScheduleViewProps {
   currentUser: UserAccount;
@@ -74,6 +75,8 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   const [newFunctionName, setNewFunctionName] = useState('');
   const [newFunctionCategory, setNewFunctionCategory] = useState('');
   const [newFunctionCount, setNewFunctionCount] = useState(1);
+  const [newFunctionAllowedShifts, setNewFunctionAllowedShifts] = useState<string[]>(['MANHA', 'NOITE']);
+  const [newFunctionSpecialEvents, setNewFunctionSpecialEvents] = useState<string>('');
 
   // Apply Preset Modal
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
@@ -182,7 +185,8 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
     const slots = schedulerAlgorithm.createSlotsForSchedule(
       scheduleId,
       newDates,
-      selectedMicroIdsForNew
+      selectedMicroIdsForNew,
+      newShift
     );
 
     const sortedDates = [...newDates].sort();
@@ -304,6 +308,8 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
       criteria: {
         hasAgeGroupPreference: targetMicroForFunction.name.toLowerCase().includes('prof') || targetMicroForFunction.name.toLowerCase().includes('aux'),
         hasShiftPreference: true,
+        allowedShifts: newFunctionAllowedShifts,
+        specialEventNames: newFunctionAllowedShifts.includes('ESPECIAL') ? newFunctionSpecialEvents.trim() : undefined,
         allowedExperienceLevels: ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO']
       }
     };
@@ -316,6 +322,8 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
     setNewFunctionName('');
     setNewFunctionCategory('');
     setNewFunctionCount(1);
+    setNewFunctionAllowedShifts(['MANHA', 'NOITE']);
+    setNewFunctionSpecialEvents('');
     setTargetMicroForFunction(null);
   };
 
@@ -825,9 +833,17 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                               {/* Row Label & Actions */}
                               <td className="py-3 px-4 font-semibold text-slate-800 border-r border-slate-100">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: micro.color }} />
+                                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: micro.color }} />
                                     <span>{functionLabel}</span>
+                                    {(() => {
+                                      const sInfo = getFunctionShiftInfo(fn);
+                                      return (
+                                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${sInfo.badgeClass}`}>
+                                          {sInfo.badgeText}
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
 
                                   {canManage && (
@@ -1286,6 +1302,118 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                   onChange={(e) => setNewFunctionCount(parseInt(e.target.value, 10) || 1)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                 />
+              </div>
+
+              {/* Turnos / Cultos de Atuação */}
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
+                  Turnos de Atuação desta Função *
+                </label>
+
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setNewFunctionAllowedShifts(['NOITE'])}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                      newFunctionAllowedShifts.length === 1 && newFunctionAllowedShifts.includes('NOITE')
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-indigo-700 border-indigo-200'
+                    }`}
+                  >
+                    🌙 Só Noite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewFunctionAllowedShifts(['MANHA'])}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                      newFunctionAllowedShifts.length === 1 && newFunctionAllowedShifts.includes('MANHA')
+                        ? 'bg-amber-600 text-white border-amber-600'
+                        : 'bg-white text-amber-700 border-amber-200'
+                    }`}
+                  >
+                    ☀️ Só Manhã
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewFunctionAllowedShifts(['MANHA', 'NOITE'])}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                      newFunctionAllowedShifts.length === 2 && newFunctionAllowedShifts.includes('MANHA') && newFunctionAllowedShifts.includes('NOITE')
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-blue-700 border-blue-200'
+                    }`}
+                  >
+                    ☀️🌙 Manhã & Noite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewFunctionAllowedShifts(['ESPECIAL']);
+                      if (!newFunctionSpecialEvents) setNewFunctionSpecialEvents('Culto de Casais, Culto de Mulheres');
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                      newFunctionAllowedShifts.length === 1 && newFunctionAllowedShifts.includes('ESPECIAL')
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white text-purple-700 border-purple-200'
+                    }`}
+                  >
+                    ⭐ Só Especiais
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <label className="flex items-center space-x-2 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={newFunctionAllowedShifts.includes('MANHA')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...newFunctionAllowedShifts, 'MANHA']
+                          : newFunctionAllowedShifts.filter((s) => s !== 'MANHA');
+                        setNewFunctionAllowedShifts(next.length > 0 ? next : ['MANHA']);
+                      }}
+                      className="w-3.5 h-3.5 text-blue-600 rounded"
+                    />
+                    <span className="font-semibold text-slate-800">☀️ Culto da Manhã (09h / 10h)</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={newFunctionAllowedShifts.includes('NOITE')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...newFunctionAllowedShifts, 'NOITE']
+                          : newFunctionAllowedShifts.filter((s) => s !== 'NOITE');
+                        setNewFunctionAllowedShifts(next.length > 0 ? next : ['NOITE']);
+                      }}
+                      className="w-3.5 h-3.5 text-blue-600 rounded"
+                    />
+                    <span className="font-semibold text-slate-800">🌙 Culto da Noite (18h / 19h - ex: Louvor)</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={newFunctionAllowedShifts.includes('ESPECIAL')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...newFunctionAllowedShifts, 'ESPECIAL']
+                          : newFunctionAllowedShifts.filter((s) => s !== 'ESPECIAL');
+                        setNewFunctionAllowedShifts(next.length > 0 ? next : ['ESPECIAL']);
+                      }}
+                      className="w-3.5 h-3.5 text-blue-600 rounded"
+                    />
+                    <span className="font-semibold text-slate-800">⭐ Cultos Especiais (Casais, Mulheres...)</span>
+                  </label>
+
+                  {newFunctionAllowedShifts.includes('ESPECIAL') && (
+                    <input
+                      type="text"
+                      value={newFunctionSpecialEvents}
+                      onChange={(e) => setNewFunctionSpecialEvents(e.target.value)}
+                      placeholder="Quais cultos especiais? Ex: Casais, Mulheres"
+                      className="w-full px-2 py-1 bg-white border border-purple-200 rounded text-xs font-medium focus:outline-hidden"
+                    />
+                  )}
+                </div>
               </div>
             </div>
 

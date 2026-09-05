@@ -13,11 +13,16 @@ import {
   Sparkles,
   Users,
   AlertTriangle,
-  GraduationCap
+  GraduationCap,
+  Sun,
+  Moon,
+  Star,
+  Calendar
 } from 'lucide-react';
 import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey } from '../../types';
 import { storageService } from '../../services/storageService';
 import { CLASSROOM_PRESETS, generateFunctionsForPreset } from '../../data/classroomPresets';
+import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
 
 interface MicroManagementProps {
   currentUser: UserAccount;
@@ -65,6 +70,8 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   const [fnCount, setFnCount] = useState<number>(1);
   const [hasAgePref, setHasAgePref] = useState(false);
   const [hasShiftPref, setHasShiftPref] = useState(false);
+  const [fnAllowedShifts, setFnAllowedShifts] = useState<string[]>(['MANHA', 'NOITE']);
+  const [fnSpecialEvents, setFnSpecialEvents] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync listener to update micros/functions when storage changes without destroying open modals
@@ -202,6 +209,10 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     setFnCount(1);
     setHasAgePref(selectedMicro?.name.toLowerCase().includes('prof') || selectedMicro?.name.toLowerCase().includes('aux'));
     setHasShiftPref(true);
+
+    const isLouvor = selectedMicro?.name.toLowerCase().includes('louvor');
+    setFnAllowedShifts(isLouvor ? ['NOITE'] : ['MANHA', 'NOITE']);
+    setFnSpecialEvents('');
     setIsFnModalOpen(true);
   };
 
@@ -212,6 +223,12 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
     setFnCount(fn.defaultRequiredCount || 1);
     setHasAgePref(!!fn.criteria?.hasAgeGroupPreference);
     setHasShiftPref(!!fn.criteria?.hasShiftPreference);
+
+    const existingShifts = fn.criteria?.allowedShifts && fn.criteria.allowedShifts.length > 0
+      ? fn.criteria.allowedShifts
+      : ['MANHA', 'NOITE'];
+    setFnAllowedShifts(existingShifts);
+    setFnSpecialEvents(fn.criteria?.specialEventNames || '');
     setIsFnModalOpen(true);
   };
 
@@ -227,6 +244,8 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       criteria: {
         hasAgeGroupPreference: hasAgePref,
         hasShiftPreference: hasShiftPref,
+        allowedShifts: fnAllowedShifts,
+        specialEventNames: fnAllowedShifts.includes('ESPECIAL') ? fnSpecialEvents.trim() : undefined,
         allowedExperienceLevels: ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO']
       }
     };
@@ -437,30 +456,36 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                     Nenhuma função cadastrada para este micro ainda. Clique em "Nova Função" para adicionar.
                   </div>
                 ) : (
-                  microFunctions.map((fn) => (
-                    <div
-                      key={fn.id}
-                      className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs hover:border-slate-300 transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900 text-xs">{fn.name}</span>
-                          {fn.category && (
-                            <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-medium">
-                              {fn.category}
+                  microFunctions.map((fn) => {
+                    const shiftInfo = getFunctionShiftInfo(fn);
+
+                    return (
+                      <div
+                        key={fn.id}
+                        className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs hover:border-slate-300 transition-colors"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <span className="font-bold text-slate-900 text-xs">{fn.name}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${shiftInfo.badgeClass}`}>
+                              {shiftInfo.badgeText}
                             </span>
-                          )}
+                            {fn.category && (
+                              <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-medium">
+                                {fn.category}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-700 flex items-center space-x-3 flex-wrap">
+                            <span>Vagas padrão por culto: <strong>{fn.defaultRequiredCount || 1}</strong></span>
+                            {fn.criteria?.hasAgeGroupPreference && (
+                              <span className="text-emerald-700 font-semibold">• Critério de Faixa Etária</span>
+                            )}
+                            <span className="text-indigo-700 font-medium">
+                              • {shiftInfo.label}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-700 flex items-center space-x-3">
-                          <span>Vagas padrão por culto: <strong>{fn.defaultRequiredCount || 1}</strong></span>
-                          {fn.criteria?.hasAgeGroupPreference && (
-                            <span className="text-emerald-700 font-semibold">• Critério de Faixa Etária</span>
-                          )}
-                          {fn.criteria?.hasShiftPreference && (
-                            <span className="text-indigo-700 font-semibold">• Critério de Turno</span>
-                          )}
-                        </div>
-                      </div>
 
                       {canEdit && (
                         <div className="flex items-center space-x-1">
@@ -481,8 +506,9 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                         </div>
                       )}
                     </div>
-                  ))
-                )}
+                  );
+                })
+              )}
               </div>
             </div>
 
@@ -712,6 +738,153 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                 />
               </div>
 
+              {/* Turnos / Cultos de Atuação */}
+              <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider">
+                    Turnos e Cultos de Atuação *
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Escolha em quais cultos esta função existe
+                  </span>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFnAllowedShifts(['NOITE'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      fnAllowedShifts.length === 1 && fnAllowedShifts.includes('NOITE')
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                    }`}
+                  >
+                    🌙 Só Noite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFnAllowedShifts(['MANHA'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      fnAllowedShifts.length === 1 && fnAllowedShifts.includes('MANHA')
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'
+                    }`}
+                  >
+                    ☀️ Só Manhã
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFnAllowedShifts(['MANHA', 'NOITE'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      fnAllowedShifts.length === 2 && fnAllowedShifts.includes('MANHA') && fnAllowedShifts.includes('NOITE')
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+                    }`}
+                  >
+                    ☀️🌙 Manhã & Noite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFnAllowedShifts(['ESPECIAL']);
+                      if (!fnSpecialEvents) setFnSpecialEvents('Culto de Casais, Culto de Mulheres');
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      fnAllowedShifts.length === 1 && fnAllowedShifts.includes('ESPECIAL')
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                        : 'bg-white text-purple-700 border-purple-200 hover:bg-purple-50'
+                    }`}
+                  >
+                    ⭐ Só Cultos Especiais
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFnAllowedShifts(['MANHA', 'NOITE', 'ESPECIAL'])}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      fnAllowedShifts.length === 3
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    ✨ Todos os Cultos
+                  </button>
+                </div>
+
+                {/* Individual Checkboxes */}
+                <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fnAllowedShifts.includes('MANHA')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...fnAllowedShifts, 'MANHA']
+                          : fnAllowedShifts.filter((s) => s !== 'MANHA');
+                        setFnAllowedShifts(next.length > 0 ? next : ['MANHA']);
+                      }}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900">☀️ Culto da Manhã</span>
+                      <span className="text-slate-500 ml-1.5">(Domingo 09h / 10h)</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fnAllowedShifts.includes('NOITE')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...fnAllowedShifts, 'NOITE']
+                          : fnAllowedShifts.filter((s) => s !== 'NOITE');
+                        setFnAllowedShifts(next.length > 0 ? next : ['NOITE']);
+                      }}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900">🌙 Culto da Noite</span>
+                      <span className="text-slate-500 ml-1.5">(Domingo 18h / 19h - ex: Louvor)</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fnAllowedShifts.includes('ESPECIAL')}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...fnAllowedShifts, 'ESPECIAL']
+                          : fnAllowedShifts.filter((s) => s !== 'ESPECIAL');
+                        setFnAllowedShifts(next.length > 0 ? next : ['ESPECIAL']);
+                      }}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900">⭐ Cultos Especiais</span>
+                      <span className="text-slate-500 ml-1.5">(Culto de Casais, Mulheres, Conferências...)</span>
+                    </div>
+                  </label>
+
+                  {/* Special event names input */}
+                  {fnAllowedShifts.includes('ESPECIAL') && (
+                    <div className="pt-2 pl-6">
+                      <label className="block text-[11px] font-bold text-purple-900 mb-1">
+                        Quais cultos especiais? (Ex: Culto de Casais, Culto de Mulheres...)
+                      </label>
+                      <input
+                        type="text"
+                        value={fnSpecialEvents}
+                        onChange={(e) => setFnSpecialEvents(e.target.value)}
+                        placeholder="Ex: Culto de Casais, Culto de Mulheres..."
+                        className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-lg text-xs font-medium text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -722,18 +895,6 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                   />
                   <span className="text-xs font-medium text-slate-800">
                     Habilitar critério de Faixa Etária (ex: Professores)
-                  </span>
-                </label>
-
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={hasShiftPref}
-                    onChange={(e) => setHasShiftPref(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 rounded"
-                  />
-                  <span className="text-xs font-medium text-slate-800">
-                    Habilitar critério de Turno (Manhã / Noite)
                   </span>
                 </label>
               </div>

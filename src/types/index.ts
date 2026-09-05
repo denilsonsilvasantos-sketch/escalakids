@@ -70,7 +70,8 @@ export interface FunctionCriteriaConfig {
   hasAgeGroupPreference?: boolean;
   allowedAgeGroups?: string[]; // e.g. ["3 a 6 anos", "5 anos", "6 anos", "7 anos", "8 anos", "9 e 10 anos", "11 e 12 anos"]
   hasShiftPreference?: boolean;
-  allowedShifts?: string[]; // e.g. ["Manhã", "Noite", "Tarde"]
+  allowedShifts?: string[]; // e.g. ["MANHA", "NOITE", "ESPECIAL"] or ["Manhã", "Noite", "Culto Especial"]
+  specialEventNames?: string; // e.g. "Culto de Casais, Culto de Mulheres"
   hasDayPreference?: boolean;
   allowedDays?: string[]; // e.g. ["Domingo", "Quarta", "Sábado"]
   requiresExperience?: boolean;

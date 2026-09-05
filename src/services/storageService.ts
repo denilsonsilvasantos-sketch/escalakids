@@ -1081,7 +1081,32 @@ class StorageService {
   linkPersonsToFamily(person1Id: string, person2Id: string, customFamilyName?: string): Family {
     const p1 = this.getPersonById(person1Id);
     const p2 = this.getPersonById(person2Id);
-    if (!p1 || !p2) throw new Error('Pessoas não encontradas');
+
+    if (!p1 && !p2) {
+      throw new Error('Pessoas não encontradas para o vínculo familiar.');
+    }
+
+    // If one person is still being created in memory (e.g. In wizard before initial save)
+    if (!p1 || !p2) {
+      const existing = p1 || p2!;
+      let family: Family;
+      if (existing.familyId) {
+        family = this.getFamilyById(existing.familyId)!;
+      } else {
+        const lastName = existing.name.split(' ').slice(-1)[0] || 'Família';
+        const famName = customFamilyName || `Família ${lastName}`;
+        family = {
+          id: `fam-${Date.now()}`,
+          name: famName,
+          priority: 'ALTA',
+          createdAt: new Date().toISOString()
+        };
+        this.saveFamily(family);
+        existing.familyId = family.id;
+        this.savePerson(existing);
+      }
+      return family;
+    }
 
     let family: Family;
 

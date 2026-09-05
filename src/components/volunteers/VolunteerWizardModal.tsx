@@ -19,6 +19,7 @@ import {
 import { Person, Micro, MicroFunction, Family, PersonMicroFunctionPreference } from '../../types';
 import { storageService } from '../../services/storageService';
 import { formatDateBR, parseDateBRToISO, maskDateBRInput, isValidDateBR } from '../../utils/dateUtils';
+import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
 
 interface VolunteerWizardModalProps {
   isOpen: boolean;
@@ -731,12 +732,22 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                               (fp) => fp.microId === microId && fp.functionId === fn.id
                             );
 
+                            const shiftInfo = getFunctionShiftInfo(fn);
+                            const availableShifts = (() => {
+                              const allowed = fn.criteria?.allowedShifts || ['MANHA', 'NOITE'];
+                              const list: string[] = [];
+                              if (allowed.includes('MANHA')) list.push('Manhã');
+                              if (allowed.includes('NOITE')) list.push('Noite');
+                              if (allowed.includes('ESPECIAL')) list.push('Especial');
+                              return list.length > 0 ? list : ['Manhã', 'Noite'];
+                            })();
+
                             return (
                               <div
                                 key={fn.id}
-                                className={`p-3 rounded-lg border transition-all ${
+                                className={`p-3 rounded-xl border transition-all ${
                                   isFnSelected
-                                    ? 'border-blue-600 bg-white shadow-2xs'
+                                    ? 'border-blue-600 bg-blue-50/30 shadow-2xs'
                                     : 'border-slate-200 bg-white/80 hover:border-slate-300'
                                 }`}
                               >
@@ -746,16 +757,21 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                                 >
                                   <div className="flex items-center space-x-2 text-xs">
                                     <div
-                                      className={`w-4 h-4 rounded flex items-center justify-center ${
+                                      className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
                                         isFnSelected ? 'bg-blue-600 text-white' : 'border border-slate-300'
                                       }`}
                                     >
                                       {isFnSelected && <Check className="w-3 h-3 stroke-[3]" />}
                                     </div>
-                                    <span className="font-bold text-slate-900">{fn.name}</span>
+                                    <div>
+                                      <span className="font-bold text-slate-900 block">{fn.name}</span>
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border inline-block mt-0.5 ${shiftInfo.badgeClass}`}>
+                                        {shiftInfo.badgeText}
+                                      </span>
+                                    </div>
                                   </div>
                                   {fn.category && (
-                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded shrink-0">
                                       {fn.category}
                                     </span>
                                   )}
@@ -785,7 +801,7 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                                         Turno Preferido:
                                       </label>
                                       <div className="flex space-x-1">
-                                        {['Manhã', 'Noite'].map((sh) => {
+                                        {availableShifts.map((sh) => {
                                           const hasSh = pref.preferredShifts.includes(sh);
                                           return (
                                             <button
@@ -797,10 +813,10 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                                                   : [...pref.preferredShifts, sh];
                                                 handleUpdatePref(microId, fn.id, 'preferredShifts', next);
                                               }}
-                                              className={`flex-1 py-0.5 rounded text-[10px] font-bold border ${
+                                              className={`flex-1 py-0.5 rounded text-[10px] font-bold border transition-colors ${
                                                 hasSh
                                                   ? 'bg-blue-600 text-white border-blue-600'
-                                                  : 'bg-white text-slate-600 border-slate-200'
+                                                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                               }`}
                                             >
                                               {sh}

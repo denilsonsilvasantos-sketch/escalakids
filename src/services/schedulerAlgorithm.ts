@@ -8,6 +8,7 @@ import {
   Family
 } from '../types';
 import { storageService } from './storageService';
+import { isFunctionActiveForShift } from '../utils/functionShiftUtils';
 
 export interface CandidateScore {
   person: Person;
@@ -465,7 +466,8 @@ export class SchedulerAlgorithm {
   createSlotsForSchedule(
     scheduleId: string,
     dates: string[],
-    microIds: string[]
+    microIds: string[],
+    scheduleShift?: string
   ): ScheduleSlot[] {
     const slots: ScheduleSlot[] = [];
     const functions = storageService.getFunctions();
@@ -474,6 +476,11 @@ export class SchedulerAlgorithm {
       const microFunctions = functions.filter((f) => f.microId === microId);
 
       for (const fn of microFunctions) {
+        // Only include functions that operate in the schedule's shift
+        if (scheduleShift && !isFunctionActiveForShift(fn, scheduleShift)) {
+          continue;
+        }
+
         const count = fn.defaultRequiredCount || 1;
 
         for (let i = 1; i <= count; i++) {
