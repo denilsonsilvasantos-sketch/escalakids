@@ -89,7 +89,10 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
     <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      {/* px-4 matches the sidebar's own p-4 (see Sidebar.tsx), so the logo lines
+          up exactly with the sidebar's left edge below it instead of floating
+          in a separately-centered column. */}
+      <div className="px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
