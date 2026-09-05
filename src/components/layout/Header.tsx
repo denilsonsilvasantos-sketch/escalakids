@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles,
   Search,
   Cake,
   Shield,
   UserCheck,
   RefreshCw,
-  Sliders,
   ChevronDown,
-  Cloud,
-  CloudCheck,
-  CloudOff,
-  Database,
   Users,
   KeyRound,
-  LogOut,
-  UserPlus
+  LogOut
 } from 'lucide-react';
 import { UserAccount, SupabaseSyncState } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -139,46 +132,34 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right Action Icons & Role Switcher */}
           <div className="flex items-center space-x-2 shrink-0">
-            {/* User Management Shortcut for Admins and Macro Leaders */}
-            {(isAdmin || isMacroLeader) && (
-              <button
-                onClick={onOpenUserManagement}
-                className="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-all shrink-0"
-                title="Gestão de Líderes, Senhas e Acessos"
-              >
-                <Users className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="hidden xl:inline">Gestão de Acessos</span>
-                <span className="xl:hidden">Acessos</span>
-              </button>
-            )}
-
-            {/* Multi-Device Live Sync Status Badge */}
-            <div
-              className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 text-slate-300 text-xs font-medium shrink-0"
-              title="Sincronização em tempo real ativa: dados unificados em todos os celulares, tablets e computadores."
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span className="hidden xl:inline">Multi-Dispositivo Conectado</span>
-              <span className="xl:hidden">Sincronizado</span>
-            </div>
-
-            {/* Supabase Cloud Sync Status Button - ONLY FOR ADMIN */}
-            {isAdmin && (
+            {/* Unified Sync Status Badge — for admins it's clickable and opens the
+                cloud sync panel; for everyone else it's just a status indicator.
+                (Access management already lives in the profile dropdown below,
+                so it isn't duplicated here as a separate button.) */}
+            {isAdmin ? (
               <button
                 onClick={onOpenSupabaseModal}
-                className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all shrink-0 ${
+                className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all shrink-0 ${
                   syncState.isConnected
                     ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/60'
                     : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
                 }`}
-                title="Sincronização em Nuvem MEVAM Kids"
+                title="Sincronização em tempo real entre dispositivos e nuvem MEVAM Kids"
               >
-                <Database className={`w-3.5 h-3.5 ${syncState.isConnected ? 'text-emerald-400' : 'text-blue-400'} shrink-0`} />
-                <span className="hidden xl:inline">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${syncState.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                <span className="hidden lg:inline">
                   {syncState.isConnected ? 'Nuvem Conectada' : 'Sincronizar Nuvem'}
                 </span>
-                <span className="xl:hidden">Nuvem</span>
+                <span className="lg:hidden">Nuvem</span>
               </button>
+            ) : (
+              <div
+                className="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 text-slate-300 text-xs font-medium shrink-0"
+                title="Sincronização em tempo real ativa: dados unificados em todos os celulares, tablets e computadores."
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="hidden lg:inline">Sincronizado</span>
+              </div>
             )}
 
             {/* Mobile Search Button */}
