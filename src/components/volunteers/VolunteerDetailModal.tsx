@@ -53,7 +53,7 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
   const [ruleType, setRuleType] = useState<'RECORRENTE' | 'DATA_ESPECIFICA'>('DATA_ESPECIFICA');
   const [specificDate, setSpecificDate] = useState('');
   const [dayOfWeek, setDayOfWeek] = useState<number>(0);
-  const [shift, setShift] = useState<'MANHA' | 'NOITE' | 'AMBOS'>('AMBOS');
+  const [shift, setShift] = useState<'MANHA' | 'NOITE' | 'ESPECIAL' | 'AMBOS'>('AMBOS');
   const [isAvailable, setIsAvailable] = useState<boolean>(false); // default adding unavailability
   const [reason, setReason] = useState('');
 
@@ -289,6 +289,7 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
                       <option value="AMBOS">Todos os Turnos</option>
                       <option value="MANHA">Apenas Manhã</option>
                       <option value="NOITE">Apenas Noite</option>
+                      <option value="ESPECIAL">Apenas Cultos Especiais</option>
                     </select>
                   </div>
                 </div>

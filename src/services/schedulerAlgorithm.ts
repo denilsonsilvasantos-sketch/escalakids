@@ -177,12 +177,17 @@ export class SchedulerAlgorithm {
       let totalPrefChecks = 0;
 
       // Shift preference
-      if (fnPref.preferredShifts && fnPref.preferredShifts.length > 0) {
+      const targetShift =
+        schedule.shift === 'NOITE' ? 'Noite' :
+        schedule.shift === 'MANHA' ? 'Manhã' :
+        schedule.shift === 'ESPECIAL' ? 'Especial' :
+        null; // AMBOS/TARDE have no single matching label, so the preference check is skipped
+
+      if (fnPref.preferredShifts && fnPref.preferredShifts.length > 0 && targetShift) {
         totalPrefChecks++;
-        const targetShift = schedule.shift === 'NOITE' ? 'Noite' : schedule.shift === 'MANHA' ? 'Manhã' : 'Tarde';
         if (fnPref.preferredShifts.includes(targetShift)) {
           prefMatches++;
-          reasons.push(`Prefere turno da ${targetShift.toLowerCase()}`);
+          reasons.push(`Prefere turno ${targetShift.toLowerCase()}`);
         }
       }
 

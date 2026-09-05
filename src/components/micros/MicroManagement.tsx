@@ -492,7 +492,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                           </span>
                         </div>
                         <p className="text-slate-600 text-[11px] mt-0.5">
-                          {shiftInfo.description}
+                          {shiftInfo.label}
                         </p>
                       </div>
 

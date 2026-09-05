@@ -134,7 +134,7 @@ export interface AvailabilityRule {
   personId: string;
   type: 'RECORRENTE' | 'DATA_ESPECIFICA';
   dayOfWeek?: number; // 0=Domingo, 3=Quarta, 6=Sábado
-  shift?: 'MANHA' | 'NOITE' | 'AMBOS' | 'QUALQUER';
+  shift?: 'MANHA' | 'NOITE' | 'ESPECIAL' | 'AMBOS' | 'QUALQUER';
   specificDate?: string; // YYYY-MM-DD
   isAvailable: boolean; // true = Available, false = Unavailable
   reason?: string;
@@ -173,7 +173,7 @@ export interface ScheduleEvent {
   id: string;
   name: string; // e.g. "Culto da Noite", "Culto da Manhã", "Conferência Kids"
   defaultTime: string; // "19:00"
-  shift: 'MANHA' | 'NOITE' | 'TARDE' | 'AMBOS';
+  shift: 'MANHA' | 'NOITE' | 'ESPECIAL' | 'TARDE' | 'AMBOS';
   dayOfWeek: number; // 0 for Sunday
 }
 
@@ -210,7 +210,7 @@ export interface Schedule {
   eventId?: string;
   eventName: string;
   period?: string;
-  shift: 'MANHA' | 'NOITE' | 'TARDE' | 'AMBOS';
+  shift: 'MANHA' | 'NOITE' | 'ESPECIAL' | 'TARDE' | 'AMBOS';
   dates: string[]; // ["2026-09-06", "2026-09-13", "2026-09-20", "2026-09-27"]
   microIds: string[]; // Included micros in this schedule
   status: ScheduleStatus;

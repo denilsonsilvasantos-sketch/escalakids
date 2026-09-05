@@ -32,6 +32,14 @@ import { CLASSROOM_PRESETS } from '../../data/classroomPresets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
 
+const SCHEDULE_SHIFT_LABELS: Record<string, string> = {
+  MANHA: '☀️ Manhã',
+  NOITE: '🌙 Noite',
+  ESPECIAL: '⭐ Culto Especial',
+  AMBOS: '✨ Todos os Turnos',
+  TARDE: 'Tarde'
+};
+
 interface MacroScheduleViewProps {
   currentUser: UserAccount;
 }
@@ -45,7 +53,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   const [isNewScheduleModalOpen, setIsNewScheduleModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('Escala Oficial MEVAM Kids');
   const [newEventName, setNewEventName] = useState('Cultos de Domingo');
-  const [newShift, setNewShift] = useState<'MANHA' | 'NOITE' | 'AMBOS'>('NOITE');
+  const [newShift, setNewShift] = useState<'MANHA' | 'NOITE' | 'ESPECIAL' | 'AMBOS'>('NOITE');
   const [newDates, setNewDates] = useState<string[]>([
     '2026-09-06',
     '2026-09-13',
@@ -61,7 +69,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   const [isEditScheduleModalOpen, setIsEditScheduleModalOpen] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editEventName, setEditEventName] = useState('');
-  const [editShift, setEditShift] = useState<'MANHA' | 'NOITE' | 'AMBOS'>('NOITE');
+  const [editShift, setEditShift] = useState<'MANHA' | 'NOITE' | 'ESPECIAL' | 'AMBOS'>('NOITE');
   const [editDates, setEditDates] = useState<string[]>([]);
   const [editDateInput, setEditDateInput] = useState('');
 
@@ -426,9 +434,10 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                 onChange={(e) => setNewShift(e.target.value as any)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               >
-                <option value="NOITE">Noite (18h / 19h)</option>
-                <option value="MANHA">Manhã (09h / 10h)</option>
-                <option value="AMBOS">Todos os Turnos</option>
+                <option value="NOITE">🌙 Noite (18h / 19h)</option>
+                <option value="MANHA">☀️ Manhã (09h / 10h)</option>
+                <option value="ESPECIAL">⭐ Culto Especial</option>
+                <option value="AMBOS">✨ Todos os Turnos</option>
               </select>
             </div>
           </div>
@@ -574,7 +583,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                 ESCALA MACRO GERAL
               </span>
               <span className="text-xs text-slate-600 font-semibold">
-                Turno: {currentSchedule.shift} • {currentSchedule.dates.length} Cultos ({currentSchedule.period})
+                Turno: {SCHEDULE_SHIFT_LABELS[currentSchedule.shift] || currentSchedule.shift} • {currentSchedule.dates.length} Cultos ({currentSchedule.period})
               </span>
             </div>
             <div className="flex items-center space-x-3 mt-1">
@@ -1174,9 +1183,10 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                     onChange={(e) => setEditShift(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                   >
-                    <option value="NOITE">Noite (18h / 19h)</option>
-                    <option value="MANHA">Manhã (09h / 10h)</option>
-                    <option value="AMBOS">Todos os Turnos</option>
+                    <option value="NOITE">🌙 Noite (18h / 19h)</option>
+                    <option value="MANHA">☀️ Manhã (09h / 10h)</option>
+                    <option value="ESPECIAL">⭐ Culto Especial</option>
+                    <option value="AMBOS">✨ Todos os Turnos</option>
                   </select>
                 </div>
               </div>
