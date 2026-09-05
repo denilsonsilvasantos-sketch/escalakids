@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { createApiRouter, ensureInitialSync, isCloudConfigured } from './server/api';
+import { createApiRouter, ensureInitialSync, isCloudConfigured } from './server/api.js';
 
 // Entry point for a traditional, long-running process: local `npm run dev`,
 // and any host that runs `npm start` as a persistent container (this is what

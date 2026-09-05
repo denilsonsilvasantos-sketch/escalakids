@@ -14,7 +14,7 @@ import {
   INITIAL_SCHEDULES,
   INITIAL_ROTATION_HISTORY,
   INITIAL_AUDIT_LOGS
-} from '../src/data/seedData';
+} from '../src/data/seedData.js'; // extension required for Node's native ESM loader on Vercel — see api/index.ts
 
 // This module holds every /api/* route and all the shared server-side state
 // (the local JSON "database", session signing, Supabase sync). It is imported

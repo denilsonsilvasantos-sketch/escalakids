@@ -1,6 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
-import { createApiRouter } from '../server/api';
+// Node's native ESM loader (which is what actually executes this on Vercel —
+// it does not bundle Node functions into a single file, it keeps them as
+// separate compiled modules) requires the real file extension on relative
+// imports. Omitting it here caused "Cannot find module '/var/task/server/api'"
+// in production even though the file exists — the resolver simply doesn't
+// guess extensions the way bundlers/CommonJS do.
+import { createApiRouter } from '../server/api.js';
 
 // Vercel serverless entry point. Vercel's zero-config convention treats any
 // file under api/ that default-exports an Express app (or a (req,res) handler)
