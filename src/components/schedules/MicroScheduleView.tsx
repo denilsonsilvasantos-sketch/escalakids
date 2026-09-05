@@ -37,6 +37,7 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
 
   const [activeSlot, setActiveSlot] = useState<ScheduleSlot | null>(null);
   const [activeSlotCandidates, setActiveSlotCandidates] = useState<CandidateScore[]>([]);
+  const [guestNameInput, setGuestNameInput] = useState('');
 
   // Synchronize schedules without closing active slot picker modal
   useEffect(() => {
@@ -70,6 +71,7 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
 
   const handleOpenSlotPicker = (slot: ScheduleSlot) => {
     setActiveSlot(slot);
+    setGuestNameInput(!slot.assignedPersonId ? slot.assignedPersonName || '' : '');
     const weights = currentMicro?.algorithmWeights || {
       availability: 100,
       correctFunction: 100,
@@ -105,6 +107,13 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
   const handleAssignPersonToSlot = (personId: string) => {
     if (!activeSlot || !currentSchedule) return;
     storageService.updateSlotAssignment(currentSchedule.id, activeSlot.id, personId, true);
+    setSchedules(storageService.getSchedules());
+    setActiveSlot(null);
+  };
+
+  const handleAssignGuestToSlot = () => {
+    if (!activeSlot || !currentSchedule || !guestNameInput.trim()) return;
+    storageService.setSlotGuestName(currentSchedule.id, activeSlot.id, guestNameInput.trim());
     setSchedules(storageService.getSchedules());
     setActiveSlot(null);
   };
@@ -253,7 +262,8 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
 
                         if (!slot) return <td key={date} className="p-2 border-r border-slate-100 text-center text-slate-300">-</td>;
 
-                        const isAssigned = !!slot.assignedPersonId;
+                        const isAssigned = !!slot.assignedPersonId || !!slot.assignedPersonName;
+                        const isGuest = isAssigned && !slot.assignedPersonId;
 
                         return (
                           <td key={date} className="p-2 border-r border-slate-100">
@@ -261,12 +271,18 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
                               <div
                                 onClick={() => handleOpenSlotPicker(slot)}
                                 className={`p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-between shadow-2xs ${
-                                  slot.manualOverride
+                                  isGuest
+                                    ? 'bg-rose-50 border-rose-300 text-rose-950'
+                                    : slot.manualOverride
                                     ? 'bg-amber-50 border-amber-300 text-amber-950'
                                     : 'bg-indigo-50 border-indigo-200 text-indigo-950'
                                 }`}
+                                title={isGuest ? 'Participação especial (sem cadastro)' : undefined}
                               >
-                                <span className="truncate">{slot.assignedPersonName}</span>
+                                <span className="truncate">
+                                  {isGuest && '🌟 '}
+                                  {slot.assignedPersonName}
+                                </span>
                               </div>
                             ) : (
                               <button
@@ -306,6 +322,30 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
             </div>
 
             <div className="p-5 max-h-96 overflow-y-auto space-y-2">
+              {allFunctions.find((f) => f.id === activeSlot.functionId)?.allowsGuestEntry && (
+                <div className="p-3.5 bg-rose-50/60 border border-rose-200 rounded-xl space-y-2 mb-3">
+                  <label className="block text-[11px] font-bold text-rose-900">
+                    🌟 PARTICIPAÇÃO ESPECIAL — DIGITE O NOME (SEM CADASTRO)
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={guestNameInput}
+                      onChange={(e) => setGuestNameInput(e.target.value)}
+                      placeholder="Ex: Pr. João (convidado)"
+                      className="flex-1 px-3 py-2 bg-white border border-rose-300 rounded-lg text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-hidden"
+                    />
+                    <button
+                      onClick={handleAssignGuestToSlot}
+                      disabled={!guestNameInput.trim()}
+                      className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg shadow-2xs shrink-0"
+                    >
+                      Definir
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {activeSlotCandidates.map((cand) => (
                 <div
                   key={cand.person.id}
