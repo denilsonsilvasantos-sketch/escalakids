@@ -311,12 +311,29 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
     });
   };
 
+  // Add an already-configured function (from "Micros & Funções") straight into
+  // this schedule — the normal path for e.g. adding "Participação Especial" to
+  // a schedule that was created before that function existed.
+  const handleAddExistingFunctionToSchedule = (fn: MicroFunction) => {
+    if (!currentSchedule) return;
+    storageService.addFunctionToSchedule(currentSchedule.id, fn);
+    setSchedules(storageService.getSchedules());
+    setIsAddFunctionModalOpen(false);
+    setTargetMicroForFunction(null);
+  };
+
   // Add Function to current schedule
   const handleSaveFunctionForMicro = () => {
     if (!currentSchedule || !targetMicroForFunction || !newFunctionName.trim()) return;
 
-    // First save the function globally if new
-    const newFn: MicroFunction = {
+    // Reuse an existing function with the same name instead of creating a
+    // duplicate — e.g. typing "Participação Especial" again would otherwise
+    // create a second function without allowsGuestEntry set.
+    const existingFn = allFunctions.find(
+      (f) => f.microId === targetMicroForFunction.id && f.name.trim().toLowerCase() === newFunctionName.trim().toLowerCase()
+    );
+
+    const newFn: MicroFunction = existingFn || {
       id: `fn-${targetMicroForFunction.id}-${Date.now()}`,
       microId: targetMicroForFunction.id,
       name: newFunctionName.trim(),
@@ -330,7 +347,9 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
         allowedExperienceLevels: ['INICIANTE', 'INTERMEDIARIO', 'AVANCADO']
       }
     };
-    storageService.saveFunction(newFn);
+    if (!existingFn) {
+      storageService.saveFunction(newFn);
+    }
 
     // Add function slots to current schedule
     storageService.addFunctionToSchedule(currentSchedule.id, newFn);
@@ -767,10 +786,27 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                 // Find all unique functions present in current schedule slots for this micro, or in allFunctions
                 const slotsInMicro = currentSchedule.slots.filter((s) => s.microId === micro.id);
                 const uniqueFunctionIds = Array.from(new Set(slotsInMicro.map((s) => s.functionId)));
-                
+
+                // Display order always follows the current "Micros & Funções" config
+                // order, not the historical order slots happened to be created in —
+                // otherwise reordering/renaming functions there never reflects in a
+                // schedule that already existed (a schedule can be months older than
+                // the last time someone tuned the function list).
+                const canonicalFunctionOrder = allFunctions
+                  .filter((f) => f.microId === micro.id)
+                  .map((f) => f.id);
+                const orderedFunctionIds = [...uniqueFunctionIds].sort((a, b) => {
+                  const ai = canonicalFunctionOrder.indexOf(a as string);
+                  const bi = canonicalFunctionOrder.indexOf(b as string);
+                  if (ai === -1 && bi === -1) return 0;
+                  if (ai === -1) return 1;
+                  if (bi === -1) return -1;
+                  return ai - bi;
+                });
+
                 // Fallback: If no slots yet, get micro functions
-                const microFunctions = uniqueFunctionIds.length > 0
-                  ? uniqueFunctionIds.map((id) => allFunctions.find((f) => f.id === id)).filter(Boolean) as MicroFunction[]
+                const microFunctions = orderedFunctionIds.length > 0
+                  ? orderedFunctionIds.map((id) => allFunctions.find((f) => f.id === id)).filter(Boolean) as MicroFunction[]
                   : allFunctions.filter((f) => f.microId === micro.id);
 
                 const isTeacherOrAux = micro.name.toLowerCase().includes('prof') || micro.name.toLowerCase().includes('aux');
@@ -1341,12 +1377,48 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
       {/* Modal: Add Function to Micro in Current Schedule */}
       {isAddFunctionModalOpen && targetMicroForFunction && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md max-h-[90vh] overflow-y-auto p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
             <h3 className="text-base font-bold text-slate-900 font-display">
               Adicionar Função em {targetMicroForFunction.name}
             </h3>
 
+            {(() => {
+              const fnIdsAlreadyInSchedule = new Set(
+                currentSchedule?.slots
+                  .filter((s) => s.microId === targetMicroForFunction.id)
+                  .map((s) => s.functionId) || []
+              );
+              const availableExistingFns = allFunctions.filter(
+                (f) => f.microId === targetMicroForFunction.id && !fnIdsAlreadyInSchedule.has(f.id)
+              );
+
+              if (availableExistingFns.length === 0) return null;
+
+              return (
+                <div className="space-y-1.5 pb-3 border-b border-slate-100">
+                  <label className="block font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+                    Já cadastradas em "{targetMicroForFunction.name}" — clique para adicionar
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableExistingFns.map((fn) => (
+                      <button
+                        key={fn.id}
+                        type="button"
+                        onClick={() => handleAddExistingFunctionToSchedule(fn)}
+                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-all"
+                      >
+                        + {fn.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="space-y-3 text-xs">
+              <label className="block font-bold text-slate-700 text-[11px] uppercase tracking-wider">
+                Ou crie uma função nova:
+              </label>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">NOME DA FUNÇÃO *</label>
                 <input
