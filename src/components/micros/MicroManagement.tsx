@@ -32,7 +32,12 @@ interface MicroManagementProps {
 
 export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser }) => {
   const [micros, setMicros] = useState<Micro[]>(storageService.getMicros());
-  const [selectedMicro, setSelectedMicro] = useState<Micro>(micros[0] || null);
+  // A micro leader only manages their own frente and shouldn't see how other
+  // frentes are configured at all; a macro leader only the ones granted to
+  // them. Only admin/coordenador see everything — matches canAccessMicro's
+  // scoping used elsewhere (schedules, volunteer list, etc.).
+  const visibleMicros = micros.filter((m) => storageService.canAccessMicro(m.id, currentUser));
+  const [selectedMicro, setSelectedMicro] = useState<Micro>(visibleMicros[0] || null);
   const [functions, setFunctions] = useState<MicroFunction[]>(storageService.getFunctions());
 
   // Edit / New Micro Modal state
@@ -88,9 +93,10 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       const updatedFunctions = storageService.getFunctions();
       setMicros(updatedMicros);
       setFunctions(updatedFunctions);
+      const updatedVisibleMicros = updatedMicros.filter((m) => storageService.canAccessMicro(m.id, currentUser));
       setSelectedMicro((prev) => {
-        if (!prev) return updatedMicros[0] || null;
-        return updatedMicros.find((m) => m.id === prev.id) || updatedMicros[0] || null;
+        if (!prev) return updatedVisibleMicros[0] || null;
+        return updatedVisibleMicros.find((m) => m.id === prev.id) || updatedVisibleMicros[0] || null;
       });
     };
     window.addEventListener('mevam_data_synced', handleSync);
@@ -357,7 +363,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                 Micros / Frentes & Funções do MEVAM Kids
               </h1>
               <p className="text-xs text-slate-700">
-                Estrutura 100% dinâmica e configurável pela Liderança — {micros.length} frentes cadastradas
+                Estrutura 100% dinâmica e configurável pela Liderança — {visibleMicros.length} frente{visibleMicros.length !== 1 ? 's' : ''} cadastrada{visibleMicros.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -381,7 +387,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
           <div className="text-xs font-bold text-slate-700 uppercase tracking-wider px-1">
             Frentes Ativas (Micros)
           </div>
-          {micros.map((m) => {
+          {visibleMicros.map((m) => {
             const isSelected = selectedMicro?.id === m.id;
             const countVolunteers = storageService.getPeople().filter((p) => p.microIds.includes(m.id)).length;
             const countFns = functions.filter((f) => f.microId === m.id).length;
