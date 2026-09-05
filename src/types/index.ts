@@ -96,6 +96,10 @@ export interface MicroFunction {
   // or run two sound boards, simultaneously). Left unset for micros where this
   // doesn't apply (a person can only ever hold one role per micro per date).
   conflictGroup?: FunctionConflictGroup;
+  // e.g. "Participação Especial": a guest slot that doesn't need a registered
+  // volunteer — the leader just types a name directly into the schedule slot,
+  // and the auto-fill assistant skips it entirely (there's no candidate pool).
+  allowsGuestEntry?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

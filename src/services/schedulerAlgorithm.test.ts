@@ -99,6 +99,7 @@ beforeEach(() => {
   mockStorageService.getRotationHistory.mockReturnValue([]);
   mockStorageService.getFamilyById.mockReturnValue(undefined);
   mockStorageService.getFamilyMembers.mockReturnValue([]);
+  mockStorageService.getFunctions.mockReturnValue([]);
 });
 
 describe('evaluateCandidate — hard disqualifications', () => {

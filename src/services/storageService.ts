@@ -1370,6 +1370,28 @@ class StorageService {
     this.saveSchedule(sched);
   }
 
+  // For functions marked allowsGuestEntry (e.g. "Participação Especial"): the
+  // slot is filled with a typed name instead of a registered Person, so there
+  // is no personId to store — assignedPersonName carries the guest's name.
+  setSlotGuestName(scheduleId: string, slotId: string, guestName: string): void {
+    const sched = this.getScheduleById(scheduleId);
+    if (!sched) return;
+    const slot = sched.slots.find((s) => s.id === slotId);
+    if (!slot) return;
+
+    slot.assignedPersonId = undefined;
+    slot.assignedPersonName = guestName.trim();
+    slot.manualOverride = true;
+    slot.score = undefined;
+    slot.scoreBreakdown = undefined;
+    this.addAuditLog(
+      'ATRIBUICAO_ESCALA',
+      `${slot.assignedPersonName} (convidado) atribuído à ${slot.sectionTitle || 'Função'} na data ${slot.date}.`,
+      'SCHEDULE'
+    );
+    this.saveSchedule(sched);
+  }
+
   addFunctionToSchedule(scheduleId: string, fn: MicroFunction): void {
     const sched = this.getScheduleById(scheduleId);
     if (!sched) return;

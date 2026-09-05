@@ -377,6 +377,9 @@ export class SchedulerAlgorithm {
   ): GenerationResult {
     const micros = storageService.getMicros();
     const allPeople = storageService.getPeople().filter((p) => p.active);
+    const guestEntryFunctionIds = new Set(
+      storageService.getFunctions().filter((f) => f.allowsGuestEntry).map((f) => f.id)
+    );
     const conflictsDetected: string[] = [];
 
     // Clone slots
@@ -387,6 +390,10 @@ export class SchedulerAlgorithm {
     const slotsToProcess = workingSlots.filter((s) => {
       if (!activeMicroIds.includes(s.microId)) return false;
       if (preserveManualOverrides && s.manualOverride && s.assignedPersonId) return false;
+      // Guest-entry slots (e.g. "Participação Especial") have no candidate pool
+      // at all — a leader always types the name in by hand, so auto-fill must
+      // never touch them, whether or not one's already been filled.
+      if (guestEntryFunctionIds.has(s.functionId)) return false;
       return true;
     });
 
