@@ -100,6 +100,10 @@ export interface MicroFunction {
   // volunteer — the leader just types a name directly into the schedule slot,
   // and the auto-fill assistant skips it entirely (there's no candidate pool).
   allowsGuestEntry?: boolean;
+  // Display position among this micro's functions (lower = earlier), everywhere
+  // a schedule lists them — set explicitly via the up/down controls in "Micros
+  // & Funções" rather than left to whatever order rows happen to be stored in.
+  order?: number;
   createdAt?: string;
   updatedAt?: string;
 }

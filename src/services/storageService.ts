@@ -955,7 +955,12 @@ class StorageService {
 
   // --- Functions ---
   getFunctions(): MicroFunction[] {
-    return this.load<MicroFunction[]>(STORAGE_KEYS.FUNCTIONS, INITIAL_FUNCTIONS);
+    const functions = this.load<MicroFunction[]>(STORAGE_KEYS.FUNCTIONS, INITIAL_FUNCTIONS);
+    // Sorted centrally so every screen that lists a micro's functions (schedule
+    // grids, Micros & Funções, the "add function" picker) agrees on the same
+    // order automatically. Stable sort: functions without an explicit `order`
+    // (older records) simply keep whatever relative position they already had.
+    return [...functions].sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
   }
 
   getFunctionsByMicro(microId: string): MicroFunction[] {
@@ -970,13 +975,38 @@ class StorageService {
     const functions = this.getFunctions();
     const idx = functions.findIndex((f) => f.id === fn.id);
     if (idx >= 0) {
-      functions[idx] = fn;
+      functions[idx] = { ...fn, order: fn.order ?? functions[idx].order };
       this.addAuditLog('EDICAO_FUNCAO', `Função ${fn.name} atualizada.`, 'FUNCTION');
     } else {
-      functions.push(fn);
+      const siblingOrders = functions.filter((f) => f.microId === fn.microId).map((f) => f.order ?? 0);
+      const nextOrder = siblingOrders.length > 0 ? Math.max(...siblingOrders) + 1 : 0;
+      functions.push({ ...fn, order: fn.order ?? nextOrder });
       this.addAuditLog('CRIACAO_FUNCAO', `Nova função ${fn.name} adicionada.`, 'FUNCTION');
     }
     this.save(STORAGE_KEYS.FUNCTIONS, functions);
+  }
+
+  // Swaps this function's display position with its immediate neighbor (within
+  // the same micro). Normalizes every sibling to an explicit sequential
+  // `order` first, so this also works for older functions that never had one.
+  moveFunctionOrder(functionId: string, direction: 'up' | 'down'): void {
+    const all = this.getFunctions();
+    const target = all.find((f) => f.id === functionId);
+    if (!target) return;
+
+    const siblings = all.filter((f) => f.microId === target.microId);
+    siblings.forEach((f, i) => { f.order = i; });
+
+    const idx = siblings.findIndex((f) => f.id === functionId);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= siblings.length) return;
+
+    const tmp = siblings[idx].order;
+    siblings[idx].order = siblings[swapIdx].order;
+    siblings[swapIdx].order = tmp;
+
+    const others = all.filter((f) => f.microId !== target.microId);
+    this.save(STORAGE_KEYS.FUNCTIONS, [...others, ...siblings]);
   }
 
   deleteFunction(id: string): void {

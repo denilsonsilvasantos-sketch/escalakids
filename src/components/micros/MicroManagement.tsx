@@ -17,7 +17,9 @@ import {
   Sun,
   Moon,
   Star,
-  Calendar
+  Calendar,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey, FunctionConflictGroup } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -335,6 +337,11 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   const peopleInMicro = storageService.getPeople().filter((p) => p.microIds.includes(selectedMicro?.id || ''));
   const isTeacherOrAux = selectedMicro?.name.toLowerCase().includes('prof') || selectedMicro?.name.toLowerCase().includes('aux');
   const isLouvorMicro = !!selectedMicro?.name.toLowerCase().includes('louvor');
+
+  const handleMoveFunction = (fnId: string, direction: 'up' | 'down') => {
+    storageService.moveFunctionOrder(fnId, direction);
+    setFunctions(storageService.getFunctions());
+  };
 
   return (
     <div className="space-y-6">
@@ -658,7 +665,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                     Nenhuma função cadastrada para este micro ainda. Clique em "Nova Função" para adicionar.
                   </div>
                 ) : (
-                  microFunctions.map((fn) => {
+                  microFunctions.map((fn, fnIdx) => {
                     const shiftInfo = getFunctionShiftInfo(fn);
 
                     return (
@@ -691,6 +698,24 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
 
                       {canEdit && (
                         <div className="flex items-center space-x-1">
+                          <div className="flex flex-col mr-1">
+                            <button
+                              onClick={() => handleMoveFunction(fn.id, 'up')}
+                              disabled={fnIdx === 0}
+                              className="p-0.5 text-slate-400 hover:text-slate-900 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              title="Mover para cima"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleMoveFunction(fn.id, 'down')}
+                              disabled={fnIdx === microFunctions.length - 1}
+                              className="p-0.5 text-slate-400 hover:text-slate-900 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              title="Mover para baixo"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                           <button
                             onClick={() => handleOpenEditFunction(fn)}
                             className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition-colors"

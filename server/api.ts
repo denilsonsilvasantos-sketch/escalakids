@@ -490,6 +490,7 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
           default_required_count: f.defaultRequiredCount || 1,
           conflict_group: f.conflictGroup || null,
           allows_guest_entry: f.allowsGuestEntry || false,
+          display_order: f.order ?? null,
           created_at: f.createdAt || new Date().toISOString(),
           updated_at: f.updatedAt || new Date().toISOString()
         }));
@@ -722,6 +723,7 @@ async function syncFromSupabaseToBackend(): Promise<void> {
         criteria: f.criteria || {},
         conflictGroup: f.conflict_group || undefined,
         allowsGuestEntry: f.allows_guest_entry || false,
+        order: f.display_order ?? undefined,
         createdAt: f.created_at,
         updatedAt: f.updated_at
       }));
