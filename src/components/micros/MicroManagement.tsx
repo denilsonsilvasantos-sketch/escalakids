@@ -534,7 +534,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                               : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
                           }`}
                         >
-                          🌙 Só Noite (Louvor...)
+                          🌙 Só Noite
                         </button>
                         <button
                           type="button"
@@ -903,7 +903,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                         : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
                     }`}
                   >
-                    🌙 Só Noite (Louvor...)
+                    🌙 Só Noite
                   </button>
                   <button
                     type="button"
