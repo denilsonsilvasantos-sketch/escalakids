@@ -168,7 +168,7 @@ export default function App() {
         onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
       />
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto relative">
+      <div className="flex-1 flex w-full relative">
         {/* Left Navigation Sidebar */}
         <Sidebar
           currentView={currentView}
