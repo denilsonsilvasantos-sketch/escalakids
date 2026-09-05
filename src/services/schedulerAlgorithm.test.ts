@@ -16,7 +16,7 @@ import type {
 // in isolation, with fully controlled fixtures, instead of needing a real
 // localStorage/server environment.
 const mockStorageService = {
-  checkCrossMicroConflict: vi.fn(),
+  checkSameMicroConflict: vi.fn(),
   isPersonAvailable: vi.fn(),
   getRotationHistory: vi.fn(),
   getFamilyById: vi.fn(),
@@ -94,7 +94,7 @@ function makeSchedule(overrides: Partial<Schedule> = {}): Schedule {
 beforeEach(() => {
   vi.clearAllMocks();
   // Sensible defaults: no conflicts, always available, no rotation history, no family.
-  mockStorageService.checkCrossMicroConflict.mockReturnValue({ hasConflict: false });
+  mockStorageService.checkSameMicroConflict.mockReturnValue({ hasConflict: false });
   mockStorageService.isPersonAvailable.mockReturnValue({ available: true });
   mockStorageService.getRotationHistory.mockReturnValue([]);
   mockStorageService.getFamilyById.mockReturnValue(undefined);
@@ -117,24 +117,59 @@ describe('evaluateCandidate — hard disqualifications', () => {
     expect(result.disqualificationReason).toBe('Não participa deste Micro');
   });
 
-  it('disqualifies a volunteer with a cross-micro conflict on the same date', () => {
-    mockStorageService.checkCrossMicroConflict.mockReturnValue({
+  it('allows a volunteer already scheduled in a DIFFERENT micro on the same date (sequential service is fine)', () => {
+    // e.g. Louvor in the first part of the service, then teaching kids afterwards.
+    mockStorageService.checkSameMicroConflict.mockReturnValue({ hasConflict: false });
+    const person = makePerson();
+    const otherMicroSlot = makeSlot({ id: 'slot-other', microId: 'micro-professor', functionId: 'fn-prof', assignedPersonId: person.id });
+    const result = schedulerAlgorithm.evaluateCandidate(person, makeSlot(), makeSchedule(), [otherMicroSlot], DEFAULT_WEIGHTS);
+    expect(result.isEligible).toBe(true);
+  });
+
+  it('disqualifies a volunteer already holding an incompatible role in the SAME micro on the same date', () => {
+    mockStorageService.checkSameMicroConflict.mockReturnValue({
       hasConflict: true,
-      conflictingMicro: { name: 'Refeitório' },
-      conflictingFunction: { name: 'Apoio' }
+      conflictingFunction: { name: 'Baixo', conflictGroup: 'INSTRUMENTO' }
     });
+    mockStorageService.getFunctionById.mockReturnValue({ name: 'Guitarra', conflictGroup: 'INSTRUMENTO' });
     const person = makePerson();
     const result = schedulerAlgorithm.evaluateCandidate(person, makeSlot(), makeSchedule(), [], DEFAULT_WEIGHTS);
     expect(result.isEligible).toBe(false);
-    expect(result.disqualificationReason).toContain('Refeitório');
+    expect(result.disqualificationReason).toContain('Baixo');
   });
 
-  it('disqualifies a volunteer already assigned elsewhere in the same generation batch on that date', () => {
+  it('allows Voz + Instrumento together in the SAME micro on the same date (Louvor exception)', () => {
+    mockStorageService.checkSameMicroConflict.mockReturnValue({
+      hasConflict: true,
+      conflictingFunction: { name: 'Vocal', conflictGroup: 'VOZ' }
+    });
+    mockStorageService.getFunctionById.mockReturnValue({ name: 'Violão', conflictGroup: 'INSTRUMENTO' });
+    const person = makePerson();
+    const result = schedulerAlgorithm.evaluateCandidate(person, makeSlot(), makeSchedule(), [], DEFAULT_WEIGHTS);
+    expect(result.isEligible).toBe(true);
+  });
+
+  it('disqualifies a volunteer already assigned to an unclassified role in the same micro/date (batch)', () => {
     const person = makePerson();
     const otherSlot = makeSlot({ id: 'slot-other', functionId: 'fn-baixo', assignedPersonId: person.id });
     const result = schedulerAlgorithm.evaluateCandidate(person, makeSlot(), makeSchedule(), [otherSlot], DEFAULT_WEIGHTS);
     expect(result.isEligible).toBe(false);
-    expect(result.disqualificationReason).toContain('Conflito na mesma data');
+    expect(result.disqualificationReason).toContain('Conflito');
+  });
+
+  it('disqualifies a volunteer whose family is set to "Ficar Separados" when a member already serves that day', () => {
+    const person = makePerson({ id: 'p-1', familyId: 'fam-1' });
+    const familyMember = makePerson({ id: 'p-2', familyId: 'fam-1' });
+    const family: Family = { id: 'fam-1', name: 'Família Silva', priority: 'ALTA', schedulingPreference: 'SEPARADOS', createdAt: '2026-01-01' };
+
+    mockStorageService.getFamilyById.mockReturnValue(family);
+    mockStorageService.getFamilyMembers.mockReturnValue([familyMember]);
+
+    const batchSlot = makeSlot({ id: 'slot-family', microId: 'micro-professor', functionId: 'fn-prof', assignedPersonId: 'p-2' });
+    const result = schedulerAlgorithm.evaluateCandidate(person, makeSlot(), makeSchedule(), [batchSlot], DEFAULT_WEIGHTS);
+
+    expect(result.isEligible).toBe(false);
+    expect(result.disqualificationReason).toContain('Família Silva');
   });
 
   it('disqualifies a volunteer who is unavailable that day', () => {
@@ -258,6 +293,26 @@ describe('generateSchedule', () => {
 
     const assignedSlots = result.schedule.slots.filter((s) => s.assignedPersonId === person.id);
     // Only one of the two same-date slots can end up assigned to this sole candidate.
+    expect(assignedSlots.length).toBe(1);
+    expect(result.unfilledSlotsCount).toBe(1);
+  });
+
+  it('auto-fill only places a volunteer once across the whole schedule, leaving other dates unfilled', () => {
+    const person = makePerson();
+    mockStorageService.getPeople.mockReturnValue([person]);
+    mockStorageService.getMicros.mockReturnValue([{ id: 'micro-louvor', algorithmWeights: DEFAULT_WEIGHTS } as Micro]);
+
+    const schedule = makeSchedule({
+      dates: ['2026-09-06', '2026-09-13'],
+      slots: [
+        makeSlot({ id: 'slot-1', date: '2026-09-06', functionId: 'fn-vocal' }),
+        makeSlot({ id: 'slot-2', date: '2026-09-13', functionId: 'fn-vocal' })
+      ]
+    });
+    const result = schedulerAlgorithm.generateSchedule(schedule);
+
+    const assignedSlots = result.schedule.slots.filter((s) => s.assignedPersonId === person.id);
+    // The sole candidate is only auto-assigned once total; the other Sunday is left open.
     expect(assignedSlots.length).toBe(1);
     expect(result.unfilledSlotsCount).toBe(1);
   });

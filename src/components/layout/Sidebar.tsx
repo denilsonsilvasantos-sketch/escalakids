@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   PlusCircle,
   X,
-  Menu
+  Menu,
+  CalendarOff
 } from 'lucide-react';
 import { UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -80,6 +81,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Famílias',
       icon: Heart,
       roles: ['ADMIN_LIDERANCA', 'LIDER_MACRO', 'COORDENADOR'],
+      badge: undefined
+    },
+    {
+      id: 'availability',
+      label: 'Indisponibilidade',
+      icon: CalendarOff,
+      roles: ['ADMIN_LIDERANCA', 'LIDER_MACRO', 'LIDER_MICRO', 'COORDENADOR'],
       badge: undefined
     },
     {

@@ -399,7 +399,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
   // able to reach this modal from the empty state's "Criar Primeira Escala" button.
   const newScheduleModal = isNewScheduleModalOpen && (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4 animate-in fade-in zoom-in-95 duration-100">
         <h3 className="text-base font-bold text-slate-900 font-display">
           Criar Nova Escala MEVAM Kids
         </h3>
@@ -488,14 +488,15 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
           {/* Micros Selector */}
           <div>
             <label className="block font-bold text-slate-700 mb-1">MICROS / SETORES NESTA ESCALA</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
               {allMicros.map((m) => {
                 const isChecked = selectedMicroIdsForNew.includes(m.id);
                 const shiftInfo = getMicroShiftInfo(m);
+                const countFns = allFunctions.filter((f) => f.microId === m.id).length;
                 return (
                   <label
                     key={m.id}
-                    className={`p-2 rounded-lg border cursor-pointer flex items-center justify-between space-x-1.5 text-xs font-semibold ${
+                    className={`w-full p-2.5 rounded-lg border cursor-pointer flex items-center justify-between gap-2 text-xs font-semibold ${
                       isChecked ? 'bg-blue-50 border-blue-500 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
@@ -512,9 +513,11 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                         }}
                         className="w-3.5 h-3.5 rounded text-blue-600 shrink-0"
                       />
-                      <span className="truncate">{m.name}</span>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                      <span>{m.name}</span>
+                      <span className="font-normal text-slate-500 shrink-0">({countFns} funções)</span>
                     </div>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${shiftInfo.badgeClass}`}>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${shiftInfo.badgeClass}`}>
                       {shiftInfo.badgeText}
                     </span>
                   </label>
@@ -666,7 +669,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
             )}
 
             {/* Delete Schedule Button */}
-            {canManage && schedules.length > 1 && (
+            {canManage && (
               <button
                 onClick={handleDeleteCurrentSchedule}
                 className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200"

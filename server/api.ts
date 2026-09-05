@@ -488,6 +488,7 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
           category: f.category || null,
           criteria: f.criteria || {},
           default_required_count: f.defaultRequiredCount || 1,
+          conflict_group: f.conflictGroup || null,
           created_at: f.createdAt || new Date().toISOString(),
           updated_at: f.updatedAt || new Date().toISOString()
         }));
@@ -518,6 +519,7 @@ async function syncToSupabaseFromBackend(db: MevamDatabase): Promise<{ success: 
         id: f.id,
         name: f.name,
         priority: f.priority,
+        scheduling_preference: f.schedulingPreference || null,
         notes: f.notes || null,
         created_at: f.createdAt || new Date().toISOString(),
         updated_at: f.updatedAt || new Date().toISOString()
@@ -717,6 +719,7 @@ async function syncFromSupabaseToBackend(): Promise<void> {
         category: f.category || 'Geral',
         defaultRequiredCount: f.default_required_count || 1,
         criteria: f.criteria || {},
+        conflictGroup: f.conflict_group || undefined,
         createdAt: f.created_at,
         updatedAt: f.updated_at
       }));
@@ -754,6 +757,7 @@ async function syncFromSupabaseToBackend(): Promise<void> {
         id: f.id,
         name: f.name,
         priority: f.priority,
+        schedulingPreference: f.scheduling_preference || undefined,
         notes: f.notes || undefined,
         createdAt: f.created_at,
         updatedAt: f.updated_at

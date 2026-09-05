@@ -13,6 +13,7 @@ import { FamilyManagement } from './components/families/FamilyManagement';
 import { BirthdayTracker } from './components/birthdays/BirthdayTracker';
 import { AuditHistoryView } from './components/history/AuditHistoryView';
 import { VolunteerPortalView } from './components/volunteers/VolunteerPortalView';
+import { AvailabilityManagementView } from './components/volunteers/AvailabilityManagementView';
 import { SupabaseSyncModal } from './components/settings/SupabaseSyncModal';
 import { UserManagementModal } from './components/auth/UserManagementModal';
 import { LoginScreen } from './components/auth/LoginScreen';
@@ -224,6 +225,10 @@ export default function App() {
 
           {currentView === 'families' && (
             <FamilyManagement currentUser={currentUser} />
+          )}
+
+          {currentView === 'availability' && (
+            <AvailabilityManagementView currentUser={currentUser} />
           )}
 
           {currentView === 'birthdays' && (

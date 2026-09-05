@@ -31,6 +31,7 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
   const [editingFamily, setEditingFamily] = useState<Family | null>(null);
   const [familyName, setFamilyName] = useState('');
   const [familyPriority, setFamilyPriority] = useState<Family['priority']>('ALTA');
+  const [familySchedulingPreference, setFamilySchedulingPreference] = useState<NonNullable<Family['schedulingPreference']>>('JUNTOS');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
@@ -53,6 +54,7 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
     setEditingFamily(null);
     setFamilyName('');
     setFamilyPriority('ALTA');
+    setFamilySchedulingPreference('JUNTOS');
     setIsModalOpen(true);
   };
 
@@ -60,6 +62,7 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
     setEditingFamily(f);
     setFamilyName(f.name);
     setFamilyPriority(f.priority);
+    setFamilySchedulingPreference(f.schedulingPreference || 'JUNTOS');
     setIsModalOpen(true);
   };
 
@@ -70,6 +73,7 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
       id: editingFamily?.id || `fam-${Date.now()}`,
       name: familyName.trim(),
       priority: familyPriority,
+      schedulingPreference: familySchedulingPreference,
       createdAt: editingFamily?.createdAt || new Date().toISOString()
     };
 
@@ -92,6 +96,12 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
 
   const handleUpdatePriority = (family: Family, priority: Family['priority']) => {
     const updated: Family = { ...family, priority };
+    storageService.saveFamily(updated);
+    setFamilies(storageService.getFamilies());
+  };
+
+  const handleUpdateSchedulingPreference = (family: Family, schedulingPreference: Family['schedulingPreference']) => {
+    const updated: Family = { ...family, schedulingPreference };
     storageService.saveFamily(updated);
     setFamilies(storageService.getFamilies());
   };
@@ -247,6 +257,20 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
                 </select>
               </div>
 
+              {/* Same-Day Scheduling Preference Quick Bar */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700 text-[11px]">Preferência de Escala:</span>
+                <select
+                  value={family.schedulingPreference || 'JUNTOS'}
+                  onChange={(e) => handleUpdateSchedulingPreference(family, e.target.value as any)}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800"
+                >
+                  <option value="JUNTOS">Ficar Juntos</option>
+                  <option value="SEPARADOS">Ficar Separados</option>
+                  <option value="SEM_PREFERENCIA">Sem Preferência</option>
+                </select>
+              </div>
+
               {/* Members List */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -346,6 +370,19 @@ export const FamilyManagement: React.FC<FamilyManagementProps> = ({ currentUser 
                   <option value="MEDIA">Média (Conveniência)</option>
                   <option value="BAIXA">Baixa</option>
                   <option value="DESATIVADA">Desativada (Indiferente)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">PREFERÊNCIA DE ESCALA</label>
+                <select
+                  value={familySchedulingPreference}
+                  onChange={(e) => setFamilySchedulingPreference(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                >
+                  <option value="JUNTOS">Ficar Juntos (recebe bônus na escala)</option>
+                  <option value="SEPARADOS">Ficar Separados (nunca no mesmo dia)</option>
+                  <option value="SEM_PREFERENCIA">Sem Preferência</option>
                 </select>
               </div>
             </div>

@@ -80,6 +80,8 @@ export interface FunctionCriteriaConfig {
   customNotes?: string;
 }
 
+export type FunctionConflictGroup = 'VOZ' | 'INSTRUMENTO' | 'TECNICA';
+
 export interface MicroFunction {
   id: string;
   microId: string;
@@ -88,6 +90,12 @@ export interface MicroFunction {
   category?: string; // e.g. "Louvor 3 a 6", "Sala 5 anos", "Geral"
   criteria: FunctionCriteriaConfig;
   defaultRequiredCount: number;
+  // Used to decide whether a volunteer can hold two roles in the SAME micro on
+  // the SAME date at once (e.g. Louvor: Voz + Instrumento is fine, but two
+  // Instrumento/Técnica roles conflict — a person can't play two instruments,
+  // or run two sound boards, simultaneously). Left unset for micros where this
+  // doesn't apply (a person can only ever hold one role per micro per date).
+  conflictGroup?: FunctionConflictGroup;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -160,10 +168,17 @@ export interface Person {
   updatedAt: string;
 }
 
+export type FamilySchedulingPreference = 'JUNTOS' | 'SEPARADOS' | 'SEM_PREFERENCIA';
+
 export interface Family {
   id: string;
   name: string; // e.g. "Família Silva"
   priority: FamilyPriority;
+  // Whether members of this family should be pushed together on the same day
+  // (default, bonus-only), actively kept apart on the same day (hard rule —
+  // e.g. they said they don't want to serve together), or left with no rule
+  // either way. Independent from `priority`, which only tunes bonus strength.
+  schedulingPreference?: FamilySchedulingPreference;
   notes?: string;
   createdAt: string;
   updatedAt?: string;

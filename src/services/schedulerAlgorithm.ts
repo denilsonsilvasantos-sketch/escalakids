@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { storageService } from './storageService';
 import { isFunctionActiveForShift, isMicroActiveForShift } from '../utils/functionShiftUtils';
+import { getScheduleDisplayName } from '../utils/personUtils';
 
 export interface CandidateScore {
   person: Person;
@@ -91,50 +92,78 @@ export class SchedulerAlgorithm {
       };
     }
 
-    // 3. HARD CHECK: Cross-micro conflict on the exact same date & shift
-    // Check against existing schedules
-    const existingConflict = storageService.checkCrossMicroConflict(person.id, slot.date, schedule.id, slot.id);
-    if (existingConflict.hasConflict) {
-      const cMicro = existingConflict.conflictingMicro?.name || 'outro micro';
-      const cFn = existingConflict.conflictingFunction?.name || 'outra função';
-      return {
-        person,
-        totalScore: -9999,
-        availabilityScore: 0,
-        functionMatchScore: 0,
-        preferenceScore: 0,
-        frequencyScore: 0,
-        recencyScore: 0,
-        rotationScore: 0,
-        familyScore: 0,
-        experienceScore: 0,
-        isEligible: false,
-        disqualificationReason: `Conflito: já escalado em ${cMicro} (${cFn})`,
-        reasons: [`Já escalado em ${cMicro} (${cFn}) nesta data`]
-      };
+    // 3. HARD CHECK: Same-micro conflict on the exact same date.
+    // A volunteer can now serve in more than one micro on the same day (e.g.
+    // Louvor, then teaching kids afterwards) — but two roles inside the SAME
+    // micro on the SAME date only coexist when explicitly compatible (Louvor's
+    // Voz + Instrumento). Two Instrumento/Técnica roles — or two unclassified
+    // roles — always conflict, since a person can't play two instruments (or
+    // teach two classrooms) at the same time.
+    const currentFn = storageService.getFunctionById(slot.functionId);
+
+    const existingConflict = storageService.checkSameMicroConflict(person.id, slot.microId, slot.date, schedule.id, slot.id);
+    const batchConflictSlot = currentBatchSlots.find(
+      (s) => s.microId === slot.microId && s.date === slot.date && s.assignedPersonId === person.id && s.id !== slot.id
+    );
+
+    const conflictingFn = existingConflict.hasConflict
+      ? existingConflict.conflictingFunction
+      : batchConflictSlot
+      ? storageService.getFunctionById(batchConflictSlot.functionId)
+      : undefined;
+
+    if (existingConflict.hasConflict || batchConflictSlot) {
+      const isCompatiblePair = currentFn?.conflictGroup === 'VOZ' || conflictingFn?.conflictGroup === 'VOZ';
+      if (!isCompatiblePair) {
+        const fnName = conflictingFn?.name || 'outra função';
+        return {
+          person,
+          totalScore: -9999,
+          availabilityScore: 0,
+          functionMatchScore: 0,
+          preferenceScore: 0,
+          frequencyScore: 0,
+          recencyScore: 0,
+          rotationScore: 0,
+          familyScore: 0,
+          experienceScore: 0,
+          isEligible: false,
+          disqualificationReason: `Conflito: já escalado em "${fnName}" neste mesmo culto`,
+          reasons: [`Já escalado em "${fnName}" nesta mesma frente e data`]
+        };
+      }
     }
 
-    // Also check against slots already assigned in the current generation batch for this date
-    const sameDateBatchAssignment = currentBatchSlots.find(
-      (s) => s.date === slot.date && s.assignedPersonId === person.id && s.id !== slot.id
-    );
-    if (sameDateBatchAssignment) {
-      const mName = storageService.getMicroById(sameDateBatchAssignment.microId)?.name || 'outro micro';
-      return {
-        person,
-        totalScore: -9999,
-        availabilityScore: 0,
-        functionMatchScore: 0,
-        preferenceScore: 0,
-        frequencyScore: 0,
-        recencyScore: 0,
-        rotationScore: 0,
-        familyScore: 0,
-        experienceScore: 0,
-        isEligible: false,
-        disqualificationReason: `Conflito na mesma data com ${mName}`,
-        reasons: [`Já escalado na mesma data em ${mName}`]
-      };
+    // 3.5 HARD CHECK: Family "keep apart" preference — some families explicitly
+    // don't want to serve on the same day, so this blocks the assignment
+    // outright instead of just withholding the togetherness bonus below.
+    if (person.familyId) {
+      const family = storageService.getFamilyById(person.familyId);
+      if (family?.schedulingPreference === 'SEPARADOS') {
+        const otherFamilyMemberIds = new Set(
+          storageService.getFamilyMembers(person.familyId).filter((m) => m.id !== person.id).map((m) => m.id)
+        );
+        const familyMemberScheduledSameDay = currentBatchSlots.find(
+          (s) => s.date === slot.date && s.assignedPersonId && otherFamilyMemberIds.has(s.assignedPersonId)
+        );
+        if (familyMemberScheduledSameDay) {
+          return {
+            person,
+            totalScore: -9999,
+            availabilityScore: 0,
+            functionMatchScore: 0,
+            preferenceScore: 0,
+            frequencyScore: 0,
+            recencyScore: 0,
+            rotationScore: 0,
+            familyScore: 0,
+            experienceScore: 0,
+            isEligible: false,
+            disqualificationReason: `${family.name} prefere não servir no mesmo dia`,
+            reasons: [`Conflito: família ${family.name} está marcada para não servir no mesmo dia`]
+          };
+        }
+      }
     }
 
     // 4. HARD / WEIGHTED CHECK: Availability for Date & Shift
@@ -387,6 +416,18 @@ export class SchedulerAlgorithm {
       const candidateScores: CandidateScore[] = [];
 
       for (const person of allPeople) {
+        // Rule: the auto-fill assistant only places each volunteer once across
+        // the WHOLE schedule being generated (spreading people out across
+        // Sundays rather than reusing the same names every week) — same-day
+        // multi-frente assignments are unaffected since this only excludes a
+        // DIFFERENT date. Slots left over from this cap stay unfilled for a
+        // leader to fill in manually. Manual assignment (the slot picker) is
+        // not subject to this — a leader can still deliberately reuse someone.
+        const alreadyUsedOnAnotherDate = workingSlots.some(
+          (s) => s.assignedPersonId === person.id && s.date !== slot.date
+        );
+        if (alreadyUsedOnAnotherDate) continue;
+
         const scoreResult = this.evaluateCandidate(person, slot, schedule, workingSlots, weights);
         if (scoreResult.isEligible && scoreResult.totalScore > 0) {
           candidateScores.push(scoreResult);
@@ -399,7 +440,7 @@ export class SchedulerAlgorithm {
       if (candidateScores.length > 0) {
         const bestCandidate = candidateScores[0];
         slot.assignedPersonId = bestCandidate.person.id;
-        slot.assignedPersonName = bestCandidate.person.name;
+        slot.assignedPersonName = getScheduleDisplayName(bestCandidate.person);
         slot.manualOverride = false;
         slot.score = bestCandidate.totalScore;
         slot.scoreBreakdown = {

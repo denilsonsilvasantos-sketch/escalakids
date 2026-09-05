@@ -19,7 +19,7 @@ import {
   Star,
   Calendar
 } from 'lucide-react';
-import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey } from '../../types';
+import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey, FunctionConflictGroup } from '../../types';
 import { storageService } from '../../services/storageService';
 import { CLASSROOM_PRESETS, generateFunctionsForPreset } from '../../data/classroomPresets';
 import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
@@ -75,6 +75,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   const [hasShiftPref, setHasShiftPref] = useState(false);
   const [fnAllowedShifts, setFnAllowedShifts] = useState<string[]>(['MANHA', 'NOITE']);
   const [fnSpecialEvents, setFnSpecialEvents] = useState<string>('');
+  const [fnConflictGroup, setFnConflictGroup] = useState<FunctionConflictGroup | ''>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync listener to update micros/functions when storage changes without destroying open modals
@@ -269,6 +270,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       : (selectedMicro?.name.toLowerCase().includes('louvor') ? ['NOITE'] : ['MANHA', 'NOITE']);
     setFnAllowedShifts(microShifts);
     setFnSpecialEvents(selectedMicro?.specialEventNames || '');
+    setFnConflictGroup('');
     setIsFnModalOpen(true);
   };
 
@@ -285,6 +287,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       : ['MANHA', 'NOITE'];
     setFnAllowedShifts(existingShifts);
     setFnSpecialEvents(fn.criteria?.specialEventNames || '');
+    setFnConflictGroup(fn.conflictGroup || '');
     setIsFnModalOpen(true);
   };
 
@@ -297,6 +300,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
       name: fnName.trim(),
       category: fnCategory.trim() || undefined,
       defaultRequiredCount: fnCount,
+      conflictGroup: isLouvorMicro ? (fnConflictGroup || undefined) : undefined,
       criteria: {
         hasAgeGroupPreference: hasAgePref,
         hasShiftPreference: hasShiftPref,
@@ -326,6 +330,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
   const microFunctions = functions.filter((f) => f.microId === selectedMicro?.id);
   const peopleInMicro = storageService.getPeople().filter((p) => p.microIds.includes(selectedMicro?.id || ''));
   const isTeacherOrAux = selectedMicro?.name.toLowerCase().includes('prof') || selectedMicro?.name.toLowerCase().includes('aux');
+  const isLouvorMicro = !!selectedMicro?.name.toLowerCase().includes('louvor');
 
   return (
     <div className="space-y-6">
@@ -1132,6 +1137,25 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                 />
               </div>
+
+              {isLouvorMicro && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">TIPO (CONFLITO DE HORÁRIO)</label>
+                  <select
+                    value={fnConflictGroup}
+                    onChange={(e) => setFnConflictGroup(e.target.value as FunctionConflictGroup | '')}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="">Não classificado</option>
+                    <option value="VOZ">🎤 Voz (vocal)</option>
+                    <option value="INSTRUMENTO">🎸 Instrumento</option>
+                    <option value="TECNICA">🎚️ Técnica (mesa de som, etc.)</option>
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Define quando um voluntário pode acumular esta função com outra do Louvor no mesmo culto: Voz + Instrumento é permitido, mas dois Instrumentos/Técnica ao mesmo tempo não.
+                  </p>
+                </div>
+              )}
 
               {/* Turnos / Cultos de Atuação */}
               <div className="pt-3 border-t border-slate-200 space-y-2.5">

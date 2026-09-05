@@ -12,6 +12,7 @@ import {
   BirthdayNotification,
   ScheduleSlot
 } from '../types';
+import { getScheduleDisplayName } from '../utils/personUtils';
 import {
   INITIAL_USERS,
   INITIAL_MICROS,
@@ -1262,23 +1263,31 @@ class StorageService {
   }
 
   // --- Conflict Detection ---
-  checkCrossMicroConflict(
+  // Scoped to the SAME micro: a volunteer can now serve in different micros on
+  // the same date (e.g. Louvor then Professor), so only two roles inside one
+  // micro on the same date are ever a conflict — and even then only when
+  // they're not an explicitly compatible pair (see FunctionConflictGroup).
+  checkSameMicroConflict(
     personId: string,
+    microId: string,
     date: string,
     scheduleId: string,
     excludeSlotId?: string
-  ): { hasConflict: boolean; conflictingSlot?: ScheduleSlot; conflictingMicro?: Micro; conflictingFunction?: MicroFunction } {
+  ): { hasConflict: boolean; conflictingSlot?: ScheduleSlot; conflictingFunction?: MicroFunction } {
     const schedules = this.getSchedules();
     for (const sched of schedules) {
       if (sched.status === 'CANCELADA') continue;
       for (const slot of sched.slots) {
-        if (slot.date === date && slot.assignedPersonId === personId && slot.id !== excludeSlotId) {
-          const micro = this.getMicroById(slot.microId);
+        if (
+          slot.microId === microId &&
+          slot.date === date &&
+          slot.assignedPersonId === personId &&
+          slot.id !== excludeSlotId
+        ) {
           const fn = this.getFunctionById(slot.functionId);
           return {
             hasConflict: true,
             conflictingSlot: slot,
-            conflictingMicro: micro,
             conflictingFunction: fn
           };
         }
@@ -1343,7 +1352,7 @@ class StorageService {
     if (personId) {
       const person = this.getPersonById(personId);
       slot.assignedPersonId = personId;
-      slot.assignedPersonName = person?.name || '';
+      slot.assignedPersonName = getScheduleDisplayName(person) || '';
       slot.manualOverride = isManual;
       // Record in audit log
       this.addAuditLog(
