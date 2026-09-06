@@ -31,6 +31,7 @@ export default function App() {
   const [wizardPerson, setWizardPerson] = useState<Person | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+  const [userManagementEditTargetId, setUserManagementEditTargetId] = useState<string | null>(null);
   const [dataVersion, setDataVersion] = useState(0);
 
   const [selectedPersonForDetail, setSelectedPersonForDetail] = useState<Person | null>(null);
@@ -164,7 +165,10 @@ export default function App() {
         }}
         onResetData={handleResetData}
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
-        onOpenUserManagement={() => setIsUserManagementOpen(true)}
+        onOpenUserManagement={(targetId) => {
+          setUserManagementEditTargetId(targetId || null);
+          setIsUserManagementOpen(true);
+        }}
         onLogout={handleLogout}
         onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
       />
@@ -296,7 +300,11 @@ export default function App() {
       {/* User Management & Hierarchy Delegation Modal */}
       <UserManagementModal
         isOpen={isUserManagementOpen}
-        onClose={() => setIsUserManagementOpen(false)}
+        initialEditUserId={userManagementEditTargetId}
+        onClose={() => {
+          setIsUserManagementOpen(false);
+          setUserManagementEditTargetId(null);
+        }}
         currentUser={currentUser}
         onUserUpdated={handleUserUpdated}
       />

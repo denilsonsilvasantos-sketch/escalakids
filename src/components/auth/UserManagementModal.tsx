@@ -25,19 +25,22 @@ import {
 import { UserAccount, UserRole, Micro } from '../../types';
 import { storageService } from '../../services/storageService';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { PhotoUploader } from '../common/PhotoUploader';
 
 interface UserManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserAccount;
   onUserUpdated?: () => void;
+  initialEditUserId?: string | null;
 }
 
 export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   isOpen,
   onClose,
   currentUser,
-  onUserUpdated
+  onUserUpdated,
+  initialEditUserId
 }) => {
   const [users, setUsers] = useState<UserAccount[]>(storageService.getUsers());
   const [micros, setMicros] = useState<Micro[]>(storageService.getMicros());
@@ -67,7 +70,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     role: (currentUser.role === 'LIDER_MACRO' ? 'LIDER_MICRO' : 'LIDER_MACRO') as UserRole,
     allowedMicroIds: [] as string[],
     primaryMicroId: '',
-    whatsapp: ''
+    whatsapp: '',
+    avatar: ''
   });
 
   // Form State for Editing User
@@ -78,7 +82,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     role: 'LIDER_MACRO' as UserRole,
     allowedMicroIds: [] as string[],
     primaryMicroId: '',
-    whatsapp: ''
+    whatsapp: '',
+    avatar: ''
   });
 
   const refreshData = useCallback(() => {
@@ -111,6 +116,17 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   useEffect(() => {
     if (!isOpen) setRevealedPassword(null);
   }, [isOpen]);
+
+  // If initialEditUserId was provided, automatically open user for editing
+  useEffect(() => {
+    if (isOpen && initialEditUserId) {
+      const allUsers = storageService.getUsers();
+      const target = allUsers.find((u) => u.id === initialEditUserId);
+      if (target) {
+        handleStartEdit(target);
+      }
+    }
+  }, [isOpen, initialEditUserId]);
 
   if (!isOpen) return null;
 
@@ -207,7 +223,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             role: formData.role,
             allowedMicroIds: formData.allowedMicroIds,
             primaryMicroId: formData.primaryMicroId,
-            whatsapp: formData.whatsapp
+            whatsapp: formData.whatsapp,
+            avatar: formData.avatar?.trim() || undefined
           },
           currentUser
         ),
@@ -230,7 +247,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           role: isMacroLeader ? 'LIDER_MICRO' : 'LIDER_MACRO',
           allowedMicroIds: [],
           primaryMicroId: '',
-          whatsapp: ''
+          whatsapp: '',
+          avatar: ''
         });
         refreshUsers();
         onUserUpdated?.();
@@ -310,7 +328,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       role: u.role,
       allowedMicroIds: u.allowedMicroIds || [],
       primaryMicroId: u.primaryMicroId || '',
-      whatsapp: u.whatsapp || ''
+      whatsapp: u.whatsapp || '',
+      avatar: u.avatar || ''
     });
   };
 
@@ -338,6 +357,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         username: editFormData.username.trim().toLowerCase().replace(/^@/, ''),
         email: editFormData.email.trim() || undefined,
         whatsapp: editFormData.whatsapp.trim(),
+        avatar: editFormData.avatar?.trim() || undefined,
         role: editFormData.role,
         allowedMicroIds:
           editFormData.role === 'LIDER_MACRO'
@@ -350,7 +370,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
       const res = await storageService.updateUserAccount(updated, currentUser);
       if (res.success) {
-        setFeedback({ type: 'success', message: 'Perfil e função do líder atualizados com sucesso!' });
+        setFeedback({ type: 'success', message: 'Perfil, dados e foto atualizados com sucesso!' });
         setEditingUser(null);
         refreshUsers();
         onUserUpdated?.();
@@ -551,6 +571,19 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     ? 'ADMIN: Cadastrar Novo Líder com Primeiro Nome e Senha'
                     : 'Líder Macro: Cadastrar Líder de Micro'}
                 </span>
+              </div>
+
+              {/* Photo Uploader for New User */}
+              <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl">
+                <PhotoUploader
+                  value={formData.avatar}
+                  onChange={(val) => setFormData({ ...formData, avatar: val })}
+                  theme="dark"
+                  label="Foto do Líder (Opcional)"
+                  helperText="Clique para procurar arquivo, arraste a foto ou insira um link web."
+                  nameFallback={formData.name || 'L'}
+                  shape="rounded"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -831,6 +864,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <div className="flex items-center space-x-2 text-sm font-bold text-blue-300">
                   <Edit2 className="w-4 h-4 text-blue-400" />
                   <span>Editar Perfil & Função: {editingUser.name}</span>
+                  {editingUser.id === 'user-admin' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-300 font-semibold">
+                      Admin Principal
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -839,6 +877,19 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 >
                   <X className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Photo Uploader for Editing User */}
+              <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl">
+                <PhotoUploader
+                  value={editFormData.avatar}
+                  onChange={(val) => setEditFormData({ ...editFormData, avatar: val })}
+                  theme="dark"
+                  label="Foto de Perfil"
+                  helperText="Clique para procurar arquivo, arraste a foto ou insira um link web."
+                  nameFallback={editFormData.name || editingUser.name}
+                  shape="rounded"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1136,6 +1187,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               displayedUsers.map((u) => {
               const roleBadge = getRoleLabel(u.role);
               const isMasterAdmin = u.id === 'user-admin';
+              const isSelf = u.id === currentUser.id;
+              const canEditUser =
+                isAdmin ||
+                isSelf ||
+                (isMacroLeader && (u.role === 'LIDER_MICRO' || u.createdBy === currentUser.id));
               const hasRevealedPassword = revealedPassword?.userId === u.id;
 
               // Linked micro names
@@ -1243,11 +1299,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       <Lock className="w-4 h-4" />
                     </button>
 
-                    {isAdmin && !isMasterAdmin && (
+                    {canEditUser && (
                       <button
                         onClick={() => handleStartEdit(u)}
                         className="p-1.5 text-slate-400 hover:text-blue-400 rounded-lg hover:bg-slate-800 transition-colors border border-slate-700"
-                        title="Editar Perfil e Função (Líder Macro/Micro/Admin)"
+                        title={isMasterAdmin ? 'Editar Administrador (Dados e Foto)' : 'Editar Perfil, Função e Foto'}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>

@@ -106,8 +106,8 @@ export const VolunteerPortalView: React.FC<VolunteerPortalViewProps> = ({
       <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white font-extrabold text-2xl shadow-inner overflow-hidden">
-            {currentUser.avatar ? (
-              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+            {currentUser.avatar || person?.avatarUrl ? (
+              <img src={currentUser.avatar || person?.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
             ) : (
               currentUser.name.charAt(0)
             )}

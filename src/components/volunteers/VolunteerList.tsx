@@ -300,8 +300,12 @@ export const VolunteerList: React.FC<VolunteerListProps> = ({
                 {/* Header info */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 text-white font-bold text-sm flex items-center justify-center shrink-0">
-                      {person.name.charAt(0)}
+                    <div className="w-10 h-10 rounded-full bg-slate-800 text-white font-bold text-sm flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-slate-200">
+                      {person.avatarUrl ? (
+                        <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-cover" />
+                      ) : (
+                        person.name.charAt(0)
+                      )}
                     </div>
                     <div>
                       <div className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
@@ -434,8 +438,12 @@ export const VolunteerList: React.FC<VolunteerListProps> = ({
                       {/* Name & Avatar */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                            {person.name.charAt(0)}
+                          <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-slate-200">
+                            {person.avatarUrl ? (
+                              <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-cover" />
+                            ) : (
+                              person.name.charAt(0)
+                            )}
                           </div>
                           <div>
                             <div className="font-bold text-slate-900 flex items-center space-x-1.5">

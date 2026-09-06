@@ -55,8 +55,12 @@ export const VolunteerDetailModal: React.FC<VolunteerDetailModalProps> = ({
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 flex items-start justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-rose-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-white/20">
-              {person.name.charAt(0)}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-rose-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-white/20 overflow-hidden shrink-0">
+              {person.avatarUrl ? (
+                <img src={person.avatarUrl} alt={person.name} className="w-full h-full object-cover" />
+              ) : (
+                person.name.charAt(0)
+              )}
             </div>
             <div>
               <div className="flex items-center space-x-2">

@@ -502,6 +502,7 @@ class StorageService {
       primaryMicroId?: string;
       personId?: string;
       whatsapp?: string;
+      avatar?: string;
     },
     creator: UserAccount = this.getCurrentUser()
   ): Promise<{

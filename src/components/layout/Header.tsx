@@ -25,7 +25,7 @@ interface HeaderProps {
   onNavigate: (view: string) => void;
   onResetData: () => void;
   onOpenSupabaseModal: () => void;
-  onOpenUserManagement: () => void;
+  onOpenUserManagement: (targetUserId?: string) => void;
   onLogout: () => void;
   onToggleMobileMenu?: () => void;
 }
@@ -288,6 +288,22 @@ export const Header: React.FC<HeaderProps> = ({
 
                   {/* Actions for current user */}
                   <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onOpenUserManagement(currentUser.id);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center justify-between transition-colors group"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <UserCheck className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                        <span>Editar Meu Perfil & Foto</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-blue-900/60 rounded text-blue-200 font-bold border border-blue-800/50">
+                        Editar
+                      </span>
+                    </button>
+
                     {(isAdmin || isMacroLeader) && (
                       <button
                         onClick={() => {

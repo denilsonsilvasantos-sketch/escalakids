@@ -20,6 +20,7 @@ import { Person, Micro, MicroFunction, Family, PersonMicroFunctionPreference } f
 import { storageService } from '../../services/storageService';
 import { formatDateBR, parseDateBRToISO, maskDateBRInput, isValidDateBR } from '../../utils/dateUtils';
 import { getFunctionShiftInfo } from '../../utils/functionShiftUtils';
+import { PhotoUploader } from '../common/PhotoUploader';
 
 interface VolunteerWizardModalProps {
   isOpen: boolean;
@@ -490,6 +491,19 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Foto do Voluntário */}
+                <div className="sm:col-span-2 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <PhotoUploader
+                    value={avatarUrl}
+                    onChange={setAvatarUrl}
+                    theme="light"
+                    label="FOTO DO VOLUNTÁRIO (OPCIONAL)"
+                    helperText="Clique para procurar arquivo no computador/celular, arraste uma foto ou insira um link da web."
+                    nameFallback={nickname || name || 'Voluntário'}
+                    shape="circle"
+                  />
+                </div>
+
                 {/* Nome Completo */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1">
