@@ -1064,6 +1064,18 @@ class StorageService {
     });
   }
 
+  // Apelido ("como gosta de ser chamado") must be unique across all volunteers
+  // so schedule grids/exports — which display the nickname, not the full name —
+  // never show two different people under the same label.
+  isNicknameTaken(nickname: string, excludeId?: string): boolean {
+    const term = nickname.trim().toLowerCase();
+    if (!term) return false;
+    return this.getPeople().some((p) => {
+      if (excludeId && p.id === excludeId) return false;
+      return (p.nickname || '').trim().toLowerCase() === term;
+    });
+  }
+
   savePerson(person: Person): void {
     const people = this.getPeople();
     const idx = people.findIndex((p) => p.id === person.id);

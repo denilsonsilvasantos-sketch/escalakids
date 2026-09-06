@@ -287,6 +287,14 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
         setValidationError('Por favor, informe o Nome Completo do voluntário.');
         return false;
       }
+      if (!nickname.trim()) {
+        setValidationError('Por favor, informe como esta pessoa gosta de ser chamada.');
+        return false;
+      }
+      if (storageService.isNicknameTaken(nickname, initialPerson?.id)) {
+        setValidationError(`Já existe um voluntário cadastrado como "${nickname.trim()}". Use outro apelido para diferenciar.`);
+        return false;
+      }
       if (!birthDate) {
         setValidationError('Por favor, informe uma Data de Nascimento válida (DD/MM/AAAA).');
         return false;
@@ -310,6 +318,14 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
     setValidationError(null);
     if (!name || !birthDate) {
       setValidationError('Nome e Data de Nascimento são obrigatórios.');
+      return;
+    }
+    if (!nickname.trim()) {
+      setValidationError('Por favor, informe como esta pessoa gosta de ser chamada.');
+      return;
+    }
+    if (storageService.isNicknameTaken(nickname, initialPerson?.id)) {
+      setValidationError(`Já existe um voluntário cadastrado como "${nickname.trim()}". Use outro apelido para diferenciar.`);
       return;
     }
 
@@ -492,7 +508,7 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                 {/* Apelido */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    COMO GOSTA DE SER CHAMADO(A)
+                    COMO GOSTA DE SER CHAMADO(A) *
                   </label>
                   <input
                     type="text"
@@ -501,6 +517,9 @@ export const VolunteerWizardModal: React.FC<VolunteerWizardModalProps> = ({
                     placeholder="Ex: João"
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                   />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Precisa ser único — é o nome que aparece nas escalas. Se já existir outro voluntário com este apelido, escolha uma variação (ex: sobrenome ou inicial).
+                  </p>
                 </div>
 
                 {/* Data de Nascimento - ÚNICO CAMPO INTUITIVO */}

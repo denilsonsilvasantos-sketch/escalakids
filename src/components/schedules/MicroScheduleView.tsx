@@ -11,7 +11,23 @@ import {
   X,
   ShieldAlert,
   Edit,
-  Trash2
+  Trash2,
+  Mic,
+  Guitar,
+  Piano,
+  Drum,
+  Volume2,
+  GraduationCap,
+  Users,
+  Popcorn,
+  ShieldCheck,
+  Camera,
+  HeartHandshake,
+  Drama,
+  UtensilsCrossed,
+  Crown,
+  Star,
+  Music2
 } from 'lucide-react';
 import { Schedule, ScheduleSlot, Micro, MicroFunction, Person, UserAccount } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -19,6 +35,31 @@ import { schedulerAlgorithm, CandidateScore } from '../../services/schedulerAlgo
 import { exportService } from '../../services/exportService';
 import { formatDateBR } from '../../utils/dateUtils';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { getFunctionIconKey, FunctionIconKey } from '../../utils/functionIcons';
+
+const FUNCTION_ICON_COMPONENTS: Record<FunctionIconKey, React.ComponentType<{ className?: string }>> = {
+  mic: Mic,
+  guitar: Guitar,
+  piano: Piano,
+  drum: Drum,
+  volume: Volume2,
+  graduation: GraduationCap,
+  users: Users,
+  popcorn: Popcorn,
+  shield: ShieldCheck,
+  camera: Camera,
+  heart: HeartHandshake,
+  drama: Drama,
+  utensils: UtensilsCrossed,
+  crown: Crown,
+  star: Star,
+  music: Music2
+};
+
+const FunctionIcon: React.FC<{ fn: { name: string; category?: string }; className?: string }> = ({ fn, className }) => {
+  const Icon = FUNCTION_ICON_COMPONENTS[getFunctionIconKey(fn)];
+  return <Icon className={className} />;
+};
 
 interface MicroScheduleViewProps {
   currentUser: UserAccount;
@@ -548,7 +589,10 @@ export const MicroScheduleView: React.FC<MicroScheduleViewProps> = ({ currentUse
                   return (
                     <tr key={`${fn.id}-${slotIndexNumber}`} className="hover:bg-slate-50/70">
                       <td className="py-3 px-4 font-semibold text-slate-800 border-r border-slate-100">
-                        {label}
+                        <div className="flex items-center space-x-2">
+                          <FunctionIcon fn={fn} className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <span>{label}</span>
+                        </div>
                       </td>
 
                       {currentSchedule.dates.map((date) => {

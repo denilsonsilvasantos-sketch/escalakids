@@ -19,11 +19,49 @@ import {
   Star,
   Calendar,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Mic,
+  Guitar,
+  Piano,
+  Drum,
+  Volume2,
+  Popcorn,
+  ShieldCheck,
+  Camera,
+  HeartHandshake,
+  Drama,
+  UtensilsCrossed,
+  Crown,
+  Music2
 } from 'lucide-react';
 import { Micro, MicroFunction, UserAccount, AlgorithmWeights, ClassroomPresetKey, FunctionConflictGroup } from '../../types';
 import { storageService } from '../../services/storageService';
 import { CLASSROOM_PRESETS, generateFunctionsForPreset } from '../../data/classroomPresets';
+import { getFunctionIconKey, FunctionIconKey } from '../../utils/functionIcons';
+
+const FUNCTION_ICON_COMPONENTS: Record<FunctionIconKey, React.ComponentType<{ className?: string }>> = {
+  mic: Mic,
+  guitar: Guitar,
+  piano: Piano,
+  drum: Drum,
+  volume: Volume2,
+  graduation: GraduationCap,
+  users: Users,
+  popcorn: Popcorn,
+  shield: ShieldCheck,
+  camera: Camera,
+  heart: HeartHandshake,
+  drama: Drama,
+  utensils: UtensilsCrossed,
+  crown: Crown,
+  star: Star,
+  music: Music2
+};
+
+const FunctionIcon: React.FC<{ fn: { name: string; category?: string }; className?: string }> = ({ fn, className }) => {
+  const Icon = FUNCTION_ICON_COMPONENTS[getFunctionIconKey(fn)];
+  return <Icon className={className} />;
+};
 import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
 
 interface MicroManagementProps {
@@ -681,6 +719,7 @@ export const MicroManagement: React.FC<MicroManagementProps> = ({ currentUser })
                       >
                         <div className="space-y-1">
                           <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                            <FunctionIcon fn={fn} className="w-4 h-4 text-slate-500 shrink-0" />
                             <span className="font-bold text-slate-900 text-xs">{fn.name}</span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${shiftInfo.badgeClass}`}>
                               {shiftInfo.badgeText}

@@ -21,7 +21,22 @@ import {
   Edit,
   GraduationCap,
   PlusCircle,
-  Settings
+  Settings,
+  Mic,
+  Guitar,
+  Piano,
+  Drum,
+  Volume2,
+  Users,
+  Popcorn,
+  ShieldCheck,
+  Camera,
+  HeartHandshake,
+  Drama,
+  UtensilsCrossed,
+  Crown,
+  Star,
+  Music2
 } from 'lucide-react';
 import { Schedule, ScheduleSlot, Micro, MicroFunction, Person, UserAccount, ClassroomPresetKey } from '../../types';
 import { storageService } from '../../services/storageService';
@@ -31,6 +46,7 @@ import { formatDateBR, parseDateBRToISO } from '../../utils/dateUtils';
 import { CLASSROOM_PRESETS } from '../../data/classroomPresets';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { getFunctionShiftInfo, getMicroShiftInfo } from '../../utils/functionShiftUtils';
+import { getFunctionIconKey, FunctionIconKey } from '../../utils/functionIcons';
 
 const SCHEDULE_SHIFT_LABELS: Record<string, string> = {
   MANHA: '☀️ Manhã',
@@ -38,6 +54,30 @@ const SCHEDULE_SHIFT_LABELS: Record<string, string> = {
   ESPECIAL: '⭐ Culto Especial',
   AMBOS: '✨ Todos os Turnos',
   TARDE: 'Tarde'
+};
+
+const FUNCTION_ICON_COMPONENTS: Record<FunctionIconKey, React.ComponentType<{ className?: string }>> = {
+  mic: Mic,
+  guitar: Guitar,
+  piano: Piano,
+  drum: Drum,
+  volume: Volume2,
+  graduation: GraduationCap,
+  users: Users,
+  popcorn: Popcorn,
+  shield: ShieldCheck,
+  camera: Camera,
+  heart: HeartHandshake,
+  drama: Drama,
+  utensils: UtensilsCrossed,
+  crown: Crown,
+  star: Star,
+  music: Music2
+};
+
+const FunctionIcon: React.FC<{ fn: { name: string; category?: string }; className?: string }> = ({ fn, className }) => {
+  const Icon = FUNCTION_ICON_COMPONENTS[getFunctionIconKey(fn)];
+  return <Icon className={className} />;
 };
 
 interface MacroScheduleViewProps {
@@ -916,6 +956,7 @@ export const MacroScheduleView: React.FC<MacroScheduleViewProps> = ({ currentUse
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: micro.color }} />
+                                    <FunctionIcon fn={fn} className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                                     <span>{functionLabel}</span>
                                     {(() => {
                                       const sInfo = getFunctionShiftInfo(fn);

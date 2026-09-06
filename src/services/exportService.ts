@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import { Schedule, Micro, MicroFunction } from '../types';
 import { storageService } from './storageService';
 import { formatDateBR } from '../utils/dateUtils';
+import { getFunctionIconKey, buildIconSvgString, FunctionIconKey } from '../utils/functionIcons';
 
 export class ExportService {
   private logoDataUrlPromise: Promise<{ dataUrl: string; width: number; height: number } | null> | null = null;
@@ -35,6 +36,40 @@ export class ExportService {
       });
     }
     return this.logoDataUrlPromise;
+  }
+
+  private functionIconCache: Partial<Record<FunctionIconKey, Promise<string | null>>> = {};
+
+  // Rasterizes one of the small function icons (mic, guitar, etc.) to a PNG
+  // data URL so jsPDF can place it — the standard PDF fonts it uses can't
+  // render icon glyphs directly. Cached per icon key since the same handful
+  // of icons repeat across every row of the schedule.
+  private loadFunctionIcon(key: FunctionIconKey): Promise<string | null> {
+    if (!this.functionIconCache[key]) {
+      this.functionIconCache[key] = new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const size = 48;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(null);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, size, size);
+            resolve(canvas.toDataURL('image/png'));
+          } catch {
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'data:image/svg+xml;base64,' + btoa(buildIconSvgString(key));
+      });
+    }
+    return this.functionIconCache[key]!;
   }
 
   /**
@@ -153,6 +188,18 @@ export class ExportService {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const logo = await this.loadLogo();
 
+    // Preload every distinct function icon this document will actually use.
+    const neededIconKeys = new Set<FunctionIconKey>();
+    for (const sec of sections) {
+      for (const row of sec.rows) {
+        neededIconKeys.add(getFunctionIconKey({ name: row.functionName, category: row.category }));
+      }
+    }
+    const iconEntries = await Promise.all(
+      [...neededIconKeys].map(async (key) => [key, await this.loadFunctionIcon(key)] as const)
+    );
+    const iconDataUrls = new Map(iconEntries);
+
     const dateHeaders = dates.map((d) => formatDateBR(d));
 
     let currentY = 15;
@@ -186,6 +233,17 @@ export class ExportService {
 
     const colWidth = 277 / (dates.length + 1);
 
+    // Vertical lines between every column (including the label column), for
+    // just the row currently being drawn — pagination breaks the table into
+    // independent chunks, so there's no single continuous line to draw.
+    const drawColumnDividers = (y: number, height: number) => {
+      doc.setDrawColor(203, 213, 225); // Slate 300
+      for (let i = 0; i <= dates.length + 1; i++) {
+        const x = 10 + colWidth * i;
+        doc.line(x, y, x, y + height);
+      }
+    };
+
     // Table Header
     doc.setFillColor(241, 245, 249); // Slate 100
     doc.rect(10, currentY, 277, 8, 'F');
@@ -198,6 +256,7 @@ export class ExportService {
       const x = 10 + colWidth * (idx + 1);
       doc.text(dateHeaders[idx], x + 4, currentY + 5.5);
     });
+    drawColumnDividers(currentY, 8);
 
     currentY += 8;
 
@@ -225,11 +284,20 @@ export class ExportService {
 
         doc.setDrawColor(226, 232, 240);
         doc.line(10, currentY + 6, 287, currentY + 6);
+        drawColumnDividers(currentY, 6);
 
         doc.setTextColor(51, 65, 85);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
-        doc.text(row.functionName, 14, currentY + 4.5);
+
+        const iconKey = getFunctionIconKey({ name: row.functionName, category: row.category });
+        const iconDataUrl = iconDataUrls.get(iconKey);
+        let textX = 14;
+        if (iconDataUrl) {
+          doc.addImage(iconDataUrl, 'PNG', 14, currentY + 1.3, 3.4, 3.4);
+          textX = 19;
+        }
+        doc.text(row.functionName, textX, currentY + 4.5);
 
         dates.forEach((d, idx) => {
           const x = 10 + colWidth * (idx + 1);
