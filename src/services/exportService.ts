@@ -5,6 +5,38 @@ import { storageService } from './storageService';
 import { formatDateBR } from '../utils/dateUtils';
 
 export class ExportService {
+  private logoDataUrlPromise: Promise<{ dataUrl: string; width: number; height: number } | null> | null = null;
+
+  // Fetches the app logo once and converts it to a data URL jsPDF can embed
+  // directly (addImage needs a data: URI or raw base64, not a plain <img> src).
+  // Cached across calls since the same logo is reused on every PDF export.
+  private loadLogo(): Promise<{ dataUrl: string; width: number; height: number } | null> {
+    if (!this.logoDataUrlPromise) {
+      this.logoDataUrlPromise = new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(null);
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight });
+          } catch {
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = '/mevam-kids-logo.png';
+      });
+    }
+    return this.logoDataUrlPromise;
+  }
+
   /**
    * Generates a structured Matrix for a Schedule:
    * Rows = Sections / Functions
@@ -116,9 +148,10 @@ export class ExportService {
   /**
    * Exports to PDF matching high-contrast printable document
    */
-  exportToPDF(schedule: Schedule, selectedMicroIds?: string[], filename?: string): void {
+  async exportToPDF(schedule: Schedule, selectedMicroIds?: string[], filename?: string): Promise<void> {
     const { sections, dates } = this.generateScheduleMatrix(schedule, selectedMicroIds);
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const logo = await this.loadLogo();
 
     const dateHeaders = dates.map((d) => formatDateBR(d));
 
@@ -128,14 +161,26 @@ export class ExportService {
     doc.setFillColor(30, 41, 59); // Slate 800
     doc.rect(10, currentY, 277, 18, 'F');
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MEVAM KIDS - ESCALA OFICIAL', 16, currentY + 8);
+    if (logo) {
+      let logoHeight = 11;
+      let logoWidth = (logo.width / logo.height) * logoHeight;
+      if (logoWidth > 60) {
+        logoWidth = 60;
+        logoHeight = (logo.height / logo.width) * logoWidth;
+      }
+      doc.addImage(logo.dataUrl, 'PNG', 14, currentY + 2, logoWidth, logoHeight);
+    } else {
+      // Fallback if the logo couldn't be loaded (e.g. offline export)
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MEVAM KIDS - ESCALA OFICIAL', 16, currentY + 8);
+    }
 
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${schedule.eventName || schedule.title} | Status: ${schedule.status}`, 16, currentY + 14);
+    doc.text(`${schedule.eventName || schedule.title} | Status: ${schedule.status}`, 16, currentY + 15.5);
 
     currentY += 24;
 
